@@ -30,7 +30,8 @@ public final class Persistence {
         if (this.user == null || this.password == null) {
             throw new IllegalStateException("Credentials must be set before building the database.");
         }
-        return new Database(Database.SQL, "jdbc:postgresql://localhost/", this.name, this.user, this.password, this.version);
+        return new Database(Database.SQL, "jdbc:postgresql://localhost/", this.name, this.user, this.password,
+                this.version);
     }
 
 }

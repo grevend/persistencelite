@@ -72,7 +72,8 @@ public final class EntityManager {
         }
     }
 
-    private @NotNull <A> A constructEntity(@NotNull Class<A> entity) throws IllegalStateException, IllegalArgumentException,
+    private @NotNull <A> A constructEntity(@NotNull Class<A> entity)
+            throws IllegalStateException, IllegalArgumentException,
             IllegalAccessException, InvocationTargetException, InstantiationException {
         Optional<Constructor<?>> constructor = getConstructor(entity);
         if (constructor.isPresent()) {
