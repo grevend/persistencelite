@@ -31,7 +31,7 @@ public class Main {
         }
 
         Dao<Artist> ad = db.getDaoFactory().getFromEntity(Artist.class);
-        System.out.println(ad.get(0));
+        System.out.println(ad.retrieve(0));
     }
 
     @Entity(name = "artist")
