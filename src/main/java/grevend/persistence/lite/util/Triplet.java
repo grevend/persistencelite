@@ -30,9 +30,9 @@ public class Triplet<A, B, C> {
     @SuppressWarnings("unchecked")
     public String toString() {
         return "Triplet{"
-                + "a=" + (a.getClass().isArray() ? Arrays.toString((A[]) a) : a)
-                + ", b=" + (b.getClass().isArray() ? Arrays.toString((B[]) b) : b)
-                + ", c=" + (c.getClass().isArray() ? Arrays.toString((C[]) c) : c)
+                + "a=" + (a != null && a.getClass().isArray() ? Arrays.toString((A[]) a) : a)
+                + ", b=" + (b != null && b.getClass().isArray() ? Arrays.toString((B[]) b) : b)
+                + ", c=" + (c != null && c.getClass().isArray() ? Arrays.toString((C[]) c) : c)
                 + '}';
     }
 
