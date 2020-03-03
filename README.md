@@ -19,13 +19,14 @@ private static class Artist {
     @Attribute(name = "pk_id")
     public int id;
     public String name, bio;
-    public Object image, verifier;
+    public Object verifier;
+    public Optional<Object> image;
 
     protected Artist() {}
     
 }
 
-Dao<Artist> ad = db.getDaoFactory().ofEntity(Artist.class);
+var ad = db.getDaoFactory().ofEntity(Artist.class);
 List<Artist> artists = ad.retrieveAll();
 ```
 
