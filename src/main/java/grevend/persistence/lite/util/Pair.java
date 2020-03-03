@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collector;
@@ -13,8 +12,8 @@ import java.util.stream.Collectors;
 
 public class Pair<A, B> {
 
-    private A a;
-    private B b;
+    private final A a;
+    private final B b;
 
     public Pair(A a, B b) {
         this.a = a;
@@ -76,16 +75,8 @@ public class Pair<A, B> {
         return a;
     }
 
-    public void setA(A a) {
-        this.a = a;
-    }
-
     public B getB() {
         return b;
-    }
-
-    public void setB(B b) {
-        this.b = b;
     }
 
     public @NotNull <E> Pair<E, B> withA(E a) {
@@ -103,20 +94,6 @@ public class Pair<A, B> {
                 + "a=" + (a.getClass().isArray() ? Arrays.toString((A[]) a) : a)
                 + ", b=" + (b.getClass().isArray() ? Arrays.toString((B[]) b) : b)
                 + '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Pair<?, ?> pair = (Pair<?, ?>) o;
-        return Objects.equals(getA(), pair.getA()) &&
-                Objects.equals(getB(), pair.getB());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getA(), getB());
     }
 
 }
