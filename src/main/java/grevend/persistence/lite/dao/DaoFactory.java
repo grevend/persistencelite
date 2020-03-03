@@ -28,7 +28,7 @@ public final class DaoFactory {
             }
 
             @Override
-            public A retrieve(Integer id) {
+            public A retrieve(Integer key) {
                 return null;
             }
 
@@ -38,12 +38,12 @@ public final class DaoFactory {
             }
 
             @Override
-            public boolean update(A e) {
+            public boolean update(A entity) {
                 return false;
             }
 
             @Override
-            public boolean delete(Integer id) {
+            public boolean delete(A entity) {
                 return false;
             }
 

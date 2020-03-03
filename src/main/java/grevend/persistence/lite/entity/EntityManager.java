@@ -58,10 +58,7 @@ public final class EntityManager {
     private @NotNull Optional<Constructor<?>> getConstructor(@NotNull Class<?> entity) {
         if (Arrays.stream(entity.getDeclaredConstructors()).anyMatch(viableConstructor)) {
             List<Constructor<?>> constructors = Arrays.stream(entity.getDeclaredConstructors())
-                    .filter(constructor -> constructor.getParameterCount() == 0
-                            && !constructor.isSynthetic()
-                            && (Modifier.isPublic(constructor.getModifiers())
-                            || Modifier.isProtected(constructor.getModifiers())))
+                    .filter(viableConstructor)
                     .collect(Collectors.toList());
             return Optional.ofNullable(constructors.size() > 0 ? constructors.get(0) : null);
         } else {

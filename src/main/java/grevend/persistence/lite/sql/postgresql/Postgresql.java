@@ -13,7 +13,7 @@ public class Postgresql implements Dao<Object, Integer> {
     }
 
     @Override
-    public Object retrieve(Integer id) {
+    public Object retrieve(Integer key) {
         return null;
     }
 
@@ -23,12 +23,12 @@ public class Postgresql implements Dao<Object, Integer> {
     }
 
     @Override
-    public boolean update(Object e) {
+    public boolean update(Object entity) {
         return false;
     }
 
     @Override
-    public boolean delete(Integer id) {
+    public boolean delete(Object entity) {
         return false;
     }
 

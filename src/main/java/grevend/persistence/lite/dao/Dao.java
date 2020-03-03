@@ -7,12 +7,12 @@ public interface Dao<T, K> {
 
     boolean create(Collection<T> entities);
 
-    T retrieve(K id);
+    T retrieve(K key);
 
     List<T> retrieveAll();
 
-    boolean update(T e);
+    boolean update(T entity);
 
-    boolean delete(K id);
+    boolean delete(T entity);
 
 }

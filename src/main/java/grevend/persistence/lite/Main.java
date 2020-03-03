@@ -1,6 +1,5 @@
 package grevend.persistence.lite;
 
-import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
@@ -32,9 +31,9 @@ public class Main {
             exception.printStackTrace();
         }
 
-        var ad = db.getDaoFactory().ofEntity(Artist.class);
-        System.out.println(ad.retrieve(0));
-        List<Artist> artists = ad.retrieveAll();
+        var artistDao = db.getDaoFactory().ofEntity(Artist.class);
+        System.out.println(artistDao.retrieve(0));
+        List<Artist> artists = artistDao.retrieveAll();
         System.out.println(artists);
     }
 
