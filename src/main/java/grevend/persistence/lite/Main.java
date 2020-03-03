@@ -3,6 +3,7 @@ package grevend.persistence.lite;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
+import grevend.persistence.lite.sql.PrimaryKey;
 import grevend.persistence.lite.sql.postgresql.Postgresql;
 
 import java.sql.Connection;
