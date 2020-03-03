@@ -21,7 +21,7 @@ private static class Artist {
     
 }
 
-Dao<Artist> ad = db.getDaoFactory().getFromEntity(Artist.class);
+Dao<Artist> ad = db.getDaoFactory().ofEntity(Artist.class);
 List<Artist> artists = ad.retrieve();
 ```
 
