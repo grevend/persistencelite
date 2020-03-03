@@ -21,13 +21,13 @@ import java.util.stream.Collectors;
 
 public final class EntityManager {
 
-    private static final Predicate<Constructor<?>> viableConstructor =
+    public static final Predicate<Constructor<?>> viableConstructor =
             constructor -> constructor.getParameterCount() == 0
                     && !constructor.isSynthetic()
                     && (Modifier.isPublic(constructor.getModifiers())
                     || Modifier.isProtected(constructor.getModifiers()));
 
-    private static final Predicate<Field> viableFields =
+    public static final Predicate<Field> viableFields =
             field -> !field.isSynthetic()
                     && !field.isAnnotationPresent(Ignore.class)
                     && !Modifier.isAbstract(field.getModifiers())
