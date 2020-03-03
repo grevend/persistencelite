@@ -33,7 +33,7 @@ public final class Persistence {
         return this;
     }
 
-    public @NotNull Persistence setDaoImplProvider(@NotNull Dao<?> daoImplProvider) {
+    public @NotNull Persistence setDaoImplProvider(@NotNull Dao<?, ?> daoImplProvider) {
         return setDaoImplProvider(daoImplProvider.getClass());
     }
 

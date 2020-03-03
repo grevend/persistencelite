@@ -19,7 +19,7 @@ public final class DaoFactory {
         return instance;
     }
 
-    public @NotNull <A> Dao<A> ofEntity(@NotNull Class<A> entity) throws IllegalArgumentException {
+    public @NotNull <A> Dao<A, Integer> ofEntity(@NotNull Class<A> entity) throws IllegalArgumentException {
         return new Dao<>() {
 
             @Override
@@ -28,12 +28,12 @@ public final class DaoFactory {
             }
 
             @Override
-            public A retrieve(int id) {
+            public A retrieve(Integer id) {
                 return null;
             }
 
             @Override
-            public List<A> retrieve() {
+            public List<A> retrieveAll() {
                 return null;
             }
 
@@ -43,7 +43,7 @@ public final class DaoFactory {
             }
 
             @Override
-            public boolean delete(int id) {
+            public boolean delete(Integer id) {
                 return false;
             }
 

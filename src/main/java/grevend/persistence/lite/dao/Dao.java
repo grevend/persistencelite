@@ -3,16 +3,16 @@ package grevend.persistence.lite.dao;
 import java.util.Collection;
 import java.util.List;
 
-public interface Dao<T> {
+public interface Dao<T, K> {
 
     boolean create(Collection<T> entities);
 
-    T retrieve(int id);
+    T retrieve(K id);
 
-    List<T> retrieve();
+    List<T> retrieveAll();
 
     boolean update(T e);
 
-    boolean delete(int id);
+    boolean delete(K id);
 
 }

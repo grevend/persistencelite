@@ -5,7 +5,7 @@ import grevend.persistence.lite.dao.Dao;
 import java.util.Collection;
 import java.util.List;
 
-public class Postgresql implements Dao<Object> {
+public class Postgresql implements Dao<Object, Integer> {
 
     @Override
     public boolean create(Collection<Object> entities) {
@@ -13,12 +13,12 @@ public class Postgresql implements Dao<Object> {
     }
 
     @Override
-    public Object retrieve(int id) {
+    public Object retrieve(Integer id) {
         return null;
     }
 
     @Override
-    public List<Object> retrieve() {
+    public List<Object> retrieveAll() {
         return null;
     }
 
@@ -28,7 +28,7 @@ public class Postgresql implements Dao<Object> {
     }
 
     @Override
-    public boolean delete(int id) {
+    public boolean delete(Integer id) {
         return false;
     }
 
