@@ -26,8 +26,8 @@ private static class Artist {
     
 }
 
-var ad = db.getDaoFactory().ofEntity(Artist.class);
-List<Artist> artists = ad.retrieveAll();
+var artistDao = db.getDaoFactory().ofEntity(Artist.class);
+List<Artist> artists = artistDao.retrieveAll();
 ```
 
 ## License
