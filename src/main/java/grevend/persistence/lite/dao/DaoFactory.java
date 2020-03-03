@@ -19,7 +19,7 @@ public final class DaoFactory {
         return instance;
     }
 
-    public @NotNull <A> Dao<A> getFromEntity(@NotNull Class<A> entity) throws IllegalArgumentException {
+    public @NotNull <A> Dao<A> ofEntity(@NotNull Class<A> entity) throws IllegalArgumentException {
         return new Dao<>() {
 
             @Override
