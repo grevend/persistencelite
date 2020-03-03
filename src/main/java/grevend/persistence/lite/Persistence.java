@@ -1,5 +1,6 @@
 package grevend.persistence.lite;
 
+import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +10,7 @@ public final class Persistence {
     private final String name;
     private final int version;
     private String user = null, password = null;
+    private Class<? extends Dao> daoImplProvider = null;
 
     private Persistence(String name, int version) {
         this.name = name;
@@ -26,11 +28,23 @@ public final class Persistence {
         return this;
     }
 
+    public @NotNull Persistence setDaoImplProvider(@NotNull Class<? extends Dao> daoImplProvider) {
+        this.daoImplProvider = daoImplProvider;
+        return this;
+    }
+
+    public @NotNull Persistence setDaoImplProvider(@NotNull Dao<?> daoImplProvider) {
+        return setDaoImplProvider(daoImplProvider.getClass());
+    }
+
     public @NotNull Database build() throws IllegalStateException {
         if (this.user == null || this.password == null) {
             throw new IllegalStateException("Credentials must be set before building the database.");
         }
-        return new Database(Database.SQL, "jdbc:postgresql://localhost/", this.name, this.user, this.password,
+        if(this.daoImplProvider == null) {
+            throw new IllegalStateException("No " + Dao.class.getCanonicalName() + " implementation provided.");
+        }
+        return new Database(this.daoImplProvider, Database.SQL, "jdbc:postgresql://localhost/", this.name, this.user, this.password,
                 this.version);
     }
 

@@ -1,5 +1,6 @@
 package grevend.persistence.lite.database;
 
+import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.dao.DaoFactory;
 import grevend.persistence.lite.entity.EntityManager;
 import org.jetbrains.annotations.NotNull;
@@ -15,17 +16,23 @@ public class Database {
 
     public static final String SQL = "sql";
 
+    private final Class<? extends Dao> daoImplProvider;
     private final String type, url, name, user, password;
     private final int version;
 
-    public Database(@NotNull String type, @NotNull String url, @NotNull String name, @NotNull String user,
-                    @NotNull String password, int version) {
+    public Database(@NotNull Class<? extends Dao> daoImplProvider, @NotNull String type, @NotNull String url,
+                    @NotNull String name, @NotNull String user, @NotNull String password, int version) {
+        this.daoImplProvider = daoImplProvider;
         this.type = type;
         this.url = url;
         this.name = name;
         this.user = user;
         this.password = password;
         this.version = version;
+    }
+
+    public @NotNull Class<? extends Dao> getDaoImplProvider() {
+        return daoImplProvider;
     }
 
     public @NotNull String getType() {

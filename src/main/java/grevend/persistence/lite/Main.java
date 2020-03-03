@@ -4,18 +4,21 @@ import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
+import grevend.persistence.lite.sql.postgresql.Postgresql;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Optional;
 
 public class Main {
 
     public static void main(String[] args) {
         Database db = Persistence.databaseBuilder("postgres", 0)
-                .setCredentials("postgres", "mypassword").build();
+                .setDaoImplProvider(Postgresql.class)
+                .setCredentials("postgres", "mypassword")
+                .build();
 
         try (Connection connection = db.createConnection()) {
             Statement st = connection.createStatement();
@@ -25,13 +28,14 @@ public class Main {
             }
             rs.close();
             st.close();
-        } catch (SQLException | IllegalAccessException | InstantiationException
-                | InvocationTargetException | NoSuchFieldException exception) {
+        } catch (Exception exception) {
             exception.printStackTrace();
         }
 
-        Dao<Artist> ad = db.getDaoFactory().getFromEntity(Artist.class);
+        Dao<Artist> ad = db.getDaoFactory().ofEntity(Artist.class);
         System.out.println(ad.retrieve(0));
+        List<Artist> artists = ad.retrieve();
+        System.out.println(artists);
     }
 
     @Entity(name = "artist")
@@ -40,7 +44,8 @@ public class Main {
         @Attribute(name = "id")
         public int id;
         public String name, bio;
-        public Object image, verifier;
+        public Object verifier;
+        public Optional<Object> image;
 
         protected Artist() {
         }
