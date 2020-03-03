@@ -1,27 +1,44 @@
 package grevend.persistence.lite.entity;
 
 import grevend.persistence.lite.util.Ignore;
+import grevend.persistence.lite.util.ThrowingFunction;
+import grevend.persistence.lite.util.Triplet;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class EntityManager {
 
+    private static final Predicate<Constructor<?>> viableConstructor =
+            constructor -> constructor.getParameterCount() == 0
+                    && !constructor.isSynthetic()
+                    && (Modifier.isPublic(constructor.getModifiers())
+                    || Modifier.isProtected(constructor.getModifiers()));
+
+    private static final Predicate<Field> viableFields =
+            field -> !field.isSynthetic()
+                    && !field.isAnnotationPresent(Ignore.class)
+                    && !Modifier.isAbstract(field.getModifiers())
+                    && !Modifier.isFinal(field.getModifiers())
+                    && !Modifier.isStatic(field.getModifiers());
+
     private static EntityManager instance;
+    private ConcurrentMap<Class<?>, List<Triplet<Class<?>, String, String>>> entityAttributes;
 
     private EntityManager() {
+        this.entityAttributes = new ConcurrentHashMap<>();
     }
 
     public static synchronized @NotNull EntityManager getInstance() {
@@ -31,35 +48,15 @@ public final class EntityManager {
         return instance;
     }
 
-    private boolean hasViableConstructor(@NotNull Class<?> entity) {
-        return Arrays.stream(entity.getDeclaredConstructors())
-                .anyMatch(constructor -> constructor.getParameterCount() == 0
-                        && !constructor.isSynthetic()
-                        && (Modifier.isPublic(constructor.getModifiers())
-                        || Modifier.isProtected(constructor.getModifiers())));
-    }
-
-    private @NotNull List<Field> getAllViableFields(@NotNull Class<?> entity) {
-        return Arrays.stream(entity.getDeclaredFields()).filter(field -> (!field.isSynthetic()
-                && !field.isAnnotationPresent(Ignore.class)
-                && !Modifier.isAbstract(field.getModifiers())
-                && !Modifier.isFinal(field.getModifiers())
-                && !Modifier.isStatic(field.getModifiers())))
-                .collect(Collectors.toList());
-    }
-
-    private @NotNull String getAttributeName(@NotNull Field field) {
-        return field.isAnnotationPresent(Attribute.class)
-                ? field.getAnnotation(Attribute.class).name() : field.getName();
-    }
-
-    private @NotNull List<Field> getFieldsWithAnnotation(
-            @NotNull List<Field> fields, @NotNull Class<? extends Annotation> annotation) {
-        return fields.stream().filter(field -> field.isAnnotationPresent(annotation)).collect(Collectors.toList());
+    private @NotNull List<Triplet<Class<?>, String, String>> getFields(@NotNull Class<?> entity) {
+        return Arrays.stream(entity.getDeclaredFields()).filter(viableFields)
+                .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
+                        (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :
+                                field.getName()))).collect(Collectors.toList());
     }
 
     private @NotNull Optional<Constructor<?>> getConstructor(@NotNull Class<?> entity) {
-        if (this.hasViableConstructor(entity)) {
+        if (Arrays.stream(entity.getDeclaredConstructors()).anyMatch(viableConstructor)) {
             List<Constructor<?>> constructors = Arrays.stream(entity.getDeclaredConstructors())
                     .filter(constructor -> constructor.getParameterCount() == 0
                             && !constructor.isSynthetic()
@@ -76,51 +73,53 @@ public final class EntityManager {
             throws IllegalStateException, IllegalArgumentException,
             IllegalAccessException, InvocationTargetException, InstantiationException {
         Optional<Constructor<?>> constructor = getConstructor(entity);
-        if (constructor.isPresent()) {
-            constructor.get().setAccessible(true);
-            return entity.cast(constructor.get().newInstance());
+        if (entity.isAnnotationPresent(Entity.class)) {
+            if (constructor.isPresent()) {
+                this.entityAttributes.computeIfAbsent(entity, this::getFields);
+                constructor.get().setAccessible(true);
+                return entity.cast(constructor.get().newInstance());
+            } else {
+                throw new IllegalArgumentException("Class " + entity.getCanonicalName()
+                        + " must declare an empty public or protected constructor");
+            }
         } else {
             throw new IllegalArgumentException("Class " + entity.getCanonicalName()
-                    + " must declare an empty public or protected constructor");
+                    + " must be annotated with @" + Entity.class.getCanonicalName());
         }
     }
 
     public @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull Map<String, Object> values)
-            throws IllegalStateException, IllegalArgumentException, IllegalAccessException,
-            InvocationTargetException, InstantiationException, NoSuchFieldException {
-        A obj = constructEntity(entity);
-        /*for (Map.Entry<String, Pair<String, Class<?>>> row : this.entities.get(entity).getAttributes().entrySet()) {
-            if (values.containsKey(row.getKey())) {
-                Field field = entity.getField(row.getValue().getA());
-                boolean isAccessible = field.canAccess(obj);
-                field.setAccessible(true);
-                field.set(obj, values.get(row.getKey()));
-                field.setAccessible(isAccessible);
-            } else {
-                throw new IllegalArgumentException("The values do not contain a value for the row " + row);
-            }
-        }*/
-        return obj;
+            throws IllegalStateException {
+        return constructEntity(entity, values::get);
     }
 
-    public @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull ResultSet resultSet) throws SQLException,
-            IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchFieldException {
-        A obj = constructEntity(entity);
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        /*if (this.entities.get(entity).getAttributes().entrySet().size() == metaData.getColumnCount()) {
-            for (Map.Entry<String, Pair<String, Class<?>>> row : this.entities.get(entity).getAttributes().entrySet()) {
-                for (int i = 1; i < metaData.getColumnCount() + 1; i++) {
-                    if (row.getKey().equals(metaData.getColumnName(i))) {
-                        Field field = entity.getField(row.getValue().getA());
-                        boolean isAccessible = field.canAccess(obj);
-                        field.setAccessible(true);
-                        field.set(obj, resultSet.getObject(i));
-                        field.setAccessible(isAccessible);
-                    }
+    public @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull ResultSet resultSet)
+            throws IllegalStateException {
+        return constructEntity(entity, resultSet::getObject);
+    }
+
+    public @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull ThrowingFunction<String, ?> values)
+            throws IllegalStateException {
+        try {
+            A obj = constructEntity(entity);
+            if (this.entityAttributes.containsKey(entity)) {
+                for (Triplet<Class<?>, String, String> attribute : this.entityAttributes.get(entity)) {
+                    Field field = entity.getField(attribute.getB());
+                    boolean isAccessible = field.canAccess(obj);
+                    field.setAccessible(true);
+                    field.set(obj,
+                            attribute.getA().equals(Optional.class) ?
+                                    Optional.ofNullable(values.apply(attribute.getC())) :
+                                    values.apply(attribute.getC()));
+                    field.setAccessible(isAccessible);
                 }
+            } else {
+                throw new IllegalStateException("EntityManager does not recognize " + entity.getCanonicalName() + ".");
             }
-        }*/
-        return obj;
+            return obj;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Construction of " + entity.getCanonicalName() + " failed.", exception);
+        }
     }
 
 }
