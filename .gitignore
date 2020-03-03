@@ -71,3 +71,6 @@ checkstyle.xml
 .idea/encodings.xml
 .idea/sqldialects.xml
 .idea/dataSources.xml
+.settings
+.project
+.classpath
