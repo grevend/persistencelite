@@ -1,5 +1,6 @@
 package grevend.persistence.lite.sql;
 
+import grevend.persistence.lite.util.PrimaryKey;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.ElementType;

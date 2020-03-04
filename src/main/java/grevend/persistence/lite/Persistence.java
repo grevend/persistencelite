@@ -2,7 +2,7 @@ package grevend.persistence.lite;
 
 import grevend.persistence.lite.dao.DaoFactory;
 import grevend.persistence.lite.database.Database;
-import grevend.persistence.lite.sql.postgresql.PostgresqlDaoFactory;
+import grevend.persistence.lite.postgresql.PostgresqlDaoFactory;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
