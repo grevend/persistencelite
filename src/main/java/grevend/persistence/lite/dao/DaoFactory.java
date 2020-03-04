@@ -1,7 +1,7 @@
 package grevend.persistence.lite.dao;
 
 import grevend.persistence.lite.entity.Attribute;
-import grevend.persistence.lite.sql.PrimaryKey;
+import grevend.persistence.lite.util.PrimaryKey;
 import grevend.persistence.lite.util.Triplet;
 import org.jetbrains.annotations.NotNull;
 
