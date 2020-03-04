@@ -6,7 +6,6 @@ The PersistenceLite library provides an easy to use abstraction over database ac
 
 ```java
 Database db = Persistence.databaseBuilder("postgres", 0)
-        .setDaoImplProvider(Postgresql.class)
         .setCredentials("...", "...")
         .build();
 ```
