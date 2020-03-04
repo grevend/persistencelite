@@ -1,18 +1,36 @@
 package grevend.persistence.lite.dao;
 
+import grevend.persistence.lite.util.Pair;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
-public interface Dao<T, K> {
+public interface Dao<E, K> {
 
-    boolean create(Collection<T> entities);
+    default boolean create(@NotNull E entity) {
+        return createAll(List.of(entity));
+    }
 
-    T retrieve(K key);
+    boolean createAll(@NotNull Collection<E> entities);
 
-    List<T> retrieveAll();
+    Optional<E> retrieve(@NotNull K key);
 
-    boolean update(T entity);
+    Optional<E> retrieve(@NotNull Collection<Pair<String, ?>> keyValuePairs);
 
-    boolean delete(T entity);
+    @NotNull List<E> retrieveAll();
+
+    default boolean update(@NotNull E entity) {
+        return updateAll(List.of(entity));
+    }
+
+    boolean updateAll(@NotNull Collection<E> entities);
+
+    default boolean delete(@NotNull E entity) {
+        return deleteAll(List.of(entity));
+    }
+
+    boolean deleteAll(@NotNull Collection<E> entities);
 
 }
