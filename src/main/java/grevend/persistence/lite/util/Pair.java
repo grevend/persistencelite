@@ -3,10 +3,10 @@ package grevend.persistence.lite.util;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 public class Pair<A, B> {
 
@@ -22,51 +22,6 @@ public class Pair<A, B> {
     @Contract(value = "_, _ -> new", pure = true)
     public static <C, D> Pair<C, D> of(C c, D d) {
         return new Pair<>(c, d);
-    }
-
-    @NotNull
-    @Contract(pure = true)
-    public static <C, D> Collector<Pair<C, D>, ?, Map<C, D>> toMap() {
-        return Collectors.toMap(Pair::getA, Pair::getB);
-    }
-
-    @NotNull
-    @Contract(pure = true)
-    public static <C, D> Collector<Pair<C, D>, ?, ConcurrentMap<C, D>> toConcurrentMap() {
-        return Collectors.toConcurrentMap(Pair::getA, Pair::getB);
-    }
-
-    public static @NotNull <C, D> Pair<C, D> unwrap(@NotNull Pair<Optional<C>, Optional<D>> pair)
-            throws IllegalStateException {
-        if (pair.getA().isPresent() && pair.getB().isPresent()) {
-            return Pair.of(pair.getA().get(), pair.getB().get());
-        } else {
-            if (pair.getA().isEmpty() && pair.getB().isEmpty()) {
-                throw new IllegalStateException("Optional values of <a> and <b> must be present.");
-            } else if (pair.getA().isEmpty()) {
-                throw new IllegalStateException("Optional value of <a> must be present.");
-            } else if (pair.getB().isEmpty()) {
-                throw new IllegalStateException("Optional value of <b> must be present.");
-            } else {
-                throw new IllegalStateException("Unwrap optional pair bug.");
-            }
-        }
-    }
-
-    public static @NotNull <C, D> Pair<C, D> unwrapA(@NotNull Pair<Optional<C>, D> pair) throws IllegalStateException {
-        if (pair.getA().isPresent()) {
-            return pair.withA(pair.getA().get());
-        } else {
-            throw new IllegalStateException("Optional value of <a> must be present.");
-        }
-    }
-
-    public static @NotNull <C, D> Pair<C, D> unwrapB(@NotNull Pair<C, Optional<D>> pair) throws IllegalStateException {
-        if (pair.getB().isPresent()) {
-            return pair.withB(pair.getB().get());
-        } else {
-            throw new IllegalStateException("Optional value of <b> must be present.");
-        }
     }
 
     public static @NotNull <C> Collector<C, ?, List<Pair<C, C>>> toPairs() {
