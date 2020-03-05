@@ -1,11 +1,8 @@
 package grevend.persistence.lite.dao;
 
-import grevend.persistence.lite.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public interface Dao<E, K> {
 
@@ -17,9 +14,9 @@ public interface Dao<E, K> {
 
     Optional<E> retrieve(@NotNull K key);
 
-    Optional<E> retrieve(@NotNull Collection<Pair<String, ?>> keyValuePairs);
+    Optional<E> retrieve(@NotNull Map<String, ?> keyValuePairs);
 
-    @NotNull List<E> retrieveAll();
+    @NotNull Set<E> retrieveAll();
 
     default boolean update(@NotNull E entity) {
         return updateAll(List.of(entity));

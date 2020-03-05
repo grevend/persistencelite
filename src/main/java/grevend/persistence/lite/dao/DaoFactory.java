@@ -1,5 +1,6 @@
 package grevend.persistence.lite.dao;
 
+import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
 import grevend.persistence.lite.util.PrimaryKey;
@@ -14,6 +15,12 @@ import static grevend.persistence.lite.entity.EntityManager.viableFields;
 
 public abstract class DaoFactory {
 
+    protected final Database database;
+
+    public DaoFactory(@NotNull Database database) {
+        this.database = database;
+    }
+
     protected @NotNull <A> List<Triplet<Class<?>, String, String>> getPrimaryKeys(@NotNull Class<A> entity) {
         return Arrays.stream(entity.getDeclaredFields()).filter(viableFields)
                 .filter(field -> field.isAnnotationPresent(PrimaryKey.class))
@@ -25,7 +32,6 @@ public abstract class DaoFactory {
     public abstract @NotNull <A, B> Dao<A, B> createDao(@NotNull Class<A> entity, @NotNull Class<B> keyClass,
                                                         List<Triplet<Class<?>, String, String>> keys);
 
-    @SuppressWarnings("unchecked")
     public @NotNull <A, B> Dao<A, B> ofEntity(@NotNull Class<A> entity, @NotNull Class<B> keyClass)
             throws IllegalArgumentException {
         if (entity.isAnnotationPresent(Entity.class)) {

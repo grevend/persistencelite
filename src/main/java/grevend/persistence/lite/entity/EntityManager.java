@@ -1,5 +1,6 @@
 package grevend.persistence.lite.entity;
 
+import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.util.Ignore;
 import grevend.persistence.lite.util.ThrowingFunction;
 import grevend.persistence.lite.util.Triplet;
@@ -10,12 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -34,18 +30,12 @@ public final class EntityManager {
                     && !Modifier.isFinal(field.getModifiers())
                     && !Modifier.isStatic(field.getModifiers());
 
-    private static EntityManager instance;
-    private ConcurrentMap<Class<?>, List<Triplet<Class<?>, String, String>>> entityAttributes;
+    private Database database;
+    private Map<Class<?>, List<Triplet<Class<?>, String, String>>> entityAttributes;
 
-    private EntityManager() {
-        this.entityAttributes = new ConcurrentHashMap<>();
-    }
-
-    public static synchronized @NotNull EntityManager getInstance() {
-        if (instance == null) {
-            instance = new EntityManager();
-        }
-        return instance;
+    public EntityManager(@NotNull Database database) {
+        this.database = database;
+        this.entityAttributes = new HashMap<>();
     }
 
     private @NotNull List<Triplet<Class<?>, String, String>> getFields(@NotNull Class<?> entity) {

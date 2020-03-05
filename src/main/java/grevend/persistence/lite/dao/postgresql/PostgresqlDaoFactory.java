@@ -1,27 +1,17 @@
-package grevend.persistence.lite.postgresql;
+package grevend.persistence.lite.dao.postgresql;
 
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.dao.DaoFactory;
-import grevend.persistence.lite.util.Pair;
+import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.util.Triplet;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class PostgresqlDaoFactory extends DaoFactory {
 
-    private static PostgresqlDaoFactory instance;
-
-    private PostgresqlDaoFactory() {
-    }
-
-    public static synchronized @NotNull PostgresqlDaoFactory getInstance() {
-        if (instance == null) {
-            instance = new PostgresqlDaoFactory();
-        }
-        return instance;
+    public PostgresqlDaoFactory(@NotNull Database database) {
+        super(database);
     }
 
     @Override
@@ -40,13 +30,13 @@ public class PostgresqlDaoFactory extends DaoFactory {
             }
 
             @Override
-            public Optional<A> retrieve(@NotNull Collection<Pair<String, ?>> keyValuePairs) {
+            public Optional<A> retrieve(@NotNull Map<String, ?> keyValuePairs) {
                 return Optional.empty();
             }
 
             @Override
-            public @NotNull List<A> retrieveAll() {
-                return List.of();
+            public @NotNull Set<A> retrieveAll() {
+                return Set.of();
             }
 
             @Override
