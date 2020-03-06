@@ -1,8 +1,11 @@
 package grevend.persistence.lite.util;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class Triplet<A, B, C> {
+public class Triplet<A extends Serializable, B extends Serializable, C extends Serializable> implements Serializable {
+
+    private static final long serialVersionUID = 2550349264294704474L;
 
     private final A a;
     private final B b;
