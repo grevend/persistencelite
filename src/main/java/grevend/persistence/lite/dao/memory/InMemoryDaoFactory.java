@@ -6,6 +6,7 @@ import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.util.Triplet;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,7 +52,12 @@ public class InMemoryDaoFactory extends DaoFactory {
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull <A, B> Dao<A, B> createDao(@NotNull Class<A> entity, @NotNull Class<B> keyClass,
-                                               List<Triplet<Class<?>, String, String>> keys) {
+                                               List<Triplet<Class<?>, String, String>> keys)
+            throws IllegalArgumentException {
+        if (!Serializable.class.isAssignableFrom(entity)) {
+            throw new IllegalArgumentException("InMemoryDaoFactory only supports entities that implement the " +
+                    Serializable.class.getCanonicalName() + " interface.");
+        }
         if (!storage.containsKey(entity)) {
             storage.put(entity, new HashSet<>());
         }
