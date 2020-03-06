@@ -2,7 +2,7 @@ package grevend.persistence.lite.database;
 
 import grevend.persistence.lite.dao.DaoFactory;
 import grevend.persistence.lite.dao.memory.InMemoryDaoFactory;
-import grevend.persistence.lite.dao.postgresql.PostgresqlDaoFactory;
+import grevend.persistence.lite.dao.sql.SqlDaoFactory;
 import grevend.persistence.lite.entity.EntityManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,6 +20,9 @@ public class Database {
 
     private final String type, url, name, user, password;
     private final int version;
+
+    private DaoFactory daoFactory;
+    private EntityManager entityManager;
 
     public Database(@NotNull String type, @NotNull String url,
                     @NotNull String name, @NotNull String user, @NotNull String password, int version) {
@@ -52,11 +55,17 @@ public class Database {
     }
 
     public @NotNull DaoFactory getDaoFactory() {
-        return this.type.equals(SQL) ? new PostgresqlDaoFactory(this) : new InMemoryDaoFactory(this);
+        if (this.daoFactory == null) {
+            this.daoFactory = this.type.equals(SQL) ? new SqlDaoFactory(this) : new InMemoryDaoFactory(this);
+        }
+        return this.daoFactory;
     }
 
     public @NotNull EntityManager getEntityManager() {
-        return new EntityManager(this);
+        if (this.entityManager == null) {
+            this.entityManager = new EntityManager(this);
+        }
+        return this.entityManager;
     }
 
     public @NotNull Optional<DatabaseMetaData> getMetaData(@NotNull Connection connection) {
