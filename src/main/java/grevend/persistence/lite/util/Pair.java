@@ -3,12 +3,15 @@ package grevend.persistence.lite.util;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collector;
 
-public class Pair<A, B> {
+public class Pair<A extends Serializable, B extends Serializable> implements Serializable {
+
+    private static final long serialVersionUID = 3602413341346015513L;
 
     private final A a;
     private final B b;
@@ -20,15 +23,16 @@ public class Pair<A, B> {
 
     @NotNull
     @Contract(value = "_, _ -> new", pure = true)
-    public static <C, D> Pair<C, D> of(C c, D d) {
+    public static <C extends Serializable, D extends Serializable> Pair<C, D> of(C c, D d) {
         return new Pair<>(c, d);
     }
 
-    public static @NotNull <C> Collector<C, ?, List<Pair<C, C>>> toPairs() {
+    public static @NotNull <C extends Serializable> Collector<C, ?, List<Pair<C, C>>> toPairs() {
         return toPairs(false);
     }
 
-    public static @NotNull <C> Collector<C, ?, List<Pair<C, C>>> toPairs(boolean nullAsPlaceholder) {
+    public static @NotNull <C extends Serializable> Collector<C, ?, List<Pair<C, C>>> toPairs(
+            boolean nullAsPlaceholder) {
 
         final class Pairing {
 
@@ -85,11 +89,11 @@ public class Pair<A, B> {
         return b;
     }
 
-    public @NotNull <E> Pair<E, B> withA(E a) {
+    public @NotNull <E extends Serializable> Pair<E, B> withA(E a) {
         return new Pair<>(a, this.b);
     }
 
-    public @NotNull <E> Pair<A, E> withB(E b) {
+    public @NotNull <E extends Serializable> Pair<A, E> withB(E b) {
         return new Pair<>(this.a, b);
     }
 
