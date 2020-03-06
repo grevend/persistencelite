@@ -58,12 +58,6 @@ out/
 .idea/modules
 *.iml
 *.ipr
-
-# VisualStudioCode #
-.history
-
-# Other #
-checkstyle.xml
 .idea/vcs.xml
 .idea/misc.xml
 .idea/compiler.xml
@@ -71,6 +65,14 @@ checkstyle.xml
 .idea/encodings.xml
 .idea/sqldialects.xml
 .idea/dataSources.xml
+.idea/inspectionProfiles/Project_Default.xml
+
+# VisualStudioCode #
+.history
+
+# Other #
+checkstyle.xml
 .settings
 .project
 .classpath
+postgres.ser
