@@ -2,10 +2,12 @@ package grevend.persistence.lite.entity;
 
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.util.Ignore;
+import grevend.persistence.lite.util.Option;
 import grevend.persistence.lite.util.ThrowingFunction;
 import grevend.persistence.lite.util.Triplet;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -28,7 +30,8 @@ public final class EntityManager {
                     && !field.isAnnotationPresent(Ignore.class)
                     && !Modifier.isAbstract(field.getModifiers())
                     && !Modifier.isFinal(field.getModifiers())
-                    && !Modifier.isStatic(field.getModifiers());
+                    && !Modifier.isStatic(field.getModifiers())
+                    && !Modifier.isTransient(field.getModifiers());
 
     private Database database;
     private Map<Class<?>, List<Triplet<Class<?>, String, String>>> entityAttributes;
@@ -85,7 +88,7 @@ public final class EntityManager {
         return constructEntity(entity, resultSet::getObject);
     }
 
-    public @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull ThrowingFunction<String, ?> values)
+    private @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull ThrowingFunction<String, ?> values)
             throws IllegalStateException {
         try {
             A obj = constructEntity(entity);
@@ -94,10 +97,24 @@ public final class EntityManager {
                     Field field = entity.getField(attribute.getB());
                     boolean isAccessible = field.canAccess(obj);
                     field.setAccessible(true);
-                    field.set(obj,
-                            attribute.getA().equals(Optional.class) ?
-                                    Optional.ofNullable(values.apply(attribute.getC())) :
-                                    values.apply(attribute.getC()));
+                    if (attribute.getA().equals(Option.class)) {
+                        if (values.apply(attribute.getC()) instanceof Serializable) {
+                            field.set(obj, Option.of((Serializable) values.apply(attribute.getC())));
+                        } else {
+                            throw new IllegalStateException("Value of " + attribute.getC() + " does not implement " +
+                                    Serializable.class.getCanonicalName() + ".");
+                        }
+                    }
+                    if (attribute.getA().equals(Optional.class) && !Serializable.class.isAssignableFrom(entity)) {
+                        field.set(obj,
+                                attribute.getA().equals(Optional.class) ?
+                                        Optional.ofNullable(values.apply(attribute.getC())) :
+                                        values.apply(attribute.getC()));
+                    } else {
+                        throw new IllegalStateException("Entity " + entity.getCanonicalName() + " implements " +
+                                Serializable.class.getCanonicalName() + " but includes attribute " + attribute.getB() +
+                                " of unserializable type " + Optional.class.getCanonicalName() + ".");
+                    }
                     field.setAccessible(isAccessible);
                 }
             } else {
