@@ -1,4 +1,4 @@
-package grevend.persistence.lite.dao.postgresql;
+package grevend.persistence.lite.dao.sql;
 
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.dao.DaoFactory;
@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class PostgresqlDaoFactory extends DaoFactory {
+public class SqlDaoFactory extends DaoFactory {
 
-    public PostgresqlDaoFactory(@NotNull Database database) {
+    public SqlDaoFactory(@NotNull Database database) {
         super(database);
     }
 
