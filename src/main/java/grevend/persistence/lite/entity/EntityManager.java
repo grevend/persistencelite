@@ -21,9 +21,7 @@ public final class EntityManager {
 
     public static final Predicate<Constructor<?>> viableConstructor =
             constructor -> constructor.getParameterCount() == 0
-                    && !constructor.isSynthetic()
-                    && (Modifier.isPublic(constructor.getModifiers())
-                    || Modifier.isProtected(constructor.getModifiers()));
+                    && !constructor.isSynthetic();
 
     public static final Predicate<Field> viableFields =
             field -> !field.isSynthetic()
@@ -33,12 +31,16 @@ public final class EntityManager {
                     && !Modifier.isStatic(field.getModifiers())
                     && !Modifier.isTransient(field.getModifiers());
 
-    private Database database;
+    private final Database database;
     private Map<Class<?>, List<Triplet<Class<?>, String, String>>> entityAttributes;
 
     public EntityManager(@NotNull Database database) {
         this.database = database;
         this.entityAttributes = new HashMap<>();
+    }
+
+    public Database getDatabase() {
+        return database;
     }
 
     private @NotNull List<Triplet<Class<?>, String, String>> getFields(@NotNull Class<?> entity) {
@@ -65,9 +67,13 @@ public final class EntityManager {
         Optional<Constructor<?>> constructor = getConstructor(entity);
         if (entity.isAnnotationPresent(Entity.class)) {
             if (constructor.isPresent()) {
+                Constructor<?> unwrappedConstructor = constructor.get();
                 this.entityAttributes.computeIfAbsent(entity, this::getFields);
-                constructor.get().setAccessible(true);
-                return entity.cast(constructor.get().newInstance());
+                boolean isAccessible = unwrappedConstructor.isAccessible();
+                unwrappedConstructor.setAccessible(true);
+                A obj = entity.cast(unwrappedConstructor.newInstance());
+                unwrappedConstructor.setAccessible(isAccessible);
+                return obj;
             } else {
                 throw new IllegalArgumentException("Class " + entity.getCanonicalName()
                         + " must declare an empty public or protected constructor");
