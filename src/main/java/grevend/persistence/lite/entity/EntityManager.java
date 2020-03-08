@@ -52,9 +52,13 @@ public final class EntityManager {
         Optional<Constructor<?>> constructor = this.getConstructor(entity);
         if (entity.isAnnotationPresent(Entity.class)) {
             if (constructor.isPresent()) {
+                Constructor<?> unwrappedConstructor = constructor.get();
                 this.entityAttributes.computeIfAbsent(entity, this::getFields);
-                constructor.get().setAccessible(true);
-                return entity.cast(constructor.get().newInstance());
+                boolean isAccessible = unwrappedConstructor.isAccessible();
+                unwrappedConstructor.setAccessible(true);
+                A obj = entity.cast(unwrappedConstructor.newInstance());
+                unwrappedConstructor.setAccessible(isAccessible);
+                return obj;
             } else {
                 throw new IllegalArgumentException("Class " + entity.getCanonicalName()
                         + " must declare an empty public or protected constructor");
