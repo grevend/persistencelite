@@ -1,7 +1,6 @@
 package grevend.persistence.lite.entity;
 
 import grevend.persistence.lite.database.Database;
-import grevend.persistence.lite.util.Ignore;
 import grevend.persistence.lite.util.Option;
 import grevend.persistence.lite.util.ThrowingFunction;
 import grevend.persistence.lite.util.Triplet;
@@ -11,14 +10,13 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class EntityManager {
 
+<<<<<<< Updated upstream
     public static final Predicate<Constructor<?>> viableConstructor =
             constructor -> constructor.getParameterCount() == 0
                     && !constructor.isSynthetic()
@@ -34,6 +32,9 @@ public final class EntityManager {
                     && !Modifier.isTransient(field.getModifiers());
 
     private Database database;
+=======
+    private final Database database;
+>>>>>>> Stashed changes
     private Map<Class<?>, List<Triplet<Class<?>, String, String>>> entityAttributes;
 
     public EntityManager(@NotNull Database database) {
@@ -41,19 +42,26 @@ public final class EntityManager {
         this.entityAttributes = new HashMap<>();
     }
 
+<<<<<<< Updated upstream
+=======
+    public @NotNull Database getDatabase() {
+        return database;
+    }
+
+>>>>>>> Stashed changes
     private @NotNull List<Triplet<Class<?>, String, String>> getFields(@NotNull Class<?> entity) {
-        return Arrays.stream(entity.getDeclaredFields()).filter(viableFields)
+        return Arrays.stream(entity.getDeclaredFields()).filter(this.database.getExtension().isFieldViable())
                 .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
                         (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :
                                 field.getName()))).collect(Collectors.toList());
     }
 
     private @NotNull Optional<Constructor<?>> getConstructor(@NotNull Class<?> entity) {
-        if (Arrays.stream(entity.getDeclaredConstructors()).anyMatch(viableConstructor)) {
-            List<Constructor<?>> constructors = Arrays.stream(entity.getDeclaredConstructors())
-                    .filter(viableConstructor)
-                    .collect(Collectors.toList());
-            return Optional.ofNullable(constructors.size() > 0 ? constructors.get(0) : null);
+        List<Constructor<?>> constructors = Arrays.stream(entity.getDeclaredConstructors())
+                .filter(this.database.getExtension().isConstructorViable())
+                .collect(Collectors.toList());
+        if (constructors.size() != 0) {
+            return Optional.ofNullable(constructors.get(0));
         } else {
             return Optional.empty();
         }
@@ -62,7 +70,7 @@ public final class EntityManager {
     private @NotNull <A> A constructEntity(@NotNull Class<A> entity)
             throws IllegalStateException, IllegalArgumentException,
             IllegalAccessException, InvocationTargetException, InstantiationException {
-        Optional<Constructor<?>> constructor = getConstructor(entity);
+        Optional<Constructor<?>> constructor = this.getConstructor(entity);
         if (entity.isAnnotationPresent(Entity.class)) {
             if (constructor.isPresent()) {
                 this.entityAttributes.computeIfAbsent(entity, this::getFields);

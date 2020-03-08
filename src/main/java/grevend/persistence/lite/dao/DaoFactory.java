@@ -11,8 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static grevend.persistence.lite.entity.EntityManager.viableFields;
-
 public abstract class DaoFactory {
 
     protected final Database database;
@@ -21,8 +19,12 @@ public abstract class DaoFactory {
         this.database = database;
     }
 
+    public @NotNull Database getDatabase() {
+        return database;
+    }
+
     protected @NotNull <A> List<Triplet<Class<?>, String, String>> getPrimaryKeys(@NotNull Class<A> entity) {
-        return Arrays.stream(entity.getDeclaredFields()).filter(viableFields)
+        return Arrays.stream(entity.getDeclaredFields()).filter(this.database.getExtension().isFieldViable())
                 .filter(field -> field.isAnnotationPresent(PrimaryKey.class))
                 .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
                         (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :

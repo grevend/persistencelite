@@ -1,4 +1,4 @@
-package grevend.persistence.lite.dao.sql;
+package grevend.persistence.lite.extensions.sql;
 
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.dao.DaoFactory;
