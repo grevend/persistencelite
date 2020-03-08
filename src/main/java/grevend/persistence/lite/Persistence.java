@@ -1,48 +1,56 @@
 package grevend.persistence.lite;
 
 import grevend.persistence.lite.database.Database;
-import org.jetbrains.annotations.Contract;
+import grevend.persistence.lite.extension.Extension;
 import org.jetbrains.annotations.NotNull;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 public final class Persistence {
 
-    private final String type, name;
-    private final int version;
-    private String user = null, password = null;
+    private static Persistence instance;
 
-    private Persistence(String type, String name, int version) {
-        this.type = type;
-        this.name = name;
-        this.version = version;
+    private String name, user, password;
+    private int version;
+
+    private Persistence() {
     }
 
-    @Contract(value = "_, _, _ -> new", pure = true)
-    public static @NotNull Persistence databaseBuilder(@NotNull String type, @NotNull String name, int version) {
-        return new Persistence(type, name, version);
+    private static Persistence getInstance() {
+        if (instance == null) {
+            instance = new Persistence();
+        }
+        return instance;
     }
 
-    @Contract(value = "_, _ -> new", pure = true)
-    public static @NotNull Persistence postgresqlDatabaseBuilder(@NotNull String name, int version) {
-        return databaseBuilder(Database.SQL, name, version);
+    public static @NotNull <E extends Extension> E databaseBuilder(@NotNull Class<E> extension, @NotNull String name,
+                                                                   int version)
+            throws IllegalArgumentException {
+        getInstance().name = name;
+        getInstance().version = version;
+        try {
+            Constructor<E> constructor = extension.getConstructor(Persistence.class);
+            return constructor.newInstance(getInstance());
+        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            getInstance().name = null;
+            getInstance().version = 0;
+            throw new IllegalArgumentException(extension.getCanonicalName() +
+                    " does not provide a public constructor with one parameter of type " +
+                    Persistence.class.getCanonicalName() + ".", e);
+        }
     }
 
-    @Contract(value = "_, _ -> new", pure = true)
-    public static @NotNull Persistence inMemoryDatabaseBuilder(@NotNull String name, int version) {
-        return databaseBuilder(Database.MEMORY, name, version);
-    }
-
-    public @NotNull Persistence setCredentials(@NotNull String user, @NotNull String password) {
+    public void setCredentials(@NotNull String user, @NotNull String password) {
         this.user = user;
         this.password = password;
-        return this;
     }
 
-    public @NotNull Database build() throws IllegalStateException {
+    public @NotNull Database build(@NotNull Extension extension) throws IllegalStateException {
         if (this.user == null || this.password == null) {
             throw new IllegalStateException("Credentials must be set before building the database.");
         }
-        return new Database(this.type, "jdbc:postgresql://localhost/",
-                this.name, this.user, this.password, this.version);
+        return new Database(extension, this.name, this.version, this.user, this.password);
     }
 
 }

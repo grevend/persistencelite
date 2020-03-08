@@ -1,4 +1,4 @@
-package grevend.persistence.lite.dao.memory;
+package grevend.persistence.lite.extensions.inmemory;
 
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.dao.DaoFactory;
