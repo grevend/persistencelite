@@ -41,7 +41,7 @@ public final class Persistence {
         }
     }
 
-    public @NotNull void setCredentials(@NotNull String user, @NotNull String password) {
+    public void setCredentials(@NotNull String user, @NotNull String password) {
         this.user = user;
         this.password = password;
     }
