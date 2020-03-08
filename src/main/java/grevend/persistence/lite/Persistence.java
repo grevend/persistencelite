@@ -41,22 +41,6 @@ public final class Persistence {
         }
     }
 
-
-    /*@Contract(value = "_, _, _ -> new", pure = true)
-    public static @NotNull Persistence databaseBuilder(@NotNull String type, @NotNull String name, int version) {
-        return new Persistence(type, name, version);
-    }
-
-    @Contract(value = "_, _ -> new", pure = true)
-    public static @NotNull Persistence postgresqlDatabaseBuilder(@NotNull String name, int version) {
-        return databaseBuilder(Database.SQL, name, version);
-    }
-
-    @Contract(value = "_, _ -> new", pure = true)
-    public static @NotNull Persistence inMemoryDatabaseBuilder(@NotNull String name, int version) {
-        return databaseBuilder(Database.MEMORY, name, version);
-    }*/
-
     public @NotNull void setCredentials(@NotNull String user, @NotNull String password) {
         this.user = user;
         this.password = password;

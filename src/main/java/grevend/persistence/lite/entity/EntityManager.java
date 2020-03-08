@@ -16,25 +16,7 @@ import java.util.stream.Collectors;
 
 public final class EntityManager {
 
-<<<<<<< Updated upstream
-    public static final Predicate<Constructor<?>> viableConstructor =
-            constructor -> constructor.getParameterCount() == 0
-                    && !constructor.isSynthetic()
-                    && (Modifier.isPublic(constructor.getModifiers())
-                    || Modifier.isProtected(constructor.getModifiers()));
-
-    public static final Predicate<Field> viableFields =
-            field -> !field.isSynthetic()
-                    && !field.isAnnotationPresent(Ignore.class)
-                    && !Modifier.isAbstract(field.getModifiers())
-                    && !Modifier.isFinal(field.getModifiers())
-                    && !Modifier.isStatic(field.getModifiers())
-                    && !Modifier.isTransient(field.getModifiers());
-
-    private Database database;
-=======
     private final Database database;
->>>>>>> Stashed changes
     private Map<Class<?>, List<Triplet<Class<?>, String, String>>> entityAttributes;
 
     public EntityManager(@NotNull Database database) {
@@ -42,13 +24,10 @@ public final class EntityManager {
         this.entityAttributes = new HashMap<>();
     }
 
-<<<<<<< Updated upstream
-=======
     public @NotNull Database getDatabase() {
         return database;
     }
 
->>>>>>> Stashed changes
     private @NotNull List<Triplet<Class<?>, String, String>> getFields(@NotNull Class<?> entity) {
         return Arrays.stream(entity.getDeclaredFields()).filter(this.database.getExtension().isFieldViable())
                 .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
