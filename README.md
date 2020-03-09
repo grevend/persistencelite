@@ -5,9 +5,9 @@ The PersistenceLite library provides an easy to use abstraction over database ac
 ## Usage
 
 ```java
-Database db = Persistence.databaseBuilder("postgres", 0)
-        .setCredentials("...", "...")
-        .build();
+var db = Persistence.databaseBuilder(InMemory.class, "postgres", 0)
+    .setCredentials("...", "...")
+    .build();
 ```
 
 ```java
@@ -19,15 +19,15 @@ private static class Artist {
     @Attribute(name = "pk_id")
     public int id;
     public String name, bio;
-    public Object verifier;
-    public Optional<Object> image;
+    public Option<Boolean> verifier;
+    public Option<Byte[]> image;
 
     protected Artist() {}
     
 }
 
 var artistDao = db.getDaoFactory().ofEntity(Artist.class);
-List<Artist> artists = artistDao.retrieveAll();
+Set<Artist> artists = artistDao.retrieveAll();
 ```
 
 ## License
