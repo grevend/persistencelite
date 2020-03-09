@@ -1,7 +1,6 @@
 package grevend.persistence.lite;
 
 import grevend.persistence.lite.dao.Dao;
-import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
 import grevend.persistence.lite.extensions.inmemory.InMemory;
@@ -16,7 +15,7 @@ import java.util.Optional;
 public class Main {
 
     public static void main(String[] args) {
-        Database db = Persistence.databaseBuilder(InMemory.class, "postgres", 0)
+        var db = Persistence.databaseBuilder(InMemory.class, "postgres", 0)
                 .setCredentials("postgres", "mypassword")
                 .build();
 

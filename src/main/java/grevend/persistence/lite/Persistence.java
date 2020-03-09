@@ -41,16 +41,38 @@ public final class Persistence {
         }
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
     public void setCredentials(@NotNull String user, @NotNull String password) {
         this.user = user;
         this.password = password;
     }
 
-    public @NotNull Database build(@NotNull Extension extension) throws IllegalStateException {
+    @SuppressWarnings("unchecked")
+    public @NotNull <D extends Database> D createDatabase(@NotNull Extension<D> extension)
+            throws IllegalStateException {
+        return (D) new Database(extension, this.name, this.version, this.user, this.password);
+    }
+
+    public @NotNull <D extends Database> D build(@NotNull Extension<D> extension) throws IllegalStateException {
         if (this.user == null || this.password == null) {
             throw new IllegalStateException("Credentials must be set before building the database.");
         }
-        return new Database(extension, this.name, this.version, this.user, this.password);
+        return createDatabase(extension);
     }
 
 }

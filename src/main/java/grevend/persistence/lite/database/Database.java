@@ -10,7 +10,7 @@ import java.net.URISyntaxException;
 
 public class Database {
 
-    private final Extension extension;
+    private final Extension<? extends Database> extension;
 
     private final String name, user, password;
     private final int version;
@@ -18,7 +18,7 @@ public class Database {
     private DaoFactory daoFactory;
     private EntityManager entityManager;
 
-    public Database(@NotNull Extension extension, String name, int version, String user, String password) {
+    public Database(@NotNull Extension<? extends Database> extension, String name, int version, String user, String password) {
         this.extension = extension;
         this.name = name;
         this.version = version;
@@ -26,7 +26,7 @@ public class Database {
         this.password = password;
     }
 
-    public @NotNull Extension getExtension() {
+    public @NotNull Extension<? extends Database> getExtension() {
         return extension;
     }
 

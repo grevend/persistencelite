@@ -13,10 +13,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.function.Predicate;
 
-public abstract class Extension {
+public abstract class Extension<D extends Database> {
 
     private final Persistence persistence;
-    private Database database;
+    private D database;
 
     public Extension(@NotNull Persistence persistence) {
         this.persistence = persistence;
@@ -39,7 +39,7 @@ public abstract class Extension {
                 && !Modifier.isTransient(field.getModifiers());
     }
 
-    public Database getDatabase() {
+    public final D getDatabase() {
         return database;
     }
 
@@ -47,13 +47,17 @@ public abstract class Extension {
         return persistence;
     }
 
-    public final @NotNull Extension setCredentials(@NotNull String user, @NotNull String password) {
+    public final @NotNull Extension<D> setCredentials(@NotNull String user, @NotNull String password) {
         this.persistence.setCredentials(user, password);
         return this;
     }
 
-    public final @NotNull Database build() throws IllegalStateException {
-        this.database = this.persistence.build(this);
+    protected @NotNull D createDatabase() throws IllegalStateException {
+        return this.persistence.createDatabase(this);
+    }
+
+    public final @NotNull D build() throws IllegalStateException {
+        this.database = createDatabase();
         return this.database;
     }
 

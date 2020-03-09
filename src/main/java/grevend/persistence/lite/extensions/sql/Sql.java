@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class Sql extends Extension {
+public class Sql extends Extension<SqlDatabase> {
 
     public Sql(@NotNull Persistence persistence) {
         super(persistence);
@@ -22,6 +22,13 @@ public class Sql extends Extension {
     @Override
     public @NotNull DaoFactory getDaoFactory() {
         return new SqlDaoFactory(this.getDatabase());
+    }
+
+    @Override
+    protected @NotNull SqlDatabase createDatabase() throws IllegalStateException {
+        Persistence persistence = this.getPersistence();
+        return new SqlDatabase(this, persistence.getName(), persistence.getVersion(), persistence.getUser(),
+                persistence.getPassword());
     }
 
 }
