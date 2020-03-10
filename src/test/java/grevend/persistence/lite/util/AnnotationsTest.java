@@ -1,6 +1,7 @@
 package grevend.persistence.lite.util;
 
 import org.assertj.core.api.Assertions;
+import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.ElementType;
@@ -8,7 +9,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static grevend.persistence.lite.util.Annotations.assertAnnotationRetentionAndTarget;
+import static grevend.persistence.lite.util.TestUtil.assertAnnotationRetentionAndTarget;
 
 public class AnnotationsTest {
 
@@ -62,17 +63,21 @@ public class AnnotationsTest {
         }
     }
 
+    @TestOnly
     public @interface NoRetentionOrTargetTest {
     }
 
+    @TestOnly
     @Retention(RetentionPolicy.SOURCE)
     public @interface NotRuntimeTest {
     }
 
+    @TestOnly
     @Retention(RetentionPolicy.RUNTIME)
     public @interface NoTargetTest {
     }
 
+    @TestOnly
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface MethodTargetTest {

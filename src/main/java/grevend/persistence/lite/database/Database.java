@@ -1,7 +1,6 @@
 package grevend.persistence.lite.database;
 
 import grevend.persistence.lite.dao.DaoFactory;
-import grevend.persistence.lite.entity.EntityManager;
 import grevend.persistence.lite.extension.Extension;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,7 +15,6 @@ public class Database implements AutoCloseable {
     private final int version;
 
     private DaoFactory daoFactory;
-    private EntityManager entityManager;
 
     public Database(@NotNull Extension<? extends Database> extension, String name, int version, String user,
                     String password) {
@@ -25,7 +23,7 @@ public class Database implements AutoCloseable {
         this.version = version;
         this.user = user;
         this.password = password;
-        this.start();
+        this.onCreate();
     }
 
     public @NotNull Extension<? extends Database> getExtension() {
@@ -59,24 +57,13 @@ public class Database implements AutoCloseable {
         return this.daoFactory;
     }
 
-    public @NotNull EntityManager getEntityManager() {
-        if (this.entityManager == null) {
-            this.entityManager = new EntityManager(this);
-        }
-        return this.entityManager;
-    }
-
-    public void start() {
+    public void onCreate() {
         this.extension.onStart();
-    }
-
-    public void stop() {
-        this.extension.onStop();
     }
 
     @Override
     public void close() throws Exception {
-        this.stop();
+        this.extension.onStop();
     }
 
 }

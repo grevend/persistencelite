@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class Sql extends Extension<SqlDatabase> {
+public class SqlExtension extends Extension<SqlDatabase> {
 
-    public Sql(@NotNull Persistence persistence) {
+    public SqlExtension(@NotNull Persistence persistence) {
         super(persistence);
     }
 

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.ElementType;
 
-import static grevend.persistence.lite.util.Annotations.assertAnnotationRetentionAndTarget;
+import static grevend.persistence.lite.util.TestUtil.assertAnnotationRetentionAndTarget;
 
 public class SqlAnnotationTest {
 

@@ -10,9 +10,9 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class InMemory extends Extension<Database> {
+public class InMemoryExtension extends Extension<Database> {
 
-    public InMemory(@NotNull Persistence persistence) {
+    public InMemoryExtension(@NotNull Persistence persistence) {
         super(persistence);
     }
 
