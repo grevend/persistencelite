@@ -7,7 +7,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class Pair<A extends Serializable, B extends Serializable> implements Serializable {
 
@@ -21,14 +23,19 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
         this.b = b;
     }
 
-    @NotNull
     @Contract(value = "_, _ -> new", pure = true)
-    public static <C extends Serializable, D extends Serializable> Pair<C, D> of(C c, D d) {
+    public static @NotNull <C extends Serializable, D extends Serializable> Pair<C, D> of(C c, D d) {
         return new Pair<>(c, d);
     }
 
     public static @NotNull <C extends Serializable> Collector<C, ?, List<Pair<C, C>>> toPairs() {
         return toPairs(false);
+    }
+
+
+    @Contract(pure = true)
+    public static @NotNull <C extends Serializable, D extends Serializable> Collector<Pair<C, D>, ?, Map<C, D>> toMap() {
+        return Collectors.toMap(Pair::getA, Pair::getB);
     }
 
     public static @NotNull <C extends Serializable> Collector<C, ?, List<Pair<C, C>>> toPairs(

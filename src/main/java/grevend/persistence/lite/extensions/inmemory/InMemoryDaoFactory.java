@@ -3,25 +3,36 @@ package grevend.persistence.lite.extensions.inmemory;
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.dao.DaoFactory;
 import grevend.persistence.lite.database.Database;
+import grevend.persistence.lite.entity.EntityClass;
+import grevend.persistence.lite.util.Pair;
 import grevend.persistence.lite.util.Triplet;
+import grevend.persistence.lite.util.Tuple;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class InMemoryDaoFactory extends DaoFactory {
 
-    private Map<Class<?>, Set<Object>> storage;
+    private static Set<Class<?>> primitives = Set.of(
+            Void.TYPE, Byte.TYPE, Short.TYPE, Integer.TYPE, Long.TYPE,
+            Float.TYPE, Double.TYPE, Boolean.TYPE, Character.TYPE);
+    private Map<EntityClass<?>, List<Object>> storage;
 
     public InMemoryDaoFactory(@NotNull Database database) {
         super(database);
         this.storage = new HashMap<>();
     }
 
+    public Map<EntityClass<?>, List<Object>> getStorage() {
+        return storage;
+    }
+
     public <A> boolean checkKey(@NotNull A entity, @NotNull Map<String, ?> keyValuePairs,
-                                @NotNull List<Triplet<Class<?>, String, String>> keys) {
+                                @NotNull Collection<Triplet<Class<?>, String, String>> keys) {
         return keys.stream().allMatch(k -> {
             try {
                 Field field = entity.getClass().getField(k.getB());
@@ -33,76 +44,68 @@ public class InMemoryDaoFactory extends DaoFactory {
         });
     }
 
-    @SuppressWarnings("unchecked")
-    public <A, B> Map<String, B> getKeyValues(@NotNull A entity,
-                                              @NotNull List<Triplet<Class<?>, String, String>> keys) {
-        Map<String, B> values = new HashMap<>();
-        keys.forEach(k -> {
-            try {
-                Field field = entity.getClass().getField(k.getB());
-                field.setAccessible(true);
-                values.put(k.getB(), (B) field.get(entity));
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        });
-        return values;
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
-    public @NotNull <A, B> Dao<A, B> createDao(@NotNull Class<A> entity, @NotNull Class<B> keyClass,
-                                               List<Triplet<Class<?>, String, String>> keys)
-            throws IllegalArgumentException {
-        if (!Serializable.class.isAssignableFrom(entity)) {
+    public @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entityClass,
+                                         @NotNull List<Triplet<Class<?>, String, String>> keys) {
+        if (!Serializable.class.isAssignableFrom(entityClass.getEntityClass())) {
             throw new IllegalArgumentException("InMemoryDaoFactory only supports entities that implement the " +
                     Serializable.class.getCanonicalName() + " interface.");
         }
-        if (!storage.containsKey(entity)) {
-            storage.put(entity, new HashSet<>());
+        if (!keys.stream()
+                .allMatch(key -> Serializable.class.isAssignableFrom(key.getA()) || primitives.contains(key.getA()))) {
+            throw new IllegalArgumentException(
+                    "InMemoryDaoFactory only supports entities with keys that implement the " +
+                            Serializable.class.getCanonicalName() + " interface.");
+        }
+        if (!storage.containsKey(entityClass)) {
+            storage.put(entityClass, new ArrayList<>());
         }
         return new Dao<>() {
 
             @Override
-            public boolean createAll(@NotNull Collection<A> entities) {
-                storage.get(entity).addAll(entities);
-                return true;
+            public boolean create(@NotNull A entity) {
+                if (!storage.get(entityClass).contains(entity)) {
+                    storage.get(entityClass).add(entity);
+                    return true;
+                }
+                return false;
             }
 
             @Override
-            public Optional<A> retrieve(@NotNull B key) {
-                return keys.size() != 1 ? Optional.empty() : retrieve(Map.of(keys.get(0).getB(), key));
+            @SuppressWarnings("unchecked")
+            public Optional<A> retrieveByKey(@NotNull Tuple key) {
+                Map<?, ?> attributes = IntStream.range(0, key.count())
+                        .mapToObj(i -> Pair
+                                .of((String & Serializable) keys.get(i).getB(),
+                                        (Serializable) key.get(i, keys.get(i).getA())))
+                        .collect(Pair.toMap());
+                Collection<A> res = retrieveByAttributes((Map<String, ?>) attributes);
+                if (res != null) {
+                    return res.size() != 1 ? Optional.empty() : Optional.ofNullable(res.iterator().next());
+                } else {
+                    return Optional.empty();
+                }
             }
 
             @Override
-            public Optional<A> retrieve(@NotNull Map<String, ?> keyValuePairs) {
-                List<?> results = storage.get(entity).stream().filter(e -> checkKey(e, keyValuePairs, keys))
+            public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
+                return retrieveAll().stream().filter(entity -> checkKey(entity, attributes, keys))
                         .collect(Collectors.toList());
-                return results.size() != 1 ? Optional.empty() : (Optional<A>) Optional.ofNullable(results.get(0));
             }
 
             @Override
-            public @NotNull Set<A> retrieveAll() {
-                return (Set<A>) storage.get(entity);
+            @SuppressWarnings("unchecked")
+            public @NotNull Collection<A> retrieveAll() {
+                return (Collection<A>) storage.get(entityClass);
             }
 
             @Override
-            public boolean updateAll(@NotNull Collection<A> entities) {
-                entities.forEach(e -> {
-                    Optional<A> res = retrieve(getKeyValues(e, keys));
-                    if (res.isPresent()) {
-                        storage.get(entity).remove(res.get());
-                        storage.get(entity).add(e);
-                    } else {
-                        create(e);
-                    }
-                });
-                return true;
-            }
-
-            @Override
-            public boolean deleteAll(@NotNull Collection<A> entities) {
-                return storage.get(entity).removeAll(entities);
+            public boolean delete(@NotNull A entity) {
+                if (storage.containsKey(entityClass)) {
+                    storage.get(entityClass).remove(entity);
+                    return true;
+                }
+                return false;
             }
 
         };

@@ -24,19 +24,16 @@ public final class EntityManager {
         this.entityAttributes = new HashMap<>();
     }
 
-    public @NotNull Database getDatabase() {
-        return database;
-    }
-
-    private @NotNull List<Triplet<Class<?>, String, String>> getFields(@NotNull Class<?> entity) {
-        return Arrays.stream(entity.getDeclaredFields()).filter(this.database.getExtension().isFieldViable())
+    private @NotNull List<Triplet<Class<?>, String, String>> getFields(@NotNull EntityClass<?> entity) {
+        return Arrays.stream(entity.getEntityClass().getDeclaredFields())
+                .filter(this.database.getExtension().isFieldViable())
                 .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
                         (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :
                                 field.getName()))).collect(Collectors.toList());
     }
 
-    private @NotNull Optional<Constructor<?>> getConstructor(@NotNull Class<?> entity) {
-        List<Constructor<?>> constructors = Arrays.stream(entity.getDeclaredConstructors())
+    private @NotNull Optional<Constructor<?>> getConstructor(@NotNull EntityClass<?> entity) {
+        List<Constructor<?>> constructors = Arrays.stream(entity.getEntityClass().getDeclaredConstructors())
                 .filter(this.database.getExtension().isConstructorViable())
                 .collect(Collectors.toList());
         if (constructors.size() != 0) {
@@ -46,46 +43,41 @@ public final class EntityManager {
         }
     }
 
-    private @NotNull <A> A constructEntity(@NotNull Class<A> entity)
-            throws IllegalStateException, IllegalArgumentException,
-            IllegalAccessException, InvocationTargetException, InstantiationException {
+    private @NotNull <A> A constructEntity(@NotNull EntityClass<A> entity) throws IllegalStateException,
+            IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException {
         Optional<Constructor<?>> constructor = this.getConstructor(entity);
-        if (entity.isAnnotationPresent(Entity.class)) {
-            if (constructor.isPresent()) {
-                Constructor<?> unwrappedConstructor = constructor.get();
-                this.entityAttributes.computeIfAbsent(entity, this::getFields);
-                boolean isAccessible = unwrappedConstructor.isAccessible();
-                unwrappedConstructor.setAccessible(true);
-                A obj = entity.cast(unwrappedConstructor.newInstance());
-                unwrappedConstructor.setAccessible(isAccessible);
-                return obj;
-            } else {
-                throw new IllegalArgumentException("Class " + entity.getCanonicalName()
-                        + " must declare an empty public or protected constructor");
-            }
+        if (constructor.isPresent()) {
+            Constructor<?> unwrappedConstructor = constructor.get();
+            this.entityAttributes.putIfAbsent(entity.getEntityClass(), this.getFields(entity));
+            boolean isAccessible = unwrappedConstructor.isAccessible();
+            unwrappedConstructor.setAccessible(true);
+            A obj = entity.getEntityClass().cast(unwrappedConstructor.newInstance());
+            unwrappedConstructor.setAccessible(isAccessible);
+            return obj;
         } else {
-            throw new IllegalArgumentException("Class " + entity.getCanonicalName()
-                    + " must be annotated with @" + Entity.class.getCanonicalName());
+            throw new IllegalArgumentException("Class " + entity.getEntityClass().getCanonicalName()
+                    + " must declare an empty public or protected constructor");
         }
     }
 
     public @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull Map<String, Object> values)
             throws IllegalStateException {
-        return constructEntity(entity, values::get);
+        return constructEntity(EntityClass.of(entity), values::get);
     }
 
     public @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull ResultSet resultSet)
             throws IllegalStateException {
-        return constructEntity(entity, resultSet::getObject);
+        return constructEntity(EntityClass.of(entity), resultSet::getObject);
     }
 
-    private @NotNull <A> A constructEntity(@NotNull Class<A> entity, @NotNull ThrowingFunction<String, ?> values)
-            throws IllegalStateException {
+    private @NotNull <A> A constructEntity(@NotNull EntityClass<A> entity, @NotNull ThrowingFunction<String, ?> values)
+            throws IllegalStateException, IllegalArgumentException {
+        Class<A> entityClass = entity.getEntityClass();
         try {
             A obj = constructEntity(entity);
-            if (this.entityAttributes.containsKey(entity)) {
-                for (Triplet<Class<?>, String, String> attribute : this.entityAttributes.get(entity)) {
-                    Field field = entity.getField(attribute.getB());
+            if (this.entityAttributes.containsKey(entityClass)) {
+                for (Triplet<Class<?>, String, String> attribute : this.entityAttributes.get(entityClass)) {
+                    Field field = entityClass.getField(attribute.getB());
                     boolean isAccessible = field.canAccess(obj);
                     field.setAccessible(true);
                     if (attribute.getA().equals(Option.class)) {
@@ -96,24 +88,26 @@ public final class EntityManager {
                                     Serializable.class.getCanonicalName() + ".");
                         }
                     }
-                    if (attribute.getA().equals(Optional.class) && !Serializable.class.isAssignableFrom(entity)) {
+                    if (attribute.getA().equals(Optional.class) && !Serializable.class.isAssignableFrom(entityClass)) {
                         field.set(obj,
                                 attribute.getA().equals(Optional.class) ?
                                         Optional.ofNullable(values.apply(attribute.getC())) :
                                         values.apply(attribute.getC()));
                     } else {
-                        throw new IllegalStateException("Entity " + entity.getCanonicalName() + " implements " +
+                        throw new IllegalStateException("Entity " + entityClass.getCanonicalName() + " implements " +
                                 Serializable.class.getCanonicalName() + " but includes attribute " + attribute.getB() +
                                 " of unserializable type " + Optional.class.getCanonicalName() + ".");
                     }
                     field.setAccessible(isAccessible);
                 }
             } else {
-                throw new IllegalStateException("EntityManager does not recognize " + entity.getCanonicalName() + ".");
+                throw new IllegalStateException(
+                        "EntityManager does not recognize " + entityClass.getCanonicalName() + ".");
             }
             return obj;
         } catch (Exception exception) {
-            throw new IllegalStateException("Construction of " + entity.getCanonicalName() + " failed.", exception);
+            throw new IllegalStateException("Construction of " + entityClass.getCanonicalName() + " failed.",
+                    exception);
         }
     }
 
