@@ -1,7 +1,6 @@
-package grevend.persistence.lite.extensions.inmemory;
+package grevend.persistence.lite.database.inmemory;
 
 import grevend.persistence.lite.dao.Dao;
-import grevend.persistence.lite.dao.DaoFactory;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.EntityClass;
 import grevend.persistence.lite.util.Pair;
@@ -9,29 +8,37 @@ import grevend.persistence.lite.util.Triplet;
 import grevend.persistence.lite.util.Tuple;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class InMemoryDaoFactory extends DaoFactory {
+public class InMemoryDatabase extends Database {
 
     private static Set<Class<?>> primitives = Set.of(
             Void.TYPE, Byte.TYPE, Short.TYPE, Integer.TYPE, Long.TYPE,
             Float.TYPE, Double.TYPE, Boolean.TYPE, Character.TYPE);
     private Map<EntityClass<?>, List<Object>> storage;
 
-    public InMemoryDaoFactory(@NotNull Database database) {
-        super(database);
+    public InMemoryDatabase(@NotNull String name, int version, @NotNull String user, @NotNull String password) {
+        super(name, version, user, password);
         this.storage = new HashMap<>();
+    }
+
+    @Override
+    public @NotNull URI getURI() throws URISyntaxException {
+        return new File(this.getName() + ".ser").toURI();
     }
 
     public Map<EntityClass<?>, List<Object>> getStorage() {
         return storage;
     }
 
-    public <A> boolean checkKey(@NotNull A entity, @NotNull Map<String, ?> keyValuePairs,
+    private <A> boolean checkKey(@NotNull A entity, @NotNull Map<String, ?> keyValuePairs,
                                 @NotNull Collection<Triplet<Class<?>, String, String>> keys) {
         return keys.stream().allMatch(k -> {
             try {

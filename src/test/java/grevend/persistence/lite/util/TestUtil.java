@@ -36,58 +36,32 @@ public class TestUtil {
 
     @SafeVarargs
     @TestOnly
-    public static <T> void verifyEqualsAndHashCode(@NotNull T ref, @NotNull T equal, @NotNull T... unEqual ) {
+    public static <T> void verifyEqualsAndHashCode(@NotNull T ref, @NotNull T equal, @NotNull T... unEqual) {
         Object object = "Hello";
         T tnull = null;
         String cname = ref.getClass().getCanonicalName();
-        // I got bitten here, assertJ equalTo does not invoke equals on the
-        // object when ref and 'other' are same.
-        // THAT's why the first one differs from the rest.
-        assertThat( ref.equals( ref ) )
-                .as( cname + ".equals(this): with self should produce true" )
-                .isTrue();
-        assertThat( ref.equals( tnull ) )
-                .as( cname + ".equals(null): ref object "
-                        + safeToString( ref ) + " and null should produce false"
-                )
-                .isFalse();
-        assertThat( ref.equals( object ) )
-                .as( cname + ".equals(new Object()): ref object"
-                        + " compared to other type should produce false"
-                )
-                .isFalse();
-        assertThat( ref.equals( equal ) )
-                .as( cname + " ref object [" + safeToString( ref )
-                        + "] and equal object [" + safeToString( equal )
-                        + "] should report equal"
-                )
-                .isTrue();
-        for ( int i = 0; i < unEqual.length; i++ ) {
-            T ueq = unEqual[ i ];
-            assertThat( ref )
-                    .as("testing supposed unequal objects")
-                    .isNotEqualTo( ueq );
+        assertThat(ref.equals(ref)).isTrue();
+        assertThat(ref.equals(tnull)).isFalse();
+        assertThat(ref.equals(object)).isFalse();
+        assertThat(ref.equals(equal)).isTrue();
+        for (int i = 0; i < unEqual.length; i++) {
+            T ueq = unEqual[i];
+            assertThat(ref).isNotEqualTo(ueq);
         }
-        // ref and equal should have same hashCode
-        assertThat( ref.hashCode() )
-                .as( cname + " equal objects "
-                        + ref.toString() + " and "
-                        + equal.toString() + " should have same hashcode"
-                )
-                .isEqualTo( equal.hashCode() );
+        assertThat(ref.hashCode()).isEqualTo(equal.hashCode());
     }
 
     @TestOnly
-    public static String safeToString( Object x ) {
-        if ( x == null ) {
+    public static String safeToString(Object x) {
+        if (x == null) {
             return "null";
         }
         try {
             return x.toString();
-        } catch ( Throwable e ) {
+        } catch (Throwable e) {
             return "invoking toString on instance "
                     + x.getClass().getCanonicalName() + "@"
-                    + Integer.toHexString( System.identityHashCode( x ) )
+                    + Integer.toHexString(System.identityHashCode(x))
                     + " causes an exception " + e.toString();
 
         }
