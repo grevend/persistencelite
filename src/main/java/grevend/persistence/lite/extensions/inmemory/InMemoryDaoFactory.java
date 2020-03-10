@@ -108,6 +108,11 @@ public class InMemoryDaoFactory extends DaoFactory {
                 return false;
             }
 
+            @Override
+            public boolean deleteByKey(@NotNull Tuple key) {
+                return false;
+            }
+
         };
     }
 

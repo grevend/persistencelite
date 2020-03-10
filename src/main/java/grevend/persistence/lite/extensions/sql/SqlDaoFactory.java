@@ -49,6 +49,11 @@ public class SqlDaoFactory extends DaoFactory {
                 return false;
             }
 
+            @Override
+            public boolean deleteByKey(@NotNull Tuple key) {
+                return false;
+            }
+
         };
     }
 
