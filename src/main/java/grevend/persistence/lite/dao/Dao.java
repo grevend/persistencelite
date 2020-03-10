@@ -1,33 +1,40 @@
 package grevend.persistence.lite.dao;
 
+import grevend.persistence.lite.util.Tuple;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public interface Dao<E, K> {
+public interface Dao<E> {
 
-    default boolean create(@NotNull E entity) {
-        return createAll(List.of(entity));
+    boolean create(@NotNull E entity);
+
+    default boolean createAll(@NotNull Collection<E> entities) {
+        return entities.stream().allMatch(this::create);
     }
 
-    boolean createAll(@NotNull Collection<E> entities);
+    Optional<E> retrieveByKey(@NotNull Tuple key);
 
-    Optional<E> retrieve(@NotNull K key);
+    default Optional<E> retrieve(@NotNull Object... keys) {
+        return retrieveByKey(Tuple.of(keys));
+    }
 
-    Optional<E> retrieve(@NotNull Map<String, ?> keyValuePairs);
+    Collection<E> retrieveByAttributes(@NotNull Map<String, ?> attributes);
 
-    @NotNull Set<E> retrieveAll();
+    @NotNull Collection<E> retrieveAll();
 
     default boolean update(@NotNull E entity) {
-        return updateAll(List.of(entity));
+        return delete(entity) && create(entity);
     }
 
-    boolean updateAll(@NotNull Collection<E> entities);
-
-    default boolean delete(@NotNull E entity) {
-        return deleteAll(List.of(entity));
+    default boolean updateAll(@NotNull Collection<E> entities) {
+        return entities.stream().allMatch(this::update);
     }
 
-    boolean deleteAll(@NotNull Collection<E> entities);
+    boolean delete(@NotNull E entity);
+
+    default boolean deleteAll(@NotNull Collection<E> entities) {
+        return entities.stream().allMatch(this::delete);
+    }
 
 }

@@ -2,7 +2,7 @@ package grevend.persistence.lite.dao;
 
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.Attribute;
-import grevend.persistence.lite.entity.Entity;
+import grevend.persistence.lite.entity.EntityClass;
 import grevend.persistence.lite.util.PrimaryKey;
 import grevend.persistence.lite.util.Triplet;
 import org.jetbrains.annotations.NotNull;
@@ -19,43 +19,32 @@ public abstract class DaoFactory {
         this.database = database;
     }
 
-    public @NotNull Database getDatabase() {
-        return database;
-    }
-
-    protected @NotNull <A> List<Triplet<Class<?>, String, String>> getPrimaryKeys(@NotNull Class<A> entity) {
-        return Arrays.stream(entity.getDeclaredFields()).filter(this.database.getExtension().isFieldViable())
+    protected @NotNull <A> List<Triplet<Class<?>, String, String>> getPrimaryKeys(@NotNull EntityClass<A> entity) {
+        return Arrays.stream(entity.getEntityClass().getDeclaredFields())
+                .filter(this.database.getExtension().isFieldViable())
                 .filter(field -> field.isAnnotationPresent(PrimaryKey.class))
                 .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
                         (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :
                                 field.getName()))).collect(Collectors.toList());
     }
 
-    public abstract @NotNull <A, B> Dao<A, B> createDao(@NotNull Class<A> entity, @NotNull Class<B> keyClass,
-                                                        List<Triplet<Class<?>, String, String>> keys);
+    public abstract @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entity,
+                                                  @NotNull List<Triplet<Class<?>, String, String>> keys);
 
-    public @NotNull <A, B> Dao<A, B> ofEntity(@NotNull Class<A> entity, @NotNull Class<B> keyClass)
+    public @NotNull <A> Dao<A> ofEntity(@NotNull EntityClass<A> entity)
             throws IllegalArgumentException {
-        if (entity.isAnnotationPresent(Entity.class)) {
-            var keys = getPrimaryKeys(entity);
-            if (keys.size() <= 0) {
-                throw new IllegalArgumentException(
-                        "Every entity must possess a primary key annotated with " +
-                                PrimaryKey.class.getCanonicalName() + ".");
-            } else {
-                return createDao(entity, keyClass, keys);
-            }
+        var keys = getPrimaryKeys(entity);
+        if (keys.size() <= 0) {
+            throw new IllegalArgumentException(
+                    "Every entity must possess a primary key annotated with " +
+                            PrimaryKey.class.getCanonicalName() + ".");
         } else {
-            throw new IllegalArgumentException("Class " + entity.getCanonicalName()
-                    + " must be annotated with @" + Entity.class.getCanonicalName());
+            return createDao(entity, keys);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public @NotNull <A, B> Dao<A, B> ofEntity(@NotNull Class<A> entity) {
-        var keys = getPrimaryKeys(entity);
-        return ofEntity(entity, keys.size() == 1 ? (Class<B>) keys.get(0).getClass() :
-                (keys.size() > 1 ? (Class<B>) List.class : (Class<B>) Object.class));
+    public @NotNull <A> Dao<A> ofEntity(@NotNull Class<A> clazz) throws IllegalArgumentException {
+        return this.ofEntity(EntityClass.of(clazz));
     }
 
 }
