@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class Database {
+public class Database implements AutoCloseable {
 
     private final Extension<? extends Database> extension;
 
@@ -18,12 +18,14 @@ public class Database {
     private DaoFactory daoFactory;
     private EntityManager entityManager;
 
-    public Database(@NotNull Extension<? extends Database> extension, String name, int version, String user, String password) {
+    public Database(@NotNull Extension<? extends Database> extension, String name, int version, String user,
+                    String password) {
         this.extension = extension;
         this.name = name;
         this.version = version;
         this.user = user;
         this.password = password;
+        this.start();
     }
 
     public @NotNull Extension<? extends Database> getExtension() {
@@ -62,6 +64,19 @@ public class Database {
             this.entityManager = new EntityManager(this);
         }
         return this.entityManager;
+    }
+
+    public void start() {
+        this.extension.onStart();
+    }
+
+    public void stop() {
+        this.extension.onStop();
+    }
+
+    @Override
+    public void close() throws Exception {
+        this.stop();
     }
 
 }

@@ -15,26 +15,27 @@ import java.util.Optional;
 public class Main {
 
     public static void main(String[] args) {
-        var db = Persistence.databaseBuilder(InMemory.class, "postgres", 0)
+        try (var db = Persistence.databaseBuilder(InMemory.class, "postgres", 0)
                 .setCredentials("postgres", "mypassword")
-                .build();
+                .build()) {
+            Dao<Artist, Integer> artistDao = db.getDaoFactory().ofEntity(Artist.class);
 
-        Dao<Artist, Integer> artistDao = db.getDaoFactory().ofEntity(Artist.class);
+            artistDao.create(new Artist(50, "test", "biotest", null, Option.empty()));
 
-        artistDao.create(new Artist(50, "test", "biotest", null, Option.empty()));
-
-        System.out.println(artistDao.retrieveAll());
-        System.out.println(artistDao.retrieve(Map.of("id", 49)));
-        Optional<Artist> artist = artistDao.retrieve(Map.of("id", 50));
-        System.out.println(artist);
-        System.out.println(artistDao.retrieve(49));
-        System.out.println(artistDao.retrieve(50));
-        artist.get().name = "newartistname";
-        artistDao.update(artist.get());
-        System.out.println(artistDao.retrieveAll().size());
-        System.out.println(artistDao.retrieve(artist.get().id));
-        System.out.println(artistDao.retrieveAll().size());
-
+            System.out.println(artistDao.retrieveAll());
+            System.out.println(artistDao.retrieve(Map.of("id", 49)));
+            Optional<Artist> artist = artistDao.retrieve(Map.of("id", 50));
+            System.out.println(artist);
+            System.out.println(artistDao.retrieve(49));
+            System.out.println(artistDao.retrieve(50));
+            artist.get().name = "newartistname";
+            artistDao.update(artist.get());
+            System.out.println(artistDao.retrieveAll().size());
+            System.out.println(artistDao.retrieve(artist.get().id));
+            System.out.println(artistDao.retrieveAll().size());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Entity(name = "artist")

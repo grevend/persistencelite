@@ -13,7 +13,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.function.Predicate;
 
-public abstract class Extension<D extends Database> {
+public abstract class Extension<D extends Database> implements AutoCloseable {
 
     private final Persistence persistence;
     private D database;
@@ -28,6 +28,12 @@ public abstract class Extension<D extends Database> {
 
     public @NotNull Predicate<Constructor<?>> isConstructorViable() {
         return constructor -> constructor.getParameterCount() == 0 && !constructor.isSynthetic();
+    }
+
+    public void onStart() {
+    }
+
+    public void onStop() {
     }
 
     public @NotNull Predicate<Field> isFieldViable() {
@@ -59,6 +65,11 @@ public abstract class Extension<D extends Database> {
     public final @NotNull D build() throws IllegalStateException {
         this.database = createDatabase();
         return this.database;
+    }
+
+    @Override
+    public void close() throws Exception {
+        this.onStop();
     }
 
 }
