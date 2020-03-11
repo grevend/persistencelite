@@ -96,7 +96,7 @@ public abstract class Database implements AutoCloseable {
         return this.getDao(EntityClass.of(clazz));
     }
 
-    public void onCreate() {
+    private void onCreate() {
         this.onStart();
     }
 

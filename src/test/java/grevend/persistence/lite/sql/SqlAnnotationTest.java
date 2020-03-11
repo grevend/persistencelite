@@ -7,10 +7,10 @@ import java.lang.annotation.ElementType;
 
 import static grevend.persistence.lite.util.TestUtil.assertAnnotationRetentionAndTarget;
 
-public class SqlAnnotationTest {
+class SqlAnnotationTest {
 
     @Test
-    public void testPrimaryKey() {
+    void testPrimaryKey() {
         assertAnnotationRetentionAndTarget(PrimaryKey.class, ElementType.FIELD);
     }
 

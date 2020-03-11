@@ -97,11 +97,13 @@ public class EntityClass<E> {
                 boolean isAccessible = field.canAccess(obj);
                 field.setAccessible(true);
                 if (attribute.getA().equals(Option.class)) {
-                    if (values.apply(attribute.getC()) instanceof Serializable) {
+                    if (values.apply(attribute.getC()) instanceof Serializable ||
+                            values.apply(attribute.getC()) == null) {
                         field.set(obj, Option.of((Serializable) values.apply(attribute.getC())));
                     } else {
-                        throw new IllegalStateException("Value of " + attribute.getC() + " does not implement " +
-                                Serializable.class.getCanonicalName() + ".");
+                        throw new IllegalStateException(
+                                "Value of " + attribute.getC() + " with type " + attribute.getA().getCanonicalName() +
+                                        " does not implement " + Serializable.class.getCanonicalName() + ".");
                     }
                 } else if (attribute.getA().isAssignableFrom(Optional.class)) {
                     if (!(obj instanceof Serializable)) {
