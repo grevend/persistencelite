@@ -1,6 +1,5 @@
 package grevend.persistence.lite.entity;
 
-import grevend.persistence.lite.util.Ignore;
 import grevend.persistence.lite.util.Option;
 import grevend.persistence.lite.util.ThrowingFunction;
 import grevend.persistence.lite.util.Triplet;
@@ -10,15 +9,18 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static grevend.persistence.lite.util.Utils.isConstructorViable;
+import static grevend.persistence.lite.util.Utils.isFieldViable;
 
 public class EntityClass<E> {
 
     private final Class<E> entityClass;
+    private Optional<Constructor<E>> entityConstructor = Optional.empty();
+    private List<Field> entityFields = null;
     private List<Triplet<Class<?>, String, String>> entityAttributes;
 
     private EntityClass(@NotNull Class<E> entityClass) {
@@ -28,54 +30,59 @@ public class EntityClass<E> {
 
     @SuppressWarnings("unchecked")
     public static @NotNull <E> EntityClass<E> of(@NotNull Class<E> entityClass) throws IllegalArgumentException {
-        if (entityClass.isAnnotationPresent(Entity.class)) {
-            return (EntityClass<E>) EntityClassCache.getInstance().entityClasses
-                    .computeIfAbsent(entityClass, clazz -> new EntityClass<>(entityClass));
-        } else {
+        if (!entityClass.isAnnotationPresent(Entity.class))
             throw new IllegalArgumentException("Class " + entityClass.getCanonicalName()
                     + " must be annotated with @" + Entity.class.getCanonicalName());
+        return (EntityClass<E>) EntityClassCache.getInstance()
+                .entityClasses.computeIfAbsent(entityClass, clazz -> new EntityClass<>(entityClass));
+    }
+
+    public boolean isSerializable() {
+        return Serializable.class.isAssignableFrom(entityClass);
+    }
+
+    public boolean hasViableConstructor() {
+        return this.getConstructor().isPresent();
+    }
+
+    public boolean hasViableFields() {
+        return this.getFields().size() > 0;
+    }
+
+    private @NotNull List<Field> getFields() {
+        if (this.entityFields == null) {
+            this.entityFields =
+                    Arrays.stream(entityClass.getDeclaredFields()).filter(isFieldViable).collect(Collectors.toList());
         }
+        return this.entityFields;
     }
 
-    private @NotNull Predicate<Constructor<?>> isConstructorViable() {
-        return constructor -> constructor.getParameterCount() == 0 && !constructor.isSynthetic();
+    @SuppressWarnings("unchecked")
+    private @NotNull Optional<Constructor<E>> getConstructor() throws IllegalStateException {
+        if (this.entityConstructor.isEmpty()) {
+            List<Constructor<?>> constructors = Arrays.stream(entityClass.getDeclaredConstructors())
+                    .filter(isConstructorViable).collect(Collectors.toList());
+            this.entityConstructor =
+                    constructors.size() > 0 ? Optional.ofNullable((Constructor<E>) constructors.get(0)) :
+                            Optional.empty();
+        }
+        return this.entityConstructor;
     }
 
-    private @NotNull Predicate<Field> isFieldViable() {
-        return field -> !field.isSynthetic()
-                && !field.isAnnotationPresent(Ignore.class)
-                && !Modifier.isAbstract(field.getModifiers())
-                && !Modifier.isFinal(field.getModifiers())
-                && !Modifier.isStatic(field.getModifiers())
-                && !Modifier.isTransient(field.getModifiers());
-    }
-
-    private @NotNull List<Triplet<Class<?>, String, String>> getFields() {
+    private @NotNull List<Triplet<Class<?>, String, String>> getAttributes() {
         return Arrays.stream(entityClass.getDeclaredFields())
-                .filter(this.isFieldViable())
+                .filter(isFieldViable)
                 .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
                         (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :
                                 field.getName()))).collect(Collectors.toList());
     }
 
-    private @NotNull Optional<Constructor<?>> getConstructor() {
-        List<Constructor<?>> constructors = Arrays.stream(entityClass.getDeclaredConstructors())
-                .filter(this.isConstructorViable())
-                .collect(Collectors.toList());
-        if (constructors.size() != 0) {
-            return Optional.ofNullable(constructors.get(0));
-        } else {
-            return Optional.empty();
-        }
-    }
-
     private @NotNull E construct() throws IllegalStateException,
             IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Optional<Constructor<?>> constructor = this.getConstructor();
-        if (constructor.isPresent()) {
-            Constructor<?> unwrappedConstructor = constructor.get();
+        if (this.hasViableConstructor()) {
+            Constructor<?> unwrappedConstructor = entityConstructor.get();
             if (this.entityAttributes.isEmpty()) {
-                this.entityAttributes.addAll(this.getFields());
+                this.entityAttributes.addAll(this.getAttributes());
             }
             boolean isAccessible = unwrappedConstructor.isAccessible();
             unwrappedConstructor.setAccessible(true);

@@ -4,10 +4,9 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -18,18 +17,18 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
     private final A a;
     private final B b;
 
-    public Pair(A a, B b) {
+    private Pair(A a, B b) {
         this.a = a;
         this.b = b;
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    public static @NotNull <C extends Serializable, D extends Serializable> Pair<C, D> of(C c, D d) {
-        return new Pair<>(c, d);
+    public static @NotNull <A extends Serializable, B extends Serializable> Pair<A, B> of(A a, B b) {
+        return new Pair<>(a, b);
     }
 
     @Contract(pure = true)
-    public static @NotNull <C extends Serializable, D extends Serializable> Collector<Pair<C, D>, ?, Map<C, D>> toMap() {
+    public static @NotNull <A extends Serializable, B extends Serializable> Collector<Pair<A, B>, ?, Map<A, B>> toMap() {
         return Collectors.toMap(Pair::getA, Pair::getB);
     }
 
@@ -42,11 +41,31 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
+        return Objects.equals(getA(), pair.getA()) &&
+                Objects.equals(getB(), pair.getB());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getA(), getB());
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public String toString() {
         return "Pair{"
-                + "a=" + (a != null && a.getClass().isArray() ? Arrays.toString((A[]) a) : a)
-                + ", b=" + (b != null && b.getClass().isArray() ? Arrays.toString((B[]) b) : b)
+                + "a=" +
+                (a != null && a.getClass().isArray() &&
+                        !Utils.arrayPrimitives.contains(a.getClass().getCanonicalName()) ?
+                        Arrays.toString((A[]) a) : a)
+                + ", b=" +
+                (b != null && b.getClass().isArray() &&
+                        !Utils.arrayPrimitives.contains(b.getClass().getCanonicalName()) ?
+                        Arrays.toString((B[]) b) : b)
                 + '}';
     }
 

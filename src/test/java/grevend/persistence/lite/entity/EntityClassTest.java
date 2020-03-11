@@ -3,9 +3,9 @@ package grevend.persistence.lite.entity;
 import grevend.persistence.lite.util.Ignore;
 import org.junit.jupiter.api.Test;
 
+import java.io.Serializable;
 import java.util.Map;
 
-import static grevend.persistence.lite.util.TestUtil.verifyEqualsAndHashCode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -30,6 +30,27 @@ class EntityClassTest {
     }
 
     @Test
+    void testIfEntityIsSerializable() {
+        assertThat(EntityClass.of(DummyEntity.class).isSerializable()).isFalse();
+        assertThat(EntityClass.of(DummyEntity4.class).isSerializable()).isTrue();
+    }
+
+    @Test
+    void testEntityHasViableConstructor() {
+        assertThat(EntityClass.of(DummyEntity.class).hasViableConstructor()).isFalse();
+        assertThat(EntityClass.of(DummyEntity.class).hasViableConstructor()).isFalse();
+        assertThat(EntityClass.of(DummyEntity2.class).hasViableConstructor()).isTrue();
+    }
+
+    @Test
+    void testEntityHasViableFields() {
+        assertThat(EntityClass.of(DummyEntity.class).hasViableFields()).isFalse();
+        assertThat(EntityClass.of(DummyEntity.class).hasViableFields()).isFalse();
+        assertThat(EntityClass.of(DummyEntity2.class).hasViableFields()).isFalse();
+        assertThat(EntityClass.of(DummyEntity3.class).hasViableFields()).isTrue();
+    }
+
+    @Test
     void testEntityConstruct() {
         var dummyEntity = EntityClass.of(DummyEntity2.class).construct(Map.of("id", 12));
         assertThat(dummyEntity).isNotNull();
@@ -49,14 +70,6 @@ class EntityClassTest {
         assertThat(dummyEntity).isNotNull();
     }
 
-    @Test
-    void testEqualsAndHashCode() {
-        var entityClass1 = EntityClass.of(DummyEntity.class);
-        var entityClass2 = EntityClass.of(DummyEntity.class);
-        var entityClass3 = EntityClass.of(DummyEntity2.class);
-        verifyEqualsAndHashCode(entityClass1, entityClass2, entityClass3);
-    }
-
     @Entity(name = "dummy")
     private static class DummyEntity {
         @Ignore
@@ -74,7 +87,11 @@ class EntityClassTest {
     //TODO add support for modifiers other than public!
     @Entity(name = "dummy3")
     public static class DummyEntity3 {
-         public int id;
+        public int id;
+    }
+
+    @Entity(name = "dummy4")
+    private static class DummyEntity4 implements Serializable {
     }
 
 }
