@@ -34,8 +34,8 @@ class PairTest {
     @Test
     void testPairWithPrimitiveArraysToString() {
         var pair = Pair.of(new int[]{12, 42}, new long[]{21, 24});
-        assertThat(pair.toString()).contains("Pair{a=[I");
-        assertThat(pair.toString()).contains(", b=[J");
+        assertThat(pair.toString()).contains("Pair{a=[I@");
+        assertThat(pair.toString()).contains(", b=[J@");
     }
 
 }

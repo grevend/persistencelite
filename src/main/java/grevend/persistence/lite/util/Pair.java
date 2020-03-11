@@ -4,7 +4,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collector;
@@ -33,39 +32,32 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
     }
 
     public A getA() {
-        return a;
+        return this.a;
     }
 
     public B getB() {
-        return b;
+        return this.b;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || this.getClass() != o.getClass()) return false;
         Pair<?, ?> pair = (Pair<?, ?>) o;
-        return Objects.equals(getA(), pair.getA()) &&
-                Objects.equals(getB(), pair.getB());
+        return Objects.equals(this.getA(), pair.getA()) &&
+                Objects.equals(this.getB(), pair.getB());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getA(), getB());
+        return Objects.hash(this.getA(), this.getB());
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public String toString() {
         return "Pair{"
-                + "a=" +
-                (a != null && a.getClass().isArray() &&
-                        !Utils.arrayPrimitives.contains(a.getClass().getCanonicalName()) ?
-                        Arrays.toString((A[]) a) : a)
-                + ", b=" +
-                (b != null && b.getClass().isArray() &&
-                        !Utils.arrayPrimitives.contains(b.getClass().getCanonicalName()) ?
-                        Arrays.toString((B[]) b) : b)
+                + "a=" + Utils.stringify(this.a)
+                + ", b=" + Utils.stringify(this.b)
                 + '}';
     }
 

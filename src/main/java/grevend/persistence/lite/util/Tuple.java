@@ -29,7 +29,7 @@ public final class Tuple {
 
     @SuppressWarnings("unchecked")
     public <A> A get(int index, @NotNull Class<A> clazz) {
-        return (A) elements.get(index);
+        return (A) this.elements.get(index);
     }
 
     public int count() {
@@ -37,26 +37,26 @@ public final class Tuple {
     }
 
     public @NotNull List<Object> getElements() {
-        return elements;
+        return this.elements;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || this.getClass() != o.getClass()) return false;
         Tuple tuple = (Tuple) o;
-        return Objects.equals(getElements(), tuple.getElements());
+        return Objects.equals(this.getElements(), tuple.getElements());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getElements());
+        return Objects.hash(this.getElements());
     }
 
     @Override
     public String toString() {
         return "Tuple{" +
-                "elements=" + elements +
+                "elements=" + this.elements +
                 '}';
     }
 

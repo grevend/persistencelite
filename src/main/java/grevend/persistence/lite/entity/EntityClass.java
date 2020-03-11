@@ -38,7 +38,7 @@ public class EntityClass<E> {
     }
 
     public boolean isSerializable() {
-        return Serializable.class.isAssignableFrom(entityClass);
+        return Serializable.class.isAssignableFrom(this.entityClass);
     }
 
     public boolean hasViableConstructor() {
@@ -52,15 +52,16 @@ public class EntityClass<E> {
     private @NotNull List<Field> getFields() {
         if (this.entityFields == null) {
             this.entityFields =
-                    Arrays.stream(entityClass.getDeclaredFields()).filter(isFieldViable).collect(Collectors.toList());
+                    Arrays.stream(this.entityClass.getDeclaredFields()).filter(isFieldViable)
+                            .collect(Collectors.toList());
         }
         return this.entityFields;
     }
 
     @SuppressWarnings("unchecked")
-    private @NotNull Optional<Constructor<E>> getConstructor() throws IllegalStateException {
+    private @NotNull Optional<Constructor<E>> getConstructor() {
         if (this.entityConstructor.isEmpty()) {
-            List<Constructor<?>> constructors = Arrays.stream(entityClass.getDeclaredConstructors())
+            List<Constructor<?>> constructors = Arrays.stream(this.entityClass.getDeclaredConstructors())
                     .filter(isConstructorViable).collect(Collectors.toList());
             this.entityConstructor =
                     constructors.size() > 0 ? Optional.ofNullable((Constructor<E>) constructors.get(0)) :
@@ -70,27 +71,66 @@ public class EntityClass<E> {
     }
 
     private @NotNull List<Triplet<Class<?>, String, String>> getAttributes() {
-        return Arrays.stream(entityClass.getDeclaredFields())
+        return Arrays.stream(this.entityClass.getDeclaredFields())
                 .filter(isFieldViable)
                 .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
-                        (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :
-                                field.getName()))).collect(Collectors.toList());
+                        field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name() :
+                                field.getName())).collect(Collectors.toList());
+    }
+
+    public @NotNull List<String> getAttributeNames() {
+        return Arrays.stream(this.entityClass.getDeclaredFields())
+                .filter(isFieldViable)
+                .map(field -> field.isAnnotationPresent(Attribute.class) ?
+                        field.getAnnotation(Attribute.class).name() : field.getName()).collect(Collectors.toList());
+    }
+
+    public @NotNull List<String> getOriginalAttributeNames() {
+        return Arrays.stream(this.entityClass.getDeclaredFields())
+                .filter(isFieldViable)
+                .map(field -> field.getAnnotation(Attribute.class).name()).collect(Collectors.toList());
+    }
+
+    public @NotNull List<Object> getAttributeValues(@NotNull E entity) {
+        return Arrays.stream(this.entityClass.getDeclaredFields()).filter(isFieldViable).map(field -> {
+            try {
+                boolean isAccessible = field.canAccess(entity);
+                field.setAccessible(true);
+                var obj = this.processResultObject(field.get(entity));
+                field.setAccessible(isAccessible);
+                return obj;
+            } catch (IllegalAccessException e) {
+                System.out.println("... ... ...");
+                return null;
+            }
+        }).collect(Collectors.toList());
+    }
+
+    private Object processResultObject(Object obj) {
+        if (obj instanceof String) {
+            obj = "'" + obj.toString() + "'";
+        } else if (obj instanceof Option) {
+            obj = ((Option<?>) obj).isPresent() ? this.processResultObject(((Option<?>) obj).get()) : "null";
+        } else if (obj instanceof Optional) {
+            obj = ((Optional<?>) obj).isPresent() ? this.processResultObject(((Optional<?>) obj).get()) : "null";
+        }
+        return obj;
     }
 
     private @NotNull E construct() throws IllegalStateException,
             IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException {
         if (this.hasViableConstructor()) {
-            Constructor<?> unwrappedConstructor = entityConstructor.get();
+            Constructor<?> unwrappedConstructor = this.entityConstructor.get();
             if (this.entityAttributes.isEmpty()) {
                 this.entityAttributes.addAll(this.getAttributes());
             }
             boolean isAccessible = unwrappedConstructor.isAccessible();
             unwrappedConstructor.setAccessible(true);
-            E obj = entityClass.cast(unwrappedConstructor.newInstance());
+            E obj = this.entityClass.cast(unwrappedConstructor.newInstance());
             unwrappedConstructor.setAccessible(isAccessible);
             return obj;
         } else {
-            throw new IllegalArgumentException("Class " + entityClass.getCanonicalName()
+            throw new IllegalArgumentException("Class " + this.entityClass.getCanonicalName()
                     + " must declare an empty constructor.");
         }
     }
@@ -98,9 +138,9 @@ public class EntityClass<E> {
     private @NotNull E construct(@NotNull ThrowingFunction<String, ?> values)
             throws IllegalStateException, IllegalArgumentException {
         try {
-            E obj = construct();
+            E obj = this.construct();
             for (Triplet<Class<?>, String, String> attribute : this.entityAttributes) {
-                Field field = entityClass.getField(attribute.getB());
+                Field field = this.entityClass.getField(attribute.getB());
                 boolean isAccessible = field.canAccess(obj);
                 field.setAccessible(true);
                 if (attribute.getA().equals(Option.class)) {
@@ -119,9 +159,11 @@ public class EntityClass<E> {
                                         Optional.ofNullable(values.apply(attribute.getC())) :
                                         values.apply(attribute.getC()));
                     } else {
-                        throw new IllegalStateException("Entity " + entityClass.getCanonicalName() + " implements " +
-                                Serializable.class.getCanonicalName() + " but includes attribute " + attribute.getB() +
-                                " of unserializable type " + Optional.class.getCanonicalName() + ".");
+                        throw new IllegalStateException(
+                                "Entity " + this.entityClass.getCanonicalName() + " implements " +
+                                        Serializable.class.getCanonicalName() + " but includes attribute " +
+                                        attribute.getB() +
+                                        " of unserializable type " + Optional.class.getCanonicalName() + ".");
                     }
                 } else {
                     if (attribute.getA().isAssignableFrom(Serializable.class)) {
@@ -139,40 +181,40 @@ public class EntityClass<E> {
             }
             return obj;
         } catch (Exception exception) {
-            throw new IllegalStateException("Construction of " + entityClass.getCanonicalName() + " failed.",
+            throw new IllegalStateException("Construction of " + this.entityClass.getCanonicalName() + " failed.",
                     exception);
         }
     }
 
     public @NotNull E construct(@NotNull Map<String, Object> values)
             throws IllegalStateException {
-        return construct(values::get);
+        return this.construct(values::get);
     }
 
     public @NotNull E construct(@NotNull ResultSet resultSet)
             throws IllegalStateException {
-        return construct(resultSet::getObject);
+        return this.construct(resultSet::getObject);
     }
 
     public @NotNull Class<E> getEntityClass() {
-        return entityClass;
+        return this.entityClass;
     }
 
     public @NotNull String getEntityName() {
-        return entityClass.getAnnotation(Entity.class).name();
+        return this.entityClass.getAnnotation(Entity.class).name();
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || this.getClass() != o.getClass()) return false;
         EntityClass<?> that = (EntityClass<?>) o;
-        return getEntityClass().equals(that.getEntityClass());
+        return this.getEntityClass().equals(that.getEntityClass());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getEntityClass());
+        return Objects.hash(this.getEntityClass());
     }
 
     private static final class EntityClassCache {
@@ -185,7 +227,7 @@ public class EntityClass<E> {
             this.entityClasses = new HashMap<>();
         }
 
-        public static EntityClassCache getInstance() {
+        private static EntityClassCache getInstance() {
             if (entityClassCache == null) {
                 entityClassCache = new EntityClassCache();
             }

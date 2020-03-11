@@ -36,9 +36,9 @@ class TripletTest {
     @Test
     void testTripletWithPrimitiveArraysToString() {
         var triplet = new Triplet<>(new int[]{12, 42}, new long[]{21, 24}, new byte[]{12, 24});
-        assertThat(triplet.toString()).contains("Triplet{a=[I");
-        assertThat(triplet.toString()).contains(", b=[J");
-        assertThat(triplet.toString()).contains(", c=[B");
+        assertThat(triplet.toString()).contains("Triplet{a=[I@");
+        assertThat(triplet.toString()).contains(", b=[J@");
+        assertThat(triplet.toString()).contains(", c=[B@");
     }
 
 }

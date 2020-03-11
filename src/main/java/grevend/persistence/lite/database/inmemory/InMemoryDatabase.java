@@ -35,7 +35,7 @@ public class InMemoryDatabase extends Database {
     }
 
     public Map<EntityClass<?>, List<Object>> getStorage() {
-        return storage;
+        return this.storage;
     }
 
     private <A> boolean checkKey(@NotNull A entity, @NotNull Map<String, ?> keyValuePairs,
@@ -64,15 +64,15 @@ public class InMemoryDatabase extends Database {
                     "InMemoryDaoFactory only supports entities with keys that implement the " +
                             Serializable.class.getCanonicalName() + " interface.");
         }
-        if (!storage.containsKey(entityClass)) {
-            storage.put(entityClass, new ArrayList<>());
+        if (!this.storage.containsKey(entityClass)) {
+            this.storage.put(entityClass, new ArrayList<>());
         }
         return new Dao<>() {
 
             @Override
             public boolean create(@NotNull A entity) {
-                if (!storage.get(entityClass).contains(entity)) {
-                    storage.get(entityClass).add(entity);
+                if (!InMemoryDatabase.this.storage.get(entityClass).contains(entity)) {
+                    InMemoryDatabase.this.storage.get(entityClass).add(entity);
                     return true;
                 }
                 return false;
@@ -86,7 +86,7 @@ public class InMemoryDatabase extends Database {
                                 .of((String & Serializable) keys.get(i).getB(),
                                         (Serializable) key.get(i, keys.get(i).getA())))
                         .collect(Pair.toMap());
-                Collection<A> res = retrieveByAttributes((Map<String, ?>) attributes);
+                Collection<A> res = this.retrieveByAttributes((Map<String, ?>) attributes);
                 if (res != null) {
                     return res.size() != 1 ? Optional.empty() : Optional.ofNullable(res.iterator().next());
                 } else {
@@ -96,20 +96,21 @@ public class InMemoryDatabase extends Database {
 
             @Override
             public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
-                return retrieveAll().stream().filter(entity -> checkKey(entity, attributes, keys))
+                return this
+                        .retrieveAll().stream().filter(entity -> InMemoryDatabase.this.checkKey(entity, attributes, keys))
                         .collect(Collectors.toList());
             }
 
             @Override
             @SuppressWarnings("unchecked")
             public @NotNull Collection<A> retrieveAll() {
-                return (Collection<A>) storage.get(entityClass);
+                return (Collection<A>) InMemoryDatabase.this.storage.get(entityClass);
             }
 
             @Override
             public boolean delete(@NotNull A entity) {
-                if (storage.containsKey(entityClass)) {
-                    storage.get(entityClass).remove(entity);
+                if (InMemoryDatabase.this.storage.containsKey(entityClass)) {
+                    InMemoryDatabase.this.storage.get(entityClass).remove(entity);
                     return true;
                 }
                 return false;
