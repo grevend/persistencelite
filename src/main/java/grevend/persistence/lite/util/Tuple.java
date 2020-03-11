@@ -6,14 +6,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public final class Tuple {
 
     private final List<Object> elements;
-
-    private Tuple() {
-        this.elements = new ArrayList<>();
-    }
 
     private Tuple(@NotNull Collection<Object> elements) {
         this.elements = new ArrayList<>();
@@ -41,6 +38,26 @@ public final class Tuple {
 
     public @NotNull List<Object> getElements() {
         return elements;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Tuple tuple = (Tuple) o;
+        return Objects.equals(getElements(), tuple.getElements());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getElements());
+    }
+
+    @Override
+    public String toString() {
+        return "Tuple{" +
+                "elements=" + elements +
+                '}';
     }
 
 }

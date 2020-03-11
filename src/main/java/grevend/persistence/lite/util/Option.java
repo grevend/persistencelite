@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 
 public class Option<T extends Serializable> implements Serializable {
@@ -30,7 +31,7 @@ public class Option<T extends Serializable> implements Serializable {
         return value == null ? empty() : new Option<>(value);
     }
 
-    public static @NotNull <T extends Serializable> Option<T> of(@NotNull Optional<T> value) {
+    public static @NotNull <T extends Serializable> Option<T> from(@NotNull Optional<T> value) {
         return value.isEmpty() ? empty() : new Option<>(value.get());
     }
 
@@ -48,6 +49,19 @@ public class Option<T extends Serializable> implements Serializable {
 
     public boolean isEmpty() {
         return this.value == null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Option<?> option = (Option<?>) o;
+        return Objects.equals(value, option.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
     }
 
     public String toString() {
