@@ -37,7 +37,7 @@ public class DatabaseBuilder<D extends Database> {
             throw new IllegalStateException("Credentials must be set before building the database.");
         }
         Constructor<D> constructor =
-                databaseImplementation.getConstructor(String.class, Integer.TYPE, String.class, String.class);
+                this.databaseImplementation.getConstructor(String.class, Integer.TYPE, String.class, String.class);
         if (constructor != null) {
             return constructor.newInstance(this.name, this.version, this.user, this.password);
         } else {

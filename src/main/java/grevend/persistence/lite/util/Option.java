@@ -54,14 +54,14 @@ public class Option<T extends Serializable> implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || this.getClass() != o.getClass()) return false;
         Option<?> option = (Option<?>) o;
-        return Objects.equals(value, option.value);
+        return Objects.equals(this.value, option.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(value);
+        return Objects.hash(this.value);
     }
 
     public String toString() {

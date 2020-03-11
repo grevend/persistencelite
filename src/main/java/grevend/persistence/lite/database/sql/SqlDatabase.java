@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SqlDatabase extends Database {
 
@@ -25,13 +26,24 @@ public class SqlDatabase extends Database {
     }
 
     @Override
-    public @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entity,
+    public @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entityClass,
                                          @NotNull List<Triplet<Class<?>, String, String>> keys) {
         return new Dao<>() {
 
             @Override
             public boolean create(@NotNull A entity) {
-                return false;
+                var query = "insert into " + entityClass.getEntityName() + " (" +
+                        String.join(", ", entityClass.getAttributeNames()) + ") values (" +
+                        entityClass.getAttributeValues(entity).stream()
+                                .map(obj -> obj == null ? "null" : obj.toString())
+                                .collect(Collectors.joining(", ")) + ")";
+                try {
+                    SqlDatabase.this.createConnection().createStatement().executeQuery(query);
+                    return true;
+                } catch (SQLException | URISyntaxException e) {
+                    e.printStackTrace();
+                    return false;
+                }
             }
 
             @Override
@@ -41,16 +53,29 @@ public class SqlDatabase extends Database {
 
             @Override
             public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
-                return null;
+                Collection<A> entities = new ArrayList<>();
+                var query = "select * from " + entityClass.getEntityName() + " where " +
+                        attributes.entrySet().stream().map(entry -> entry.getKey() + "="
+                                + entry.getValue().toString()).collect(Collectors.joining(", "));
+                try {
+                    ResultSet res = SqlDatabase.this.createConnection().createStatement().executeQuery(query);
+                    while (res.next()) {
+                        entities.add(entityClass.construct(res));
+                    }
+                } catch (SQLException | URISyntaxException e) {
+                    e.printStackTrace();
+                }
+                return entities;
             }
 
             @Override
             public @NotNull Collection<A> retrieveAll() {
                 Collection<A> entities = new ArrayList<>();
                 try {
-                    ResultSet res = createConnection().createStatement().executeQuery("select * from " + entity.getEntityName());
-                    while(res.next()) {
-                        entities.add(entity.construct(res));
+                    ResultSet res = SqlDatabase.this.createConnection().createStatement()
+                            .executeQuery("select * from " + entityClass.getEntityName());
+                    while (res.next()) {
+                        entities.add(entityClass.construct(res));
                     }
                 } catch (SQLException | URISyntaxException e) {
                     e.printStackTrace();

@@ -17,7 +17,7 @@ public interface Dao<E> {
     Optional<E> retrieveByKey(@NotNull Tuple key);
 
     default Optional<E> retrieve(@NotNull Object... keys) {
-        return retrieveByKey(Tuple.of(keys));
+        return this.retrieveByKey(Tuple.of(keys));
     }
 
     Collection<E> retrieveByAttributes(@NotNull Map<String, ?> attributes);
@@ -25,11 +25,11 @@ public interface Dao<E> {
     @NotNull Collection<E> retrieveAll();
 
     default @NotNull Stream<E> stream() {
-        return retrieveAll().stream();
+        return this.retrieveAll().stream();
     }
 
     default boolean update(@NotNull E entity) {
-        return delete(entity) && create(entity);
+        return this.delete(entity) && this.create(entity);
     }
 
     default boolean updateAll(@NotNull Collection<E> entities) {

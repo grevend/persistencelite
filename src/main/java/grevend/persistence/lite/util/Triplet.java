@@ -1,7 +1,6 @@
 package grevend.persistence.lite.util;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Objects;
 
 public class Triplet<A extends Serializable, B extends Serializable, C extends Serializable> implements Serializable {
@@ -19,42 +18,38 @@ public class Triplet<A extends Serializable, B extends Serializable, C extends S
     }
 
     public A getA() {
-        return a;
+        return this.a;
     }
 
     public B getB() {
-        return b;
+        return this.b;
     }
 
     public C getC() {
-        return c;
+        return this.c;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || this.getClass() != o.getClass()) return false;
         Triplet<?, ?, ?> triplet = (Triplet<?, ?, ?>) o;
-        return Objects.equals(getA(), triplet.getA()) &&
-                Objects.equals(getB(), triplet.getB()) &&
-                Objects.equals(getC(), triplet.getC());
+        return Objects.equals(this.getA(), triplet.getA()) &&
+                Objects.equals(this.getB(), triplet.getB()) &&
+                Objects.equals(this.getC(), triplet.getC());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getA(), getB(), getC());
+        return Objects.hash(this.getA(), this.getB(), this.getC());
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public String toString() {
         return "Triplet{"
-                + "a=" + (a != null && a.getClass().isArray() &&
-                !Utils.arrayPrimitives.contains(a.getClass().getCanonicalName()) ? Arrays.toString((A[]) a) : a)
-                + ", b=" + (b != null && b.getClass().isArray() &&
-                !Utils.arrayPrimitives.contains(b.getClass().getCanonicalName()) ? Arrays.toString((B[]) b) : b)
-                + ", c=" + (c != null && c.getClass().isArray() &&
-                !Utils.arrayPrimitives.contains(c.getClass().getCanonicalName()) ? Arrays.toString((C[]) c) : c)
+                + "a=" + Utils.stringify(this.a)
+                + ", b=" + Utils.stringify(this.b)
+                + ", c=" + Utils.stringify(this.c)
                 + '}';
     }
 

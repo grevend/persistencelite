@@ -32,19 +32,19 @@ public abstract class Database implements AutoCloseable {
     }
 
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public int getVersion() {
-        return version;
+        return this.version;
     }
 
     public String getUser() {
-        return user;
+        return this.user;
     }
 
     public String getPassword() {
-        return password;
+        return this.password;
     }
 
     public abstract @NotNull URI getURI() throws URISyntaxException;
@@ -82,13 +82,13 @@ public abstract class Database implements AutoCloseable {
 
     private @NotNull <A> Dao<A> getDao(@NotNull EntityClass<A> entity)
             throws IllegalArgumentException {
-        var keys = getPrimaryKeys(entity);
+        var keys = this.getPrimaryKeys(entity);
         if (keys.size() <= 0) {
             throw new IllegalArgumentException(
                     "Every entity must possess a primary key annotated with " +
                             PrimaryKey.class.getCanonicalName() + ".");
         } else {
-            return createDao(entity, keys);
+            return this.createDao(entity, keys);
         }
     }
 
