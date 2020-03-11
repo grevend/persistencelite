@@ -6,15 +6,15 @@ import java.lang.annotation.ElementType;
 
 import static grevend.persistence.lite.util.TestUtil.assertAnnotationRetentionAndTarget;
 
-public class EntityAnnotationTest {
+class EntityAnnotationTest {
 
     @Test
-    public void testEntity() {
+    void testEntity() {
         assertAnnotationRetentionAndTarget(Entity.class, ElementType.TYPE);
     }
 
     @Test
-    public void testAttribute() {
+    void testAttribute() {
         assertAnnotationRetentionAndTarget(Attribute.class, ElementType.FIELD);
     }
 

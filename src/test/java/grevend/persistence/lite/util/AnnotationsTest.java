@@ -11,10 +11,10 @@ import java.lang.annotation.Target;
 
 import static grevend.persistence.lite.util.TestUtil.assertAnnotationRetentionAndTarget;
 
-public class AnnotationsTest {
+class AnnotationsTest {
 
     @Test
-    public void testRetentionAndTargetArePresentAndCorrect() {
+    void testRetentionAndTargetArePresentAndCorrect() {
         try {
             assertAnnotationRetentionAndTarget(Ignore.class, ElementType.FIELD);
         } catch (AssertionError assertionError) {
@@ -23,7 +23,7 @@ public class AnnotationsTest {
     }
 
     @Test
-    public void testRetentionAndTargetAreNotPresent() {
+    void testRetentionAndTargetAreNotPresent() {
         try {
             assertAnnotationRetentionAndTarget(NoRetentionOrTargetTest.class);
             Assertions.fail("No assertion error found. Retention and Target already set.");
@@ -35,7 +35,7 @@ public class AnnotationsTest {
     }
 
     @Test
-    public void testRetentionIsNotRuntime() {
+    void testRetentionIsNotRuntime() {
         try {
             assertAnnotationRetentionAndTarget(NotRuntimeTest.class);
             Assertions.fail("No assertion error found. Retentions is already RUNTIME.");
@@ -45,7 +45,7 @@ public class AnnotationsTest {
     }
 
     @Test
-    public void testTargetIsNotPresent() {
+    void testTargetIsNotPresent() {
         try {
             assertAnnotationRetentionAndTarget(NoTargetTest.class);
         } catch (AssertionError assertionError) {
@@ -54,7 +54,7 @@ public class AnnotationsTest {
     }
 
     @Test
-    public void testTargetIsNotField() {
+    void testTargetIsNotField() {
         try {
             assertAnnotationRetentionAndTarget(MethodTargetTest.class, ElementType.FIELD);
             Assertions.fail("No assertion error found. Target is already FIELD.");
@@ -64,23 +64,23 @@ public class AnnotationsTest {
     }
 
     @TestOnly
-    public @interface NoRetentionOrTargetTest {
+    @interface NoRetentionOrTargetTest {
     }
 
     @TestOnly
     @Retention(RetentionPolicy.SOURCE)
-    public @interface NotRuntimeTest {
+    @interface NotRuntimeTest {
     }
 
     @TestOnly
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface NoTargetTest {
+    @interface NoTargetTest {
     }
 
     @TestOnly
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public @interface MethodTargetTest {
+    @interface MethodTargetTest {
     }
 
 }

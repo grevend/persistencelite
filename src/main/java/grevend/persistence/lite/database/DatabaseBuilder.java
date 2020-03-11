@@ -27,7 +27,6 @@ public class DatabaseBuilder<D extends Database> {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     public @NotNull D build()
             throws IllegalStateException, NoSuchMethodException, IllegalAccessException, InvocationTargetException,
             InstantiationException {

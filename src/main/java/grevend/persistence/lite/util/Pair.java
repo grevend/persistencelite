@@ -28,64 +28,9 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
         return new Pair<>(c, d);
     }
 
-    public static @NotNull <C extends Serializable> Collector<C, ?, List<Pair<C, C>>> toPairs() {
-        return toPairs(false);
-    }
-
-
     @Contract(pure = true)
     public static @NotNull <C extends Serializable, D extends Serializable> Collector<Pair<C, D>, ?, Map<C, D>> toMap() {
         return Collectors.toMap(Pair::getA, Pair::getB);
-    }
-
-    public static @NotNull <C extends Serializable> Collector<C, ?, List<Pair<C, C>>> toPairs(
-            boolean nullAsPlaceholder) {
-
-        final class Pairing {
-
-            private List<Pair<C, C>> pairs;
-
-            private C first, second;
-            private boolean empty;
-
-            private Pairing() {
-                this.pairs = new ArrayList<>();
-                this.empty = true;
-            }
-
-            public void accept(C value) {
-                if (empty) {
-                    this.first = value;
-                    this.empty = false;
-                } else {
-                    this.second = value;
-                    this.pairs.add(Pair.of(first, second));
-                    this.first = null;
-                    this.second = null;
-                    this.empty = true;
-                }
-            }
-
-            @NotNull Pairing combine(@NotNull Pairing other) {
-                if (!other.empty) {
-                    this.accept(other.first);
-                    this.second = other.second;
-                }
-                return this;
-            }
-
-            public List<Pair<C, C>> finish() {
-                if (nullAsPlaceholder) {
-                    if (this.first != null && this.second == null) {
-                        this.pairs.add(Pair.of(this.first, null));
-                    }
-                }
-                return this.pairs;
-            }
-
-        }
-
-        return Collector.of(Pairing::new, Pairing::accept, Pairing::combine, Pairing::finish);
     }
 
     public A getA() {
@@ -94,14 +39,6 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
 
     public B getB() {
         return b;
-    }
-
-    public @NotNull <E extends Serializable> Pair<E, B> withA(E a) {
-        return new Pair<>(a, this.b);
-    }
-
-    public @NotNull <E extends Serializable> Pair<A, E> withB(E b) {
-        return new Pair<>(this.a, b);
     }
 
     @Override
