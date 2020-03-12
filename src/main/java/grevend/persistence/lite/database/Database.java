@@ -3,6 +3,7 @@ package grevend.persistence.lite.database;
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.EntityClass;
+import grevend.persistence.lite.entity.EntityImplementationException;
 import grevend.persistence.lite.util.Ignore;
 import grevend.persistence.lite.util.PrimaryKey;
 import grevend.persistence.lite.util.Triplet;
@@ -82,19 +83,18 @@ public abstract class Database implements AutoCloseable {
                 field.getName()))).collect(Collectors.toList());
   }
 
-  private @NotNull <A> Dao<A> getDao(@NotNull EntityClass<A> entity)
-      throws IllegalArgumentException {
+  private @NotNull <A> Dao<A> getDao(@NotNull EntityClass<A> entity) {
     var keys = this.getPrimaryKeys(entity);
     if (keys.size() <= 0) {
-      throw new IllegalArgumentException(
-          "Every entity must possess a primary key annotated with " +
-              PrimaryKey.class.getCanonicalName() + ".");
+      throw new EntityImplementationException(
+          "Every entity must possess a primary key annotated with %s.",
+          PrimaryKey.class.getCanonicalName());
     } else {
       return this.createDao(entity, keys);
     }
   }
 
-  public @NotNull <A> Dao<A> getDao(@NotNull Class<A> clazz) throws IllegalArgumentException {
+  public @NotNull <A> Dao<A> getDao(@NotNull Class<A> clazz) {
     return this.getDao(EntityClass.of(clazz));
   }
 
@@ -103,7 +103,7 @@ public abstract class Database implements AutoCloseable {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     this.onStop();
   }
 

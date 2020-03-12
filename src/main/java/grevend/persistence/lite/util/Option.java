@@ -1,6 +1,6 @@
 package grevend.persistence.lite.util;
 
-import grevend.persistence.lite.util.jacoco.Generated;
+import grevend.jacoco.Generated;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -54,12 +54,12 @@ public class Option<T extends Serializable> implements Serializable {
   @Override
   @Generated
   public boolean equals(Object o) {
-      if (this == o) {
-          return true;
-      }
-      if (o == null || this.getClass() != o.getClass()) {
-          return false;
-      }
+    if (this == o) {
+      return true;
+    }
+    if (o == null || this.getClass() != o.getClass()) {
+      return false;
+    }
     Option<?> option = (Option<?>) o;
     return Objects.equals(this.value, option.value);
   }

@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,6 +27,7 @@ public class InMemoryDatabase extends Database {
   private static Set<Class<?>> primitives = Set.of(
       Void.TYPE, Byte.TYPE, Short.TYPE, Integer.TYPE, Long.TYPE,
       Float.TYPE, Double.TYPE, Boolean.TYPE, Character.TYPE);
+
   private Map<EntityClass<?>, List<Object>> storage;
 
   public InMemoryDatabase(@NotNull String name, int version, @NotNull String user,
@@ -37,7 +37,7 @@ public class InMemoryDatabase extends Database {
   }
 
   @Override
-  public @NotNull URI getURI() throws URISyntaxException {
+  public @NotNull URI getURI() {
     return new File(this.getName() + ".ser").toURI();
   }
 
@@ -62,16 +62,16 @@ public class InMemoryDatabase extends Database {
   public @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entityClass,
       @NotNull List<Triplet<Class<?>, String, String>> keys) {
     if (!Serializable.class.isAssignableFrom(entityClass.getEntityClass())) {
-      throw new IllegalArgumentException(
-          "InMemoryDaoFactory only supports entities that implement the " +
-              Serializable.class.getCanonicalName() + " interface.");
+      throw new InMemoryDatabaseException(
+          "InMemoryDaoFactory only supports entities that implement the %s interface.",
+          Serializable.class.getCanonicalName());
     }
     if (!keys.stream()
         .allMatch(key -> Serializable.class.isAssignableFrom(key.getA()) || primitives
             .contains(key.getA()))) {
-      throw new IllegalArgumentException(
-          "InMemoryDaoFactory only supports entities with keys that implement the " +
-              Serializable.class.getCanonicalName() + " interface.");
+      throw new InMemoryDatabaseException(
+          "InMemoryDaoFactory only supports entities with keys that implement the %s interface.",
+          Serializable.class.getCanonicalName());
     }
     if (!this.storage.containsKey(entityClass)) {
       this.storage.put(entityClass, new ArrayList<>());
@@ -90,23 +90,17 @@ public class InMemoryDatabase extends Database {
       @Override
       @SuppressWarnings("unchecked")
       public Optional<A> retrieveByKey(@NotNull Tuple key) {
-        Map<?, ?> attributes = IntStream.range(0, key.count())
-            .mapToObj(i -> Pair
-                .of((String & Serializable) keys.get(i).getB(),
-                    (Serializable) key.get(i, keys.get(i).getA())))
-            .collect(Pair.toMap());
+        Map<?, ?> attributes = IntStream.range(0, key.count()).mapToObj(i -> Pair
+            .of((String & Serializable) keys.get(i).getB(),
+                (Serializable) key.get(i, keys.get(i).getA()))).collect(Pair.toMap());
         Collection<A> res = this.retrieveByAttributes((Map<String, ?>) attributes);
-        if (res != null) {
-          return res.size() != 1 ? Optional.empty() : Optional.ofNullable(res.iterator().next());
-        } else {
-          return Optional.empty();
-        }
+        return res == null || res.size() != 1 ? Optional.empty()
+            : Optional.ofNullable(res.iterator().next());
       }
 
       @Override
       public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
-        return this
-            .retrieveAll().stream()
+        return this.retrieveAll().stream()
             .filter(entity -> InMemoryDatabase.this.checkKey(entity, attributes, keys))
             .collect(Collectors.toList());
       }

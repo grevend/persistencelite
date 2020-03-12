@@ -1,21 +1,20 @@
 package grevend.persistence.lite.entity;
 
-import org.junit.jupiter.api.Test;
+import static grevend.persistence.lite.util.TestUtil.assertAnnotationRetentionAndTarget;
 
 import java.lang.annotation.ElementType;
-
-import static grevend.persistence.lite.util.TestUtil.assertAnnotationRetentionAndTarget;
+import org.junit.jupiter.api.Test;
 
 class EntityAnnotationTest {
 
-    @Test
-    void testEntity() {
-        assertAnnotationRetentionAndTarget(Entity.class, ElementType.TYPE);
-    }
+  @Test
+  void testEntity() {
+    assertAnnotationRetentionAndTarget(Entity.class, ElementType.TYPE);
+  }
 
-    @Test
-    void testAttribute() {
-        assertAnnotationRetentionAndTarget(Attribute.class, ElementType.FIELD);
-    }
+  @Test
+  void testAttribute() {
+    assertAnnotationRetentionAndTarget(Attribute.class, ElementType.FIELD);
+  }
 
 }

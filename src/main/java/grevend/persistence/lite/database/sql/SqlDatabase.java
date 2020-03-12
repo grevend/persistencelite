@@ -3,6 +3,7 @@ package grevend.persistence.lite.database.sql;
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.EntityClass;
+import grevend.persistence.lite.entity.EntityConstructionException;
 import grevend.persistence.lite.util.Triplet;
 import grevend.persistence.lite.util.Tuple;
 import java.net.URI;
@@ -40,15 +41,15 @@ public class SqlDatabase extends Database {
 
       @Override
       public boolean create(@NotNull A entity) {
-        var query = "insert into " + entityClass.getEntityName() + " (" +
-            String.join(", ", entityClass.getAttributeNames()) + ") values (" +
-            entityClass.getAttributeValues(entity).stream()
-                .map(obj -> obj == null ? "null" : obj.toString())
-                .collect(Collectors.joining(", ")) + ")";
         try {
+          var query = "insert into " + entityClass.getEntityName() + " (" +
+              String.join(", ", entityClass.getAttributeNames()) + ") values (" +
+              entityClass.getAttributeValues(entity).stream()
+                  .map(obj -> obj == null ? "null" : obj.toString())
+                  .collect(Collectors.joining(", ")) + ")";
           SqlDatabase.this.createConnection().createStatement().executeQuery(query);
           return true;
-        } catch (SQLException | URISyntaxException e) {
+        } catch (SQLException | URISyntaxException | EntityConstructionException e) {
           e.printStackTrace();
           return false;
         }
@@ -107,8 +108,7 @@ public class SqlDatabase extends Database {
   public @NotNull Optional<DatabaseMetaData> getMetaData(@NotNull Connection connection) {
     try {
       return Optional.ofNullable(connection.getMetaData());
-    } catch (SQLException sqlException) {
-      sqlException.printStackTrace();
+    } catch (SQLException e) {
       return Optional.empty();
     }
   }

@@ -1,6 +1,6 @@
 package grevend.persistence.lite.util;
 
-import grevend.persistence.lite.util.jacoco.Generated;
+import grevend.jacoco.Generated;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,12 +43,12 @@ public final class Tuple {
   @Override
   @Generated
   public boolean equals(Object o) {
-      if (this == o) {
-          return true;
-      }
-      if (o == null || this.getClass() != o.getClass()) {
-          return false;
-      }
+    if (this == o) {
+      return true;
+    }
+    if (o == null || this.getClass() != o.getClass()) {
+      return false;
+    }
     Tuple tuple = (Tuple) o;
     return Objects.equals(this.getElements(), tuple.getElements());
   }

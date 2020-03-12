@@ -26,22 +26,20 @@ public class DatabaseBuilder<D extends Database> {
     return this;
   }
 
-  public @NotNull D build()
-      throws IllegalStateException, NoSuchMethodException, IllegalAccessException, InvocationTargetException,
-      InstantiationException {
+  public @NotNull D build() {
     if (this.name == null) {
-      throw new IllegalStateException("Name and version must be set before building the database.");
+      throw new DatabaseBuilderException(
+          "Name and version must be set before building the database.");
     }
     if (this.user == null || this.password == null) {
-      throw new IllegalStateException("Credentials must be set before building the database.");
+      throw new DatabaseBuilderException("Credentials must be set before building the database.");
     }
-    Constructor<D> constructor =
-        this.databaseImplementation
-            .getConstructor(String.class, Integer.TYPE, String.class, String.class);
-    if (constructor != null) {
+    try {
+      Constructor<D> constructor = this.databaseImplementation
+          .getConstructor(String.class, Integer.TYPE, String.class, String.class);
       return constructor.newInstance(this.name, this.version, this.user, this.password);
-    } else {
-      throw new IllegalStateException("No constructor found in Database implementation.");
+    } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+      throw new DatabaseBuilderException("Database construction failed.", e);
     }
   }
 

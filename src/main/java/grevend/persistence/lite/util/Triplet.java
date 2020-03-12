@@ -1,6 +1,6 @@
 package grevend.persistence.lite.util;
 
-import grevend.persistence.lite.util.jacoco.Generated;
+import grevend.jacoco.Generated;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -34,12 +34,12 @@ public class Triplet<A extends Serializable, B extends Serializable, C extends S
   @Override
   @Generated
   public boolean equals(Object o) {
-      if (this == o) {
-          return true;
-      }
-      if (o == null || this.getClass() != o.getClass()) {
-          return false;
-      }
+    if (this == o) {
+      return true;
+    }
+    if (o == null || this.getClass() != o.getClass()) {
+      return false;
+    }
     Triplet<?, ?, ?> triplet = (Triplet<?, ?, ?>) o;
     return Objects.equals(this.getA(), triplet.getA()) &&
         Objects.equals(this.getB(), triplet.getB()) &&
