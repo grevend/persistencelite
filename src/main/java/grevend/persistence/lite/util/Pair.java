@@ -1,5 +1,6 @@
 package grevend.persistence.lite.util;
 
+import grevend.persistence.lite.util.jacoco.Generated;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,6 +41,7 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
     }
 
     @Override
+    @Generated
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || this.getClass() != o.getClass()) return false;
@@ -49,10 +51,12 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
     }
 
     @Override
+    @Generated
     public int hashCode() {
         return Objects.hash(this.getA(), this.getB());
     }
 
+    @Generated
     @Override
     public String toString() {
         return "Pair{"

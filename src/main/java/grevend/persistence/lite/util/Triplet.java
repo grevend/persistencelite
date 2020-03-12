@@ -1,5 +1,7 @@
 package grevend.persistence.lite.util;
 
+import grevend.persistence.lite.util.jacoco.Generated;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -30,6 +32,7 @@ public class Triplet<A extends Serializable, B extends Serializable, C extends S
     }
 
     @Override
+    @Generated
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || this.getClass() != o.getClass()) return false;
@@ -40,6 +43,7 @@ public class Triplet<A extends Serializable, B extends Serializable, C extends S
     }
 
     @Override
+    @Generated
     public int hashCode() {
         return Objects.hash(this.getA(), this.getB(), this.getC());
     }

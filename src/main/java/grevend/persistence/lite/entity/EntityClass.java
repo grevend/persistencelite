@@ -3,6 +3,7 @@ package grevend.persistence.lite.entity;
 import grevend.persistence.lite.util.Option;
 import grevend.persistence.lite.util.ThrowingFunction;
 import grevend.persistence.lite.util.Triplet;
+import grevend.persistence.lite.util.jacoco.Generated;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
@@ -100,7 +101,6 @@ public class EntityClass<E> {
                 field.setAccessible(isAccessible);
                 return obj;
             } catch (IllegalAccessException e) {
-                System.out.println("... ... ...");
                 return null;
             }
         }).collect(Collectors.toList());
@@ -205,6 +205,7 @@ public class EntityClass<E> {
     }
 
     @Override
+    @Generated
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || this.getClass() != o.getClass()) return false;
@@ -213,6 +214,7 @@ public class EntityClass<E> {
     }
 
     @Override
+    @Generated
     public int hashCode() {
         return Objects.hash(this.getEntityClass());
     }
