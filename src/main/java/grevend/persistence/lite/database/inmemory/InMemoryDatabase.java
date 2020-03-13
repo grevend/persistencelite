@@ -6,6 +6,7 @@ import grevend.persistence.lite.entity.EntityClass;
 import grevend.persistence.lite.util.Pair;
 import grevend.persistence.lite.util.Triplet;
 import grevend.persistence.lite.util.Tuple;
+import grevend.persistence.lite.util.Utils;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -17,16 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.jetbrains.annotations.NotNull;
 
 public class InMemoryDatabase extends Database {
-
-  private static Set<Class<?>> primitives = Set.of(
-      Void.TYPE, Byte.TYPE, Short.TYPE, Integer.TYPE, Long.TYPE,
-      Float.TYPE, Double.TYPE, Boolean.TYPE, Character.TYPE);
 
   private Map<EntityClass<?>, List<Object>> storage;
 
@@ -66,8 +62,8 @@ public class InMemoryDatabase extends Database {
           "InMemoryDaoFactory only supports entities that implement the %s interface.",
           Serializable.class.getCanonicalName());
     }
-    if (!keys.stream()
-        .allMatch(key -> Serializable.class.isAssignableFrom(key.getA()) || primitives
+    if (!keys.stream().allMatch(
+        key -> Serializable.class.isAssignableFrom(key.getA()) || Utils.primitives
             .contains(key.getA()))) {
       throw new InMemoryDatabaseException(
           "InMemoryDaoFactory only supports entities with keys that implement the %s interface.",

@@ -29,6 +29,10 @@ public interface Dao<E> {
     return this.retrieveAll().stream();
   }
 
+  default @NotNull Stream<E> parallelStream() {
+    return this.retrieveAll().parallelStream();
+  }
+
   default boolean update(@NotNull E entity) {
     return this.delete(entity) && this.create(entity);
   }

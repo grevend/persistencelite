@@ -31,7 +31,7 @@ public class Option<T extends Serializable> implements Serializable {
     return value == null ? empty() : new Option<>(value);
   }
 
-  public static @NotNull <T extends Serializable> Option<T> from(@NotNull Optional<T> value) {
+  public static @NotNull <T extends Serializable> Option<T> ofOptional(@NotNull Optional<T> value) {
     return value.isEmpty() ? empty() : new Option<>(value.get());
   }
 

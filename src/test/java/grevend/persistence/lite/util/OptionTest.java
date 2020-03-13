@@ -27,7 +27,7 @@ class OptionTest {
 
   @Test
   void testOptionFromOptional() {
-    Option<Integer> integerOption = Option.from(Optional.of(12));
+    Option<Integer> integerOption = Option.ofOptional(Optional.of(12));
     assertThat(integerOption.isPresent()).isTrue();
     assertThat(integerOption.isEmpty()).isFalse();
     assertThat(integerOption.get()).isEqualTo(12);
@@ -35,7 +35,7 @@ class OptionTest {
 
   @Test
   void testOptionFromEmptyOptional() {
-    Option<Integer> integerOption = Option.from(Optional.empty());
+    Option<Integer> integerOption = Option.ofOptional(Optional.empty());
     assertThat(integerOption.isPresent()).isFalse();
     assertThat(integerOption.isEmpty()).isTrue();
     assertThatThrownBy(integerOption::get).isExactlyInstanceOf(NoSuchElementException.class);

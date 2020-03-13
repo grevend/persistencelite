@@ -77,30 +77,28 @@ public class EntityClass<E> {
     return this.entityConstructor;
   }
 
+  private @NotNull String getAttributeName(@NotNull Field field) {
+    return field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name()
+        : field.getName();
+  }
+
   private @NotNull List<Triplet<Class<?>, String, String>> getAttributes() {
-    return Arrays.stream(this.entityClass.getDeclaredFields())
-        .filter(isFieldViable)
-        .map(field -> new Triplet<Class<?>, String, String>(field.getType(), field.getName(),
-            field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class).name()
-                : field.getName())).collect(Collectors.toList());
+    return this.getFields().stream().map(
+        field -> Triplet.<Class<?>, String, String>of(field.getType(), field.getName(),
+            this.getAttributeName(field))).collect(Collectors.toList());
   }
 
   public @NotNull List<String> getAttributeNames() {
-    return Arrays.stream(this.entityClass.getDeclaredFields())
-        .filter(isFieldViable)
-        .map(field -> field.isAnnotationPresent(Attribute.class) ?
-            field.getAnnotation(Attribute.class).name() : field.getName())
-        .collect(Collectors.toList());
+    return this.getFields().stream().map(this::getAttributeName).collect(Collectors.toList());
   }
 
   public @NotNull List<String> getOriginalAttributeNames() {
-    return Arrays.stream(this.entityClass.getDeclaredFields())
-        .filter(isFieldViable)
-        .map(field -> field.getAnnotation(Attribute.class).name()).collect(Collectors.toList());
+    return this.getFields().stream().map(field -> field.getAnnotation(Attribute.class).name())
+        .collect(Collectors.toList());
   }
 
   public @NotNull List<Object> getAttributeValues(@NotNull E entity) {
-    return Arrays.stream(this.entityClass.getDeclaredFields()).filter(isFieldViable).map(field -> {
+    return this.getFields().stream().map(field -> {
       try {
         boolean isAccessible = field.canAccess(entity);
         field.setAccessible(true);

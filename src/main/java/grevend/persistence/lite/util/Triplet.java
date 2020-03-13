@@ -3,6 +3,8 @@ package grevend.persistence.lite.util;
 import grevend.jacoco.Generated;
 import java.io.Serializable;
 import java.util.Objects;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public class Triplet<A extends Serializable, B extends Serializable, C extends Serializable> implements
     Serializable {
@@ -13,10 +15,16 @@ public class Triplet<A extends Serializable, B extends Serializable, C extends S
   private final B b;
   private final C c;
 
-  public Triplet(A a, B b, C c) {
+  private Triplet(A a, B b, C c) {
     this.a = a;
     this.b = b;
     this.c = c;
+  }
+
+  @Contract(value = "_, _, _ -> new", pure = true)
+  public static @NotNull <A extends Serializable, B extends Serializable, C extends Serializable> Triplet<A, B, C> of(
+      A a, B b, C c) {
+    return new Triplet<>(a, b, c);
   }
 
   public A getA() {
