@@ -1,6 +1,5 @@
 package grevend.persistence.lite.dao;
 
-import grevend.persistence.lite.entity.EntityClass;
 import grevend.persistence.lite.util.Tuple;
 import java.util.Collection;
 import java.util.Map;
@@ -17,11 +16,6 @@ public interface Dao<E> {
   }
 
   Optional<E> retrieveByKey(@NotNull Tuple key);
-
-  @SuppressWarnings("unchecked")
-  default Optional<E> retrieveByKey(@NotNull E entity) {
-    return this.retrieveByKey(EntityClass.of((Class<E>) entity.getClass()).getKeyValueTuple());
-  }
 
   default Optional<E> retrieve(@NotNull Object... keys) {
     return this.retrieveByKey(Tuple.of(keys));

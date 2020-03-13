@@ -8,7 +8,6 @@ import grevend.persistence.lite.util.Option;
 import grevend.persistence.lite.util.PrimaryKey;
 import grevend.persistence.lite.util.ThrowingFunction;
 import grevend.persistence.lite.util.Triplet;
-import grevend.persistence.lite.util.Tuple;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -112,10 +111,6 @@ public class EntityClass<E> {
             this.entityClass.getCanonicalName());
       }
     }).collect(Collectors.toList());
-  }
-
-  public Tuple getKeyValueTuple() {
-    throw new UnsupportedOperationException();
   }
 
   public @NotNull List<Triplet<Class<?>, String, String>> getPrimaryKeys() {
@@ -239,6 +234,12 @@ public class EntityClass<E> {
   @Generated
   public int hashCode() {
     return Objects.hash(this.getEntityClass());
+  }
+
+  @Override
+  public String toString() {
+    return "EntityClass{" + "entityClass=" + this.entityClass + ", entityAttributes="
+        + this.entityAttributes + '}';
   }
 
   private static final class EntityClassCache {

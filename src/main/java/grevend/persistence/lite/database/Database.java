@@ -12,15 +12,12 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class Database implements AutoCloseable {
 
-  private final String name, user, password;
+  private final String name;
   private final int version;
 
-  public Database(@NotNull String name, int version, @NotNull String user,
-      @NotNull String password) {
+  public Database(@NotNull String name, int version) {
     this.name = name;
     this.version = version;
-    this.user = user;
-    this.password = password;
     this.onStart();
   }
 
@@ -30,14 +27,6 @@ public abstract class Database implements AutoCloseable {
 
   public int getVersion() {
     return this.version;
-  }
-
-  public String getUser() {
-    return this.user;
-  }
-
-  public String getPassword() {
-    return this.password;
   }
 
   public abstract @NotNull URI getURI() throws URISyntaxException;

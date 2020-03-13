@@ -26,9 +26,8 @@ public class InMemoryDatabase extends Database {
 
   private Map<EntityClass<?>, List<Object>> storage;
 
-  public InMemoryDatabase(@NotNull String name, int version, @NotNull String user,
-      @NotNull String password) {
-    super(name, version, user, password);
+  public InMemoryDatabase(@NotNull String name, int version) {
+    super(name, version);
     this.storage = new HashMap<>();
   }
 

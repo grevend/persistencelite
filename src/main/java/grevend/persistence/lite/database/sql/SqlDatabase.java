@@ -24,9 +24,21 @@ import org.jetbrains.annotations.NotNull;
 
 public class SqlDatabase extends Database {
 
+  private final String user, password;
+
   public SqlDatabase(@NotNull String name, int version, @NotNull String user,
       @NotNull String password) {
-    super(name, version, user, password);
+    super(name, version);
+    this.user = user;
+    this.password = password;
+  }
+
+  public @NotNull String getUser() {
+    return this.user;
+  }
+
+  public @NotNull String getPassword() {
+    return this.password;
   }
 
   @Override

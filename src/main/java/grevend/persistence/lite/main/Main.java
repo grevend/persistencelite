@@ -1,7 +1,7 @@
 package grevend.persistence.lite.main;
 
 import grevend.persistence.lite.Persistence;
-import grevend.persistence.lite.database.sql.SqlDatabase;
+import grevend.persistence.lite.database.sql.SqlDatabaseBuilder;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
 import grevend.persistence.lite.util.Option;
@@ -12,9 +12,8 @@ import java.sql.Connection;
 public class Main {
 
   public static void main(String[] args) {
-    try (var db = Persistence.databaseBuilder(SqlDatabase.class, "postgres", 0)
-        .setCredentials("postgres", "mypassword")
-        .build()) {
+    try (var db = Persistence.databaseBuilder(SqlDatabaseBuilder.class, "postgres", 0)
+        .setCredentials("postgres", "mypassword").build()) {
       Connection connection = db.createConnection();
       System.out.println(db.getMetaData(connection).isPresent() ? db.getMetaData(connection).get()
           .getJDBCMajorVersion() : "null");
