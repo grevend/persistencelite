@@ -1,5 +1,6 @@
-package grevend.persistence.lite;
+package grevend.persistence.lite.main;
 
+import grevend.persistence.lite.Persistence;
 import grevend.persistence.lite.database.sql.SqlDatabase;
 import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
