@@ -59,7 +59,6 @@ public class Pair<A extends Serializable, B extends Serializable> implements Ser
     return Objects.hash(this.getA(), this.getB());
   }
 
-  @Generated
   @Override
   public String toString() {
     return "Pair{"

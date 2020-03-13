@@ -2,6 +2,7 @@ package grevend.persistence.lite.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PairTest {
@@ -36,6 +37,14 @@ class PairTest {
     var pair = Pair.of(new int[]{12, 42}, new long[]{21, 24});
     assertThat(pair.toString()).contains("Pair{a=[I@");
     assertThat(pair.toString()).contains(", b=[J@");
+  }
+
+  @Test
+  void testPairToMap() {
+    var map = List.of(Pair.of(12, 21), Pair.of(34, 43), Pair.of(56, 65)).stream()
+        .collect(Pair.toMap());
+    assertThat(map).containsKeys(12, 34, 56);
+    assertThat(map).containsValues(21, 43, 65);
   }
 
 }

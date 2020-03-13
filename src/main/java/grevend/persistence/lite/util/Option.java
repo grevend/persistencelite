@@ -70,6 +70,7 @@ public class Option<T extends Serializable> implements Serializable {
     return Objects.hash(this.value);
   }
 
+  @Override
   public String toString() {
     return this.value != null ? String.format("Option[%s]", this.value) : "Option.empty";
   }

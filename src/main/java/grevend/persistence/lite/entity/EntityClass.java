@@ -5,8 +5,10 @@ import static grevend.persistence.lite.util.Utils.isFieldViable;
 
 import grevend.jacoco.Generated;
 import grevend.persistence.lite.util.Option;
+import grevend.persistence.lite.util.PrimaryKey;
 import grevend.persistence.lite.util.ThrowingFunction;
 import grevend.persistence.lite.util.Triplet;
+import grevend.persistence.lite.util.Tuple;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -110,6 +112,16 @@ public class EntityClass<E> {
             this.entityClass.getCanonicalName());
       }
     }).collect(Collectors.toList());
+  }
+
+  public Tuple getKeyValueTuple() {
+    throw new UnsupportedOperationException();
+  }
+
+  public @NotNull List<Triplet<Class<?>, String, String>> getPrimaryKeys() {
+    return this.getFields().stream().filter(field -> field.isAnnotationPresent(PrimaryKey.class))
+        .map(field -> Triplet.<Class<?>, String, String>of(field.getType(), field.getName(),
+            this.getAttributeName(field))).collect(Collectors.toList());
   }
 
   private Object processResultObject(Object obj) {

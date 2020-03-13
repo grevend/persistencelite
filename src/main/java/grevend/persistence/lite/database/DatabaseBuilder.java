@@ -1,5 +1,6 @@
 package grevend.persistence.lite.database;
 
+import grevend.jacoco.Generated;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import org.jetbrains.annotations.NotNull;
@@ -26,11 +27,8 @@ public class DatabaseBuilder<D extends Database> {
     return this;
   }
 
+  @Generated
   public @NotNull D build() {
-    if (this.name == null) {
-      throw new DatabaseBuilderException(
-          "Name and version must be set before building the database.");
-    }
     if (this.user == null || this.password == null) {
       throw new DatabaseBuilderException("Credentials must be set before building the database.");
     }

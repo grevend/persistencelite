@@ -1,17 +1,13 @@
 package grevend.persistence.lite.database;
 
 import grevend.persistence.lite.dao.Dao;
-import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.EntityClass;
 import grevend.persistence.lite.entity.EntityImplementationException;
 import grevend.persistence.lite.util.PrimaryKey;
 import grevend.persistence.lite.util.Triplet;
-import grevend.persistence.lite.util.Utils;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class Database implements AutoCloseable {
@@ -55,19 +51,8 @@ public abstract class Database implements AutoCloseable {
   public void onStop() {
   }
 
-  private @NotNull <A> List<Triplet<Class<?>, String, String>> getPrimaryKeys(
-      @NotNull EntityClass<A> entity) {
-    return Arrays.stream(entity.getEntityClass().getDeclaredFields())
-        .filter(Utils.isFieldViable)
-        .filter(field -> field.isAnnotationPresent(PrimaryKey.class))
-        .map(field -> Triplet.<Class<?>, String, String>of(field.getType(), field.getName(),
-            (field.isAnnotationPresent(Attribute.class) ? field.getAnnotation(Attribute.class)
-                .name() :
-                field.getName()))).collect(Collectors.toList());
-  }
-
   private @NotNull <A> Dao<A> getDao(@NotNull EntityClass<A> entity) {
-    var keys = this.getPrimaryKeys(entity);
+    var keys = entity.getPrimaryKeys();
     if (keys.size() <= 0) {
       throw new EntityImplementationException(
           "Every entity must possess a primary key annotated with %s.",
