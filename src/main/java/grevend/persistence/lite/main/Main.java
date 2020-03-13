@@ -20,7 +20,8 @@ public class Main {
       var dao = db.getDao(Artist.class);
       System.out.println(dao.retrieveAll());
       //System.out.println(dao.retrieveByAttributes(Map.of("id", 4)));
-      //System.out.println(dao.create(new Artist(100, "100", "100-bio", Option.of(0), Option.empty())));
+      //System.out.println(dao.create(new Artist(1000, "1000", "1000-bio", Option.empty(), Option.empty())));
+      //System.out.println(dao.retrieveAll());
     } catch (Exception e) {
       e.printStackTrace();
     }

@@ -12,18 +12,15 @@ public class Utils {
   public static Set<Class<?>> primitives = Set.of(
       Void.TYPE, Byte.TYPE, Short.TYPE, Integer.TYPE, Long.TYPE,
       Float.TYPE, Double.TYPE, Boolean.TYPE, Character.TYPE);
-
   public static Set<String> arrayPrimitives =
       Set.of("void[]", "byte[]", "short[]", "int[]", "long[]", "float[]", "double[]", "boolean[]",
           "char[]");
-
   public static Predicate<Field> isFieldViable = field -> !field.isSynthetic()
       && !field.isAnnotationPresent(Ignore.class)
       && !Modifier.isAbstract(field.getModifiers())
       && !Modifier.isFinal(field.getModifiers())
       && !Modifier.isStatic(field.getModifiers())
       && !Modifier.isTransient(field.getModifiers());
-
   public static Predicate<Constructor<?>> isConstructorViable =
       constructor -> constructor.getParameterCount() == 0 && !constructor.isSynthetic();
 
@@ -36,6 +33,10 @@ public class Utils {
           !Utils.arrayPrimitives.contains(a.getClass().getCanonicalName()) ?
           Arrays.toString((A[]) a) : a.toString();
     }
+  }
+
+  public enum Crud {
+    CREATE, RETRIEVE, UPDATE, DELETE;
   }
 
 }

@@ -1,20 +1,26 @@
 package grevend.persistence.lite.database.sql;
 
+import static grevend.persistence.lite.util.Utils.Crud.CREATE;
+
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.EntityClass;
 import grevend.persistence.lite.entity.EntityConstructionException;
 import grevend.persistence.lite.util.Triplet;
 import grevend.persistence.lite.util.Tuple;
+import grevend.persistence.lite.util.Utils.Crud;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,10 +31,12 @@ import org.jetbrains.annotations.NotNull;
 public class SqlDatabase extends Database {
 
   private final String user, password;
+  private Map<EntityClass<?>, Map<Crud, PreparedStatement>> preparedStatements;
 
   public SqlDatabase(@NotNull String name, int version, @NotNull String user,
       @NotNull String password) {
     super(name, version);
+    this.preparedStatements = new HashMap<>();
     this.user = user;
     this.password = password;
   }
@@ -46,23 +54,47 @@ public class SqlDatabase extends Database {
     return new URI("jdbc:postgresql://localhost/");
   }
 
+  private @NotNull <A> PreparedStatement prepareCreateStatement(@NotNull EntityClass<A> entityClass)
+      throws SQLException, URISyntaxException {
+    return this.createConnection().prepareStatement(
+        "insert into " + entityClass.getEntityName() + " (" + String
+            .join(", ", entityClass.getAttributeNames()) + ") values (" + String
+            .join(", ", Collections.nCopies(entityClass.getAttributeNames().size(), "?")) + ")");
+  }
+
   @Override
   public @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entityClass,
       @NotNull List<Triplet<Class<?>, String, String>> keys) {
+    if (!this.preparedStatements.containsKey(entityClass)) {
+      this.preparedStatements.put(entityClass, Map.of());
+    }
     return new Dao<>() {
 
       @Override
       public boolean create(@NotNull A entity) {
         try {
-          var query = "insert into " + entityClass.getEntityName() + " (" +
-              String.join(", ", entityClass.getAttributeNames()) + ") values (" +
-              entityClass.getAttributeValues(entity).stream()
-                  .map(obj -> obj == null ? "null" : obj.toString())
-                  .collect(Collectors.joining(", ")) + ")";
-          SqlDatabase.this.createConnection().createStatement().executeQuery(query);
+          SqlDatabase.this.createConnection().setAutoCommit(false);
+          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(CREATE)) {
+            SqlDatabase.this.preparedStatements.put(entityClass,
+                Map.of(CREATE, SqlDatabase.this.prepareCreateStatement(entityClass)));
+          }
+          var statement = SqlDatabase.this.preparedStatements.get(entityClass).get(CREATE);
+          var values = entityClass.getAttributeValues(entity);
+          for (int i = 0; i < values.size(); i++) {
+            try {
+              if (values.get(i) == null || values.get(i) == "null") {
+                statement.setNull(i + 1, java.sql.Types.NULL);
+              } else {
+                statement.setObject(i + 1, values.get(i) == null ? "null" : values.get(i));
+              }
+            } catch (SQLException ignored) {
+              return false;
+            }
+          }
+          statement.executeUpdate();
+          SqlDatabase.this.createConnection().commit();
           return true;
         } catch (SQLException | URISyntaxException | EntityConstructionException e) {
-          e.printStackTrace();
           return false;
         }
       }

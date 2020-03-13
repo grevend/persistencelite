@@ -17,10 +17,6 @@ public interface Dao<E> {
 
   Optional<E> retrieveByKey(@NotNull Tuple key);
 
-  default Optional<E> retrieve(@NotNull Object... keys) {
-    return this.retrieveByKey(Tuple.of(keys));
-  }
-
   Collection<E> retrieveByAttributes(@NotNull Map<String, ?> attributes);
 
   @NotNull Collection<E> retrieveAll();
