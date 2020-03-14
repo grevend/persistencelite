@@ -36,7 +36,7 @@ public class Utils {
   }
 
   public enum Crud {
-    CREATE, RETRIEVE, UPDATE, DELETE;
+    CREATE, RETRIEVE_BY_KEY, RETRIEVE_BY_ATTRIBUTES, RETRIEVE_ALL, UPDATE, DELETE;
   }
 
 }

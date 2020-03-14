@@ -1,7 +1,8 @@
 package grevend.persistence.lite.database.sql;
 
 import static grevend.persistence.lite.util.Utils.Crud.CREATE;
-import static grevend.persistence.lite.util.Utils.Crud.RETRIEVE;
+import static grevend.persistence.lite.util.Utils.Crud.RETRIEVE_ALL;
+import static grevend.persistence.lite.util.Utils.Crud.RETRIEVE_BY_KEY;
 
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
@@ -16,7 +17,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -65,7 +65,7 @@ public class SqlDatabase extends Database {
             .join(", ", Collections.nCopies(entityClass.getAttributeNames().size(), "?")) + ")");
   }
 
-  private @NotNull <E> PreparedStatement prepareRetrieveStatement(
+  private @NotNull <E> PreparedStatement prepareRetrieveWithAttributesStatement(
       @NotNull EntityClass<E> entityClass, @NotNull Collection<String> attributes)
       throws SQLException, URISyntaxException {
     return this.createConnection().prepareStatement(
@@ -114,12 +114,12 @@ public class SqlDatabase extends Database {
       @Override
       public Optional<A> retrieveByKey(@NotNull Tuple key) {
         try {
-          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(RETRIEVE)) {
-            SqlDatabase.this.preparedStatements.put(entityClass, Map.of(RETRIEVE, SqlDatabase.this
-                .prepareRetrieveStatement(entityClass,
+          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(RETRIEVE_BY_KEY)) {
+            SqlDatabase.this.preparedStatements.put(entityClass, Map.of(RETRIEVE_BY_KEY,
+                SqlDatabase.this.prepareRetrieveWithAttributesStatement(entityClass,
                     keys.stream().map(Triplet::getC).collect(Collectors.toList()))));
           }
-          var statement = SqlDatabase.this.preparedStatements.get(entityClass).get(RETRIEVE);
+          var statement = SqlDatabase.this.preparedStatements.get(entityClass).get(RETRIEVE_BY_KEY);
           for (var i = 0; i < keys.size(); i++) {
             try {
               if (key.get(i, keys.get(i).getA()) == null || key.get(i, keys.get(i).getA())
@@ -147,10 +147,11 @@ public class SqlDatabase extends Database {
       public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
         Collection<A> entities = new ArrayList<>();
         try {
-          var statement = SqlDatabase.this.prepareRetrieveStatement(entityClass, attributes.keySet());
+          var statement = SqlDatabase.this
+              .prepareRetrieveWithAttributesStatement(entityClass, attributes.keySet());
           var i = 0;
-          for(Entry<String, ?> attribute : attributes.entrySet()) {
-            if(attribute.getValue() == null || attribute.getValue().equals("null")) {
+          for (Entry<String, ?> attribute : attributes.entrySet()) {
+            if (attribute.getValue() == null || attribute.getValue().equals("null")) {
               statement.setNull(i + 1, Types.NULL);
             } else {
               statement.setObject(i + 1, attribute.getValue());
@@ -171,8 +172,13 @@ public class SqlDatabase extends Database {
       public @NotNull Collection<A> retrieveAll() {
         Collection<A> entities = new ArrayList<>();
         try {
-          ResultSet res = SqlDatabase.this.createConnection().createStatement()
-              .executeQuery("select * from " + entityClass.getEntityName());
+          var connection = SqlDatabase.this.createConnection();
+          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(RETRIEVE_ALL)) {
+            SqlDatabase.this.preparedStatements.put(entityClass, Map.of(RETRIEVE_ALL,
+                connection.prepareStatement("select * from " + entityClass.getEntityName())));
+          }
+          var res = SqlDatabase.this.preparedStatements.get(entityClass).get(RETRIEVE_ALL)
+              .executeQuery();
           while (res.next()) {
             entities.add(entityClass.construct(res));
           }
