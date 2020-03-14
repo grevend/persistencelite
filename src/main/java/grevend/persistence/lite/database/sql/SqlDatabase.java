@@ -98,7 +98,6 @@ public class SqlDatabase extends Database {
           connection.commit();
           return true;
         } catch (SQLException | URISyntaxException | EntityConstructionException ignored) {
-          System.out.println(ignored.getMessage());
           return false;
         }
       }

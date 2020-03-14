@@ -117,12 +117,13 @@ public class InMemoryDatabase extends Database {
 
       @Override
       public boolean deleteByKey(@NotNull Tuple key) {
-        return false;
+        var entity = this.retrieveByKey(key);
+        return entity.isPresent() && this.delete(entity.get());
       }
 
       @Override
       public boolean deleteByAttributes(@NotNull Map<String, ?> attributes) {
-        return false;
+        return this.deleteAll(this.retrieveByAttributes(attributes));
       }
 
     };
