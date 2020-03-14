@@ -120,9 +120,7 @@ public class EntityClass<E> {
   }
 
   private Object processResultObject(Object obj) {
-    if (obj instanceof String) {
-      obj = "'" + obj.toString() + "'";
-    } else if (obj instanceof Option) {
+    if (obj instanceof Option) {
       obj = ((Option<?>) obj).isPresent() ? this.processResultObject(((Option<?>) obj).get())
           : "null";
     } else if (obj instanceof Optional) {

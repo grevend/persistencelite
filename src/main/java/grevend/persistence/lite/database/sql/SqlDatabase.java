@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -83,7 +84,8 @@ public class SqlDatabase extends Database {
       @Override
       public boolean create(@NotNull A entity) {
         try {
-          SqlDatabase.this.createConnection().setAutoCommit(false);
+          var connection = SqlDatabase.this.createConnection();
+          connection.setAutoCommit(false);
           if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(CREATE)) {
             SqlDatabase.this.preparedStatements.put(entityClass,
                 Map.of(CREATE, SqlDatabase.this.prepareCreateStatement(entityClass)));
@@ -102,9 +104,9 @@ public class SqlDatabase extends Database {
             }
           }
           statement.executeUpdate();
-          SqlDatabase.this.createConnection().commit();
+          connection.commit();
           return true;
-        } catch (SQLException | URISyntaxException | EntityConstructionException e) {
+        } catch (SQLException | URISyntaxException | EntityConstructionException ignored) {
           return false;
         }
       }
@@ -136,7 +138,7 @@ public class SqlDatabase extends Database {
           } else {
             return Optional.empty();
           }
-        } catch (SQLException | URISyntaxException e) {
+        } catch (SQLException | URISyntaxException ignored) {
           return Optional.empty();
         }
       }
@@ -144,18 +146,25 @@ public class SqlDatabase extends Database {
       @Override
       public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
         Collection<A> entities = new ArrayList<>();
-        var query = "select * from " + entityClass.getEntityName() + " where " +
-            attributes.entrySet().stream().map(entry -> entry.getKey() + "="
-                + entry.getValue().toString()).collect(Collectors.joining(", "));
         try {
-          ResultSet res = SqlDatabase.this.createConnection().createStatement().executeQuery(query);
+          var statement = SqlDatabase.this.prepareRetrieveStatement(entityClass, attributes.keySet());
+          var i = 0;
+          for(Entry<String, ?> attribute : attributes.entrySet()) {
+            if(attribute.getValue() == null || attribute.getValue().equals("null")) {
+              statement.setNull(i + 1, Types.NULL);
+            } else {
+              statement.setObject(i + 1, attribute.getValue());
+            }
+            i++;
+          }
+          var res = statement.executeQuery();
           while (res.next()) {
             entities.add(entityClass.construct(res));
           }
-        } catch (SQLException | URISyntaxException e) {
-          e.printStackTrace();
+          return entities;
+        } catch (SQLException | URISyntaxException ignored) {
+          return entities;
         }
-        return entities;
       }
 
       @Override
@@ -167,10 +176,10 @@ public class SqlDatabase extends Database {
           while (res.next()) {
             entities.add(entityClass.construct(res));
           }
-        } catch (SQLException | URISyntaxException e) {
-          e.printStackTrace();
+          return entities;
+        } catch (SQLException | URISyntaxException ignored) {
+          return entities;
         }
-        return entities;
       }
 
       @Override
