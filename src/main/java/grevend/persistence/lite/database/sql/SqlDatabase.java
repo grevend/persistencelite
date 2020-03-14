@@ -191,6 +191,7 @@ public class SqlDatabase extends Database {
         try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
             .prepareDeleteWithAttributesStatement(connection, entityClass,
                 keys.stream().map(Triplet::getC).collect(Collectors.toList()))) {
+          connection.setAutoCommit(false);
           for (var i = 0; i < keys.size(); i++) {
             if (key.get(i, keys.get(i).getA()) == null || key.get(i, keys.get(i).getA())
                 .equals("null")) {
@@ -200,15 +201,33 @@ public class SqlDatabase extends Database {
             }
           }
           statement.executeUpdate();
+          connection.commit();
           return true;
-        } catch (SQLException | URISyntaxException e) {
+        } catch (SQLException | URISyntaxException ignored) {
           return false;
         }
       }
 
       @Override
       public boolean deleteByAttributes(@NotNull Map<String, ?> attributes) {
-        return false;
+        try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
+            .prepareDeleteWithAttributesStatement(connection, entityClass, attributes.keySet())) {
+          connection.setAutoCommit(false);
+          var i = 0;
+          for (Entry<String, ?> attribute : attributes.entrySet()) {
+            if (attribute.getValue() == null || attribute.getValue().equals("null")) {
+              statement.setNull(i + 1, Types.NULL);
+            } else {
+              statement.setObject(i + 1, attribute.getValue());
+            }
+            i++;
+          }
+          statement.executeUpdate();
+          connection.commit();
+          return true;
+        } catch (SQLException | URISyntaxException ignored) {
+          return false;
+        }
       }
 
     };
