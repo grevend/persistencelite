@@ -6,6 +6,7 @@ import grevend.persistence.lite.entity.Attribute;
 import grevend.persistence.lite.entity.Entity;
 import grevend.persistence.lite.util.Option;
 import grevend.persistence.lite.util.PrimaryKey;
+import grevend.persistence.lite.util.Tuple;
 import java.io.Serializable;
 import java.sql.Connection;
 
@@ -20,8 +21,10 @@ public class Main {
       var dao = db.getDao(Artist.class);
       System.out.println(dao.retrieveAll());
       //System.out.println(dao.retrieveByAttributes(Map.of("id", 4)));
-      //System.out.println(dao.create(new Artist(1000, "1000", "1000-bio", Option.empty(), Option.empty())));
+      System.out.println(
+          dao.create(new Artist(1000, "1000", "1000-bio", Option.empty(), Option.empty())));
       //System.out.println(dao.retrieveAll());
+      System.out.println(dao.retrieveByKey(Tuple.of(1000)));
     } catch (Exception e) {
       e.printStackTrace();
     }

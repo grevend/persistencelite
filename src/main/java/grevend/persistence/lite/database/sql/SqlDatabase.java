@@ -1,6 +1,7 @@
 package grevend.persistence.lite.database.sql;
 
 import static grevend.persistence.lite.util.Utils.Crud.CREATE;
+import static grevend.persistence.lite.util.Utils.Crud.RETRIEVE;
 
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
@@ -17,6 +18,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,12 +56,20 @@ public class SqlDatabase extends Database {
     return new URI("jdbc:postgresql://localhost/");
   }
 
-  private @NotNull <A> PreparedStatement prepareCreateStatement(@NotNull EntityClass<A> entityClass)
+  private @NotNull <E> PreparedStatement prepareCreateStatement(@NotNull EntityClass<E> entityClass)
       throws SQLException, URISyntaxException {
     return this.createConnection().prepareStatement(
         "insert into " + entityClass.getEntityName() + " (" + String
             .join(", ", entityClass.getAttributeNames()) + ") values (" + String
             .join(", ", Collections.nCopies(entityClass.getAttributeNames().size(), "?")) + ")");
+  }
+
+  private @NotNull <E> PreparedStatement prepareRetrieveStatement(
+      @NotNull EntityClass<E> entityClass, @NotNull Collection<String> attributes)
+      throws SQLException, URISyntaxException {
+    return this.createConnection().prepareStatement(
+        "select * from " + entityClass.getEntityName() + " where " + attributes.stream()
+            .map(attribute -> attribute + "=?").collect(Collectors.joining(", ")));
   }
 
   @Override
@@ -80,12 +90,12 @@ public class SqlDatabase extends Database {
           }
           var statement = SqlDatabase.this.preparedStatements.get(entityClass).get(CREATE);
           var values = entityClass.getAttributeValues(entity);
-          for (int i = 0; i < values.size(); i++) {
+          for (var i = 0; i < values.size(); i++) {
             try {
-              if (values.get(i) == null || values.get(i) == "null") {
-                statement.setNull(i + 1, java.sql.Types.NULL);
+              if (values.get(i) == null || values.get(i).equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
               } else {
-                statement.setObject(i + 1, values.get(i) == null ? "null" : values.get(i));
+                statement.setObject(i + 1, values.get(i));
               }
             } catch (SQLException ignored) {
               return false;
@@ -101,7 +111,34 @@ public class SqlDatabase extends Database {
 
       @Override
       public Optional<A> retrieveByKey(@NotNull Tuple key) {
-        return Optional.empty();
+        try {
+          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(RETRIEVE)) {
+            SqlDatabase.this.preparedStatements.put(entityClass, Map.of(RETRIEVE, SqlDatabase.this
+                .prepareRetrieveStatement(entityClass,
+                    keys.stream().map(Triplet::getC).collect(Collectors.toList()))));
+          }
+          var statement = SqlDatabase.this.preparedStatements.get(entityClass).get(RETRIEVE);
+          for (var i = 0; i < keys.size(); i++) {
+            try {
+              if (key.get(i, keys.get(i).getA()) == null || key.get(i, keys.get(i).getA())
+                  .equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+              } else {
+                statement.setObject(i + 1, key.get(i, keys.get(i).getA()));
+              }
+            } catch (SQLException ignored) {
+              return Optional.empty();
+            }
+          }
+          var res = statement.executeQuery();
+          if (res.next()) {
+            return Optional.of(entityClass.construct(res));
+          } else {
+            return Optional.empty();
+          }
+        } catch (SQLException | URISyntaxException e) {
+          return Optional.empty();
+        }
       }
 
       @Override
