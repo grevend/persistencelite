@@ -1,16 +1,11 @@
 package grevend.persistence.lite.database.sql;
 
-import static grevend.persistence.lite.util.Utils.Crud.CREATE;
-import static grevend.persistence.lite.util.Utils.Crud.RETRIEVE_ALL;
-import static grevend.persistence.lite.util.Utils.Crud.RETRIEVE_BY_KEY;
-
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.EntityClass;
 import grevend.persistence.lite.entity.EntityConstructionException;
 import grevend.persistence.lite.util.Triplet;
 import grevend.persistence.lite.util.Tuple;
-import grevend.persistence.lite.util.Utils.Crud;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -22,7 +17,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,12 +28,10 @@ import org.jetbrains.annotations.NotNull;
 public class SqlDatabase extends Database {
 
   private final String user, password;
-  private Map<EntityClass<?>, Map<Crud, PreparedStatement>> preparedStatements;
 
   public SqlDatabase(@NotNull String name, int version, @NotNull String user,
       @NotNull String password) {
     super(name, version);
-    this.preparedStatements = new HashMap<>();
     this.user = user;
     this.password = password;
   }
@@ -57,98 +49,85 @@ public class SqlDatabase extends Database {
     return new URI("jdbc:postgresql://localhost/");
   }
 
-  private @NotNull <E> PreparedStatement prepareCreateStatement(@NotNull EntityClass<E> entityClass)
-      throws SQLException, URISyntaxException {
-    return this.createConnection().prepareStatement(
+  private @NotNull <E> PreparedStatement prepareCreateStatement(@NotNull Connection connection,
+      @NotNull EntityClass<E> entityClass) throws SQLException, URISyntaxException {
+    return connection.prepareStatement(
         "insert into " + entityClass.getEntityName() + " (" + String
             .join(", ", entityClass.getAttributeNames()) + ") values (" + String
             .join(", ", Collections.nCopies(entityClass.getAttributeNames().size(), "?")) + ")");
   }
 
   private @NotNull <E> PreparedStatement prepareRetrieveWithAttributesStatement(
-      @NotNull EntityClass<E> entityClass, @NotNull Collection<String> attributes)
-      throws SQLException, URISyntaxException {
-    return this.createConnection().prepareStatement(
+      @NotNull Connection connection, @NotNull EntityClass<E> entityClass,
+      @NotNull Collection<String> attributes) throws SQLException, URISyntaxException {
+    return connection.prepareStatement(
         "select * from " + entityClass.getEntityName() + " where " + attributes.stream()
             .map(attribute -> attribute + "=?").collect(Collectors.joining(", ")));
   }
 
+  private @NotNull <E> PreparedStatement prepareDeleteWithAttributesStatement(
+      @NotNull Connection connection, @NotNull EntityClass<E> entityClass,
+      @NotNull Collection<String> attributes) throws SQLException, URISyntaxException {
+    return connection.prepareStatement(
+        "delete from " + entityClass.getEntityName() + " where " + attributes.stream()
+            .map(attribute -> attribute + "=?").collect(Collectors.joining(", ")));
+  }
+
   @Override
-  public @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entityClass,
+  public @NotNull <E> Dao<E> createDao(@NotNull EntityClass<E> entityClass,
       @NotNull List<Triplet<Class<?>, String, String>> keys) {
-    if (!this.preparedStatements.containsKey(entityClass)) {
-      this.preparedStatements.put(entityClass, Map.of());
-    }
+
     return new Dao<>() {
 
       @Override
-      public boolean create(@NotNull A entity) {
-        try {
-          var connection = SqlDatabase.this.createConnection();
+      public boolean create(@NotNull E entity) {
+        try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
+            .prepareCreateStatement(connection, entityClass)) {
           connection.setAutoCommit(false);
-          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(CREATE)) {
-            SqlDatabase.this.preparedStatements.put(entityClass,
-                Map.of(CREATE, SqlDatabase.this.prepareCreateStatement(entityClass)));
-          }
-          var statement = SqlDatabase.this.preparedStatements.get(entityClass).get(CREATE);
-          var values = entityClass.getAttributeValues(entity);
-          for (var i = 0; i < values.size(); i++) {
-            try {
-              if (values.get(i) == null || values.get(i).equals("null")) {
-                statement.setNull(i + 1, Types.NULL);
-              } else {
-                statement.setObject(i + 1, values.get(i));
-              }
-            } catch (SQLException ignored) {
-              return false;
+          var attributes = entityClass.getAttributeValues(entity, false);
+          var i = 0;
+          for (String attribute : entityClass.getAttributeNames()) {
+            if (attributes.get(attribute) == null || attributes.get(attribute).equals("null")) {
+              statement.setNull(i + 1, Types.NULL);
+            } else {
+              statement.setObject(i + 1, attributes.get(attribute));
             }
+            i++;
           }
           statement.executeUpdate();
           connection.commit();
           return true;
         } catch (SQLException | URISyntaxException | EntityConstructionException ignored) {
+          System.out.println(ignored.getMessage());
           return false;
         }
       }
 
       @Override
-      public Optional<A> retrieveByKey(@NotNull Tuple key) {
-        try {
-          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(RETRIEVE_BY_KEY)) {
-            SqlDatabase.this.preparedStatements.put(entityClass, Map.of(RETRIEVE_BY_KEY,
-                SqlDatabase.this.prepareRetrieveWithAttributesStatement(entityClass,
-                    keys.stream().map(Triplet::getC).collect(Collectors.toList()))));
-          }
-          var statement = SqlDatabase.this.preparedStatements.get(entityClass).get(RETRIEVE_BY_KEY);
+      public Optional<E> retrieveByKey(@NotNull Tuple key) {
+        try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
+            .prepareRetrieveWithAttributesStatement(connection, entityClass,
+                keys.stream().map(Triplet::getC).collect(Collectors.toList()))) {
           for (var i = 0; i < keys.size(); i++) {
-            try {
-              if (key.get(i, keys.get(i).getA()) == null || key.get(i, keys.get(i).getA())
-                  .equals("null")) {
-                statement.setNull(i + 1, Types.NULL);
-              } else {
-                statement.setObject(i + 1, key.get(i, keys.get(i).getA()));
-              }
-            } catch (SQLException ignored) {
-              return Optional.empty();
+            if (key.get(i, keys.get(i).getA()) == null || key.get(i, keys.get(i).getA())
+                .equals("null")) {
+              statement.setNull(i + 1, Types.NULL);
+            } else {
+              statement.setObject(i + 1, key.get(i, keys.get(i).getA()));
             }
           }
           var res = statement.executeQuery();
-          if (res.next()) {
-            return Optional.of(entityClass.construct(res));
-          } else {
-            return Optional.empty();
-          }
+          return res.next() ? Optional.of(entityClass.construct(res)) : Optional.empty();
         } catch (SQLException | URISyntaxException ignored) {
           return Optional.empty();
         }
       }
 
       @Override
-      public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
-        Collection<A> entities = new ArrayList<>();
-        try {
-          var statement = SqlDatabase.this
-              .prepareRetrieveWithAttributesStatement(entityClass, attributes.keySet());
+      public Collection<E> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
+        Collection<E> entities = new ArrayList<>();
+        try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
+            .prepareRetrieveWithAttributesStatement(connection, entityClass, attributes.keySet())) {
           var i = 0;
           for (Entry<String, ?> attribute : attributes.entrySet()) {
             if (attribute.getValue() == null || attribute.getValue().equals("null")) {
@@ -169,16 +148,11 @@ public class SqlDatabase extends Database {
       }
 
       @Override
-      public @NotNull Collection<A> retrieveAll() {
-        Collection<A> entities = new ArrayList<>();
-        try {
-          var connection = SqlDatabase.this.createConnection();
-          if (!SqlDatabase.this.preparedStatements.get(entityClass).containsKey(RETRIEVE_ALL)) {
-            SqlDatabase.this.preparedStatements.put(entityClass, Map.of(RETRIEVE_ALL,
-                connection.prepareStatement("select * from " + entityClass.getEntityName())));
-          }
-          var res = SqlDatabase.this.preparedStatements.get(entityClass).get(RETRIEVE_ALL)
-              .executeQuery();
+      public @NotNull Collection<E> retrieveAll() {
+        Collection<E> entities = new ArrayList<>();
+        try (var connection = SqlDatabase.this.createConnection(); var statement = connection
+            .prepareStatement("select * from " + entityClass.getEntityName())) {
+          var res = statement.executeQuery();
           while (res.next()) {
             entities.add(entityClass.construct(res));
           }
@@ -189,12 +163,36 @@ public class SqlDatabase extends Database {
       }
 
       @Override
-      public boolean delete(@NotNull A entity) {
-        return false;
+      public boolean delete(@NotNull E entity) {
+        try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
+            .prepareDeleteWithAttributesStatement(connection, entityClass,
+                keys.stream().map(Triplet::getC).collect(Collectors.toList()))) {
+          connection.setAutoCommit(false);
+          var attributes = entityClass.getAttributeValues(entity, true);
+          var i = 0;
+          for (String attribute : keys.stream().map(Triplet::getC).collect(Collectors.toList())) {
+            if (attributes.get(attribute) == null || attributes.get(attribute).equals("null")) {
+              statement.setNull(i + 1, Types.NULL);
+            } else {
+              statement.setObject(i + 1, attributes.get(attribute));
+            }
+            i++;
+          }
+          statement.executeUpdate();
+          connection.commit();
+          return true;
+        } catch (SQLException | URISyntaxException ignored) {
+          return false;
+        }
       }
 
       @Override
       public boolean deleteByKey(@NotNull Tuple key) {
+        return false;
+      }
+
+      @Override
+      public boolean deleteByAttributes(@NotNull Map<String, ?> attributes) {
         return false;
       }
 

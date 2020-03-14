@@ -54,7 +54,7 @@ public class InMemoryDatabase extends Database {
   }
 
   @Override
-  public @NotNull <A> Dao<A> createDao(@NotNull EntityClass<A> entityClass,
+  public @NotNull <E> Dao<E> createDao(@NotNull EntityClass<E> entityClass,
       @NotNull List<Triplet<Class<?>, String, String>> keys) {
     if (!Serializable.class.isAssignableFrom(entityClass.getEntityClass())) {
       throw new InMemoryDatabaseException(
@@ -74,7 +74,7 @@ public class InMemoryDatabase extends Database {
     return new Dao<>() {
 
       @Override
-      public boolean create(@NotNull A entity) {
+      public boolean create(@NotNull E entity) {
         if (!InMemoryDatabase.this.storage.get(entityClass).contains(entity)) {
           InMemoryDatabase.this.storage.get(entityClass).add(entity);
           return true;
@@ -84,17 +84,17 @@ public class InMemoryDatabase extends Database {
 
       @Override
       @SuppressWarnings("unchecked")
-      public Optional<A> retrieveByKey(@NotNull Tuple key) {
+      public Optional<E> retrieveByKey(@NotNull Tuple key) {
         Map<?, ?> attributes = IntStream.range(0, key.count()).mapToObj(i -> Pair
             .of((String & Serializable) keys.get(i).getB(),
                 (Serializable) key.get(i, keys.get(i).getA()))).collect(Pair.toMap());
-        Collection<A> res = this.retrieveByAttributes((Map<String, ?>) attributes);
+        Collection<E> res = this.retrieveByAttributes((Map<String, ?>) attributes);
         return res == null || res.size() != 1 ? Optional.empty()
             : Optional.ofNullable(res.iterator().next());
       }
 
       @Override
-      public Collection<A> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
+      public Collection<E> retrieveByAttributes(@NotNull Map<String, ?> attributes) {
         return this.retrieveAll().stream()
             .filter(entity -> InMemoryDatabase.this.checkKey(entity, attributes, keys))
             .collect(Collectors.toList());
@@ -102,12 +102,12 @@ public class InMemoryDatabase extends Database {
 
       @Override
       @SuppressWarnings("unchecked")
-      public @NotNull Collection<A> retrieveAll() {
-        return (Collection<A>) InMemoryDatabase.this.storage.get(entityClass);
+      public @NotNull Collection<E> retrieveAll() {
+        return (Collection<E>) InMemoryDatabase.this.storage.get(entityClass);
       }
 
       @Override
-      public boolean delete(@NotNull A entity) {
+      public boolean delete(@NotNull E entity) {
         if (InMemoryDatabase.this.storage.containsKey(entityClass)) {
           InMemoryDatabase.this.storage.get(entityClass).remove(entity);
           return true;
@@ -117,6 +117,11 @@ public class InMemoryDatabase extends Database {
 
       @Override
       public boolean deleteByKey(@NotNull Tuple key) {
+        return false;
+      }
+
+      @Override
+      public boolean deleteByAttributes(@NotNull Map<String, ?> attributes) {
         return false;
       }
 

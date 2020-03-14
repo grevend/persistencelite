@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -59,9 +60,8 @@ public class EntityClass<E> {
 
   private @NotNull List<Field> getFields() {
     if (this.entityFields == null) {
-      this.entityFields =
-          Arrays.stream(this.entityClass.getDeclaredFields()).filter(isFieldViable)
-              .collect(Collectors.toList());
+      this.entityFields = Arrays.stream(this.entityClass.getDeclaredFields()).filter(isFieldViable)
+          .collect(Collectors.toList());
     }
     return this.entityFields;
   }
@@ -93,24 +93,20 @@ public class EntityClass<E> {
     return this.getFields().stream().map(this::getAttributeName).collect(Collectors.toList());
   }
 
-  public @NotNull List<String> getOriginalAttributeNames() {
-    return this.getFields().stream().map(field -> field.getAnnotation(Attribute.class).name())
-        .collect(Collectors.toList());
-  }
-
-  public @NotNull List<Object> getAttributeValues(@NotNull E entity) {
-    return this.getFields().stream().map(field -> {
-      try {
-        boolean isAccessible = field.canAccess(entity);
-        field.setAccessible(true);
-        var obj = this.processResultObject(field.get(entity));
-        field.setAccessible(isAccessible);
-        return obj;
-      } catch (IllegalAccessException e) {
-        throw new EntityConstructionException("Construction of %s failed.", e,
-            this.entityClass.getCanonicalName());
-      }
-    }).collect(Collectors.toList());
+  public @NotNull Map<String, Object> getAttributeValues(@NotNull E entity, boolean keysOnly) {
+    return this.getFields().stream()
+        .filter(field -> !keysOnly || field.isAnnotationPresent(PrimaryKey.class)).map(field -> {
+          try {
+            boolean isAccessible = field.canAccess(entity);
+            field.setAccessible(true);
+            var obj = this.processResultObject(field.get(entity));
+            field.setAccessible(isAccessible);
+            return Map.entry(this.getAttributeName(field), obj);
+          } catch (IllegalAccessException e) {
+            throw new EntityConstructionException("Construction of %s failed.", e,
+                this.entityClass.getCanonicalName());
+          }
+        }).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
   }
 
   public @NotNull List<Triplet<Class<?>, String, String>> getPrimaryKeys() {
@@ -121,13 +117,14 @@ public class EntityClass<E> {
 
   private Object processResultObject(Object obj) {
     if (obj instanceof Option) {
-      obj = ((Option<?>) obj).isPresent() ? this.processResultObject(((Option<?>) obj).get())
+      return ((Option<?>) obj).isPresent() ? this.processResultObject(((Option<?>) obj).get())
           : "null";
     } else if (obj instanceof Optional) {
-      obj = ((Optional<?>) obj).isPresent() ? this.processResultObject(((Optional<?>) obj).get())
+      return ((Optional<?>) obj).isPresent() ? this.processResultObject(((Optional<?>) obj).get())
           : "null";
+    } else {
+      return obj;
     }
-    return obj;
   }
 
   private @NotNull E construct() {

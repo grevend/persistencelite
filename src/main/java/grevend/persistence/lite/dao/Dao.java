@@ -41,6 +41,8 @@ public interface Dao<E> {
 
   boolean deleteByKey(@NotNull Tuple key);
 
+  boolean deleteByAttributes(@NotNull Map<String, ?> attributes);
+
   default boolean deleteAll(@NotNull Collection<E> entities) {
     return entities.stream().allMatch(this::delete);
   }
