@@ -5,7 +5,7 @@ The PersistenceLite library provides an easy to use abstraction over database ac
 ## Usage
 
 ```java
-var db = Persistence.databaseBuilder(SqlDatabase.class, "dbname", 0)
+var db = Persistence.databaseBuilder(SqlDatabaseBuilder.class, "dbname", 0)
     .setCredentials("user", "password")
     .build()
 ```
