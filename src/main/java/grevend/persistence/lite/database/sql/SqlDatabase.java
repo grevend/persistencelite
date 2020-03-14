@@ -188,7 +188,22 @@ public class SqlDatabase extends Database {
 
       @Override
       public boolean deleteByKey(@NotNull Tuple key) {
-        return false;
+        try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
+            .prepareDeleteWithAttributesStatement(connection, entityClass,
+                keys.stream().map(Triplet::getC).collect(Collectors.toList()))) {
+          for (var i = 0; i < keys.size(); i++) {
+            if (key.get(i, keys.get(i).getA()) == null || key.get(i, keys.get(i).getA())
+                .equals("null")) {
+              statement.setNull(i + 1, Types.NULL);
+            } else {
+              statement.setObject(i + 1, key.get(i, keys.get(i).getA()));
+            }
+          }
+          statement.executeUpdate();
+          return true;
+        } catch (SQLException | URISyntaxException e) {
+          return false;
+        }
       }
 
       @Override
