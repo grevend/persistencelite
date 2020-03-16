@@ -24,7 +24,9 @@
 
 package grevend.persistence.lite.dao;
 
+import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.util.Tuple;
+import grevend.persistence.lite.util.sequence.LazySeq;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +55,10 @@ public interface Dao<E> {
     return this.retrieveAll().parallelStream();
   }
 
+  default @NotNull LazySeq<E> sequence() {
+    return LazySeq.of(this.retrieveAll());
+  }
+
   default boolean update(@NotNull E entity) {
     return this.delete(entity) && this.create(entity);
   }
@@ -70,5 +76,7 @@ public interface Dao<E> {
   default boolean deleteAll(@NotNull Collection<E> entities) {
     return entities.stream().allMatch(this::delete);
   }
+
+  @NotNull Database getDatabase();
 
 }

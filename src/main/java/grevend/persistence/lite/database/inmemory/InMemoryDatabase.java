@@ -150,6 +150,11 @@ public class InMemoryDatabase extends Database {
         return this.deleteAll(this.retrieveByAttributes(attributes));
       }
 
+      @Override
+      public @NotNull Database getDatabase() {
+        return InMemoryDatabase.this;
+      }
+
     };
   }
 

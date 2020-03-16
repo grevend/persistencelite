@@ -253,6 +253,11 @@ public class SqlDatabase extends Database {
         }
       }
 
+      @Override
+      public @NotNull Database getDatabase() {
+        return SqlDatabase.this;
+      }
+
     };
   }
 
