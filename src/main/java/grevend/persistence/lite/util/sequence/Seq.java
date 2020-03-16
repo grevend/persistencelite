@@ -24,56 +24,50 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import java.util.Comparator;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> extends LazySeq<T> {
+public interface Seq<T> {
 
-  private Predicate<? super T> predicate;
+  @NotNull Iterator<T> iterator();
 
-  public FilterSeq(LazySeq<T> seq, Predicate<? super T> predicate) {
-    super(seq);
-    this.predicate = predicate;
-  }
+  @NotNull Seq<T> filter(@NotNull Predicate<? super T> predicate);
 
-  @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var predicate = this.predicate;
-    return new Iterator<>() {
+  @NotNull <R> Seq<R> map(@NotNull Function<? super T, ? extends R> function);
 
-      private T next;
-      private boolean isNextSet = false;
+  @NotNull <R> Seq<R> flatMap(@NotNull Function<? super T, ? extends Seq<? extends R>> function);
 
-      @Override
-      public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
+  @NotNull Seq<T> distinct();
 
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
-            return true;
-          }
-        }
-        return false;
-      }
+  @NotNull Seq<T> sort(@NotNull Comparator<? super T> comparator);
 
-      @Override
-      public T next() {
-        if (!this.isNextSet && !this.setNext()) {
-          throw new NoSuchElementException();
-        }
-        this.isNextSet = false;
-        return this.next;
-      }
+  @NotNull Seq<T> limit(int i);
 
-    };
-  }
+  @NotNull Seq<T> skip(int i);
+
+  void forEach(@NotNull Consumer<? super T> consumer);
+
+  void forEach(@NotNull BiConsumer<? super T, Integer> consumer);
+
+  @NotNull <R, A> R collect(@NotNull Collector<? super T, A, R> collector);
+
+  @NotNull Optional<T> min(@NotNull Comparator<? super T> comparator);
+
+  @NotNull Optional<T> max(@NotNull Comparator<? super T> comparator);
+
+  int count();
+
+  boolean anyMatch(@NotNull Predicate<? super T> predicate);
+
+  boolean allMatch(@NotNull Predicate<? super T> predicate);
+
+  boolean noneMatch(@NotNull Predicate<? super T> predicate);
 
 }

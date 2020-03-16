@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class LazySeq<T> {
+public abstract class LazySeq<T> implements Seq<T> {
 
   protected final LazySeq<T> seq;
 
@@ -45,6 +45,7 @@ public abstract class LazySeq<T> {
   public static @NotNull <T> LazySeq<T> of(@NotNull final Iterator<T> iterator) {
     return new LazySeq<T>(null) {
 
+      @NotNull
       @Override
       public Iterator<T> iterator() {
         return iterator;
@@ -53,38 +54,38 @@ public abstract class LazySeq<T> {
     };
   }
 
-  public static @NotNull <T> LazySeq<T> of(@NotNull final Iterable<T> iterable) {
+  public static @NotNull <T> Seq<T> of(@NotNull final Iterable<T> iterable) {
     return of(iterable.iterator());
   }
 
-  public abstract Iterator<T> iterator();
+  public abstract @NotNull Iterator<T> iterator();
 
-  public @NotNull LazySeq<T> filter(@NotNull Predicate<? super T> predicate) {
+  public @NotNull Seq<T> filter(@NotNull Predicate<? super T> predicate) {
     return new FilterSeq<>(this, predicate);
   }
 
-  public @NotNull <R> LazySeq<R> map(@NotNull Function<? super T, ? extends R> function) {
+  public @NotNull <R> Seq<R> map(@NotNull Function<? super T, ? extends R> function) {
     return null;
   }
 
-  public @NotNull <R> LazySeq<R> flatMap(
-      @NotNull Function<? super T, ? extends LazySeq<? extends R>> function) {
+  public @NotNull <R> Seq<R> flatMap(
+      @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
     return null;
   }
 
-  public @NotNull LazySeq<T> distinct() {
+  public @NotNull Seq<T> distinct() {
     return null;
   }
 
-  public @NotNull LazySeq<T> sort(@NotNull Comparator<? super T> comparator) {
+  public @NotNull Seq<T> sort(@NotNull Comparator<? super T> comparator) {
     return null;
   }
 
-  public @NotNull LazySeq<T> limit(int i) {
+  public @NotNull Seq<T> limit(int i) {
     return null;
   }
 
-  public @NotNull LazySeq<T> skip(int i) {
+  public @NotNull Seq<T> skip(int i) {
     return null;
   }
 
