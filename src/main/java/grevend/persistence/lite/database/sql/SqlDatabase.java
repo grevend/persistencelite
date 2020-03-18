@@ -27,9 +27,10 @@ package grevend.persistence.lite.database.sql;
 import grevend.persistence.lite.dao.Dao;
 import grevend.persistence.lite.database.Database;
 import grevend.persistence.lite.entity.EntityClass;
-import grevend.persistence.lite.entity.EntityConstructionException;
 import grevend.persistence.lite.util.Triplet;
 import grevend.persistence.lite.util.Tuple;
+import grevend.persistence.lite.util.function.ThrowingBiConsumer;
+import grevend.persistence.lite.util.function.ThrowingBiFunction;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -103,27 +104,90 @@ public class SqlDatabase extends Database {
 
     return new Dao<>() {
 
+      private boolean operation(
+          @NotNull ThrowingBiFunction<Connection, EntityClass<E>, PreparedStatement> statementFunction,
+          @NotNull ThrowingBiConsumer<Connection, PreparedStatement> operationFunction) {
+        Connection connection = null;
+        try {
+          connection = SqlDatabase.this.createConnection();
+          var statement = statementFunction.apply(connection, entityClass);
+          operationFunction.accept(connection, statement);
+          return true;
+        } catch (Exception ignored) {
+        } finally {
+          if (connection != null) {
+            try {
+              connection.close();
+            } catch (SQLException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+        return false;
+      }
+
+      private boolean operationWithRollback(
+          @NotNull ThrowingBiFunction<Connection, EntityClass<E>, PreparedStatement> statementFunction,
+          @NotNull ThrowingBiConsumer<Connection, PreparedStatement> operationFunction) {
+        Connection connection = null;
+        try {
+          connection = SqlDatabase.this.createConnection();
+          connection.setAutoCommit(false);
+          var statement = statementFunction.apply(connection, entityClass);
+          operationFunction.accept(connection, statement);
+          return true;
+        } catch (Exception e) {
+          if (connection != null) {
+            try {
+              connection.rollback();
+            } catch (SQLException sqlException) {
+              sqlException.printStackTrace();
+            }
+          }
+        } finally {
+          if (connection != null) {
+            try {
+              connection.close();
+              connection.setAutoCommit(true);
+            } catch (SQLException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+        return false;
+      }
+
+      private void create(@NotNull E entity, @NotNull Connection connection,
+          @NotNull PreparedStatement statement) throws SQLException {
+        var attributes = entityClass.getAttributeValues(entity, false);
+        var i = 0;
+        for (String attribute : entityClass.getAttributeNames()) {
+          if (attributes.get(attribute) == null || attributes.get(attribute).equals("null")) {
+            statement.setNull(i + 1, Types.NULL);
+          } else {
+            statement.setObject(i + 1, attributes.get(attribute));
+          }
+          i++;
+        }
+        statement.executeUpdate();
+      }
+
       @Override
       public boolean create(@NotNull E entity) {
-        try (var connection = SqlDatabase.this.createConnection(); var statement = SqlDatabase.this
-            .prepareCreateStatement(connection, entityClass)) {
-          connection.setAutoCommit(false);
-          var attributes = entityClass.getAttributeValues(entity, false);
-          var i = 0;
-          for (String attribute : entityClass.getAttributeNames()) {
-            if (attributes.get(attribute) == null || attributes.get(attribute).equals("null")) {
-              statement.setNull(i + 1, Types.NULL);
-            } else {
-              statement.setObject(i + 1, attributes.get(attribute));
-            }
-            i++;
-          }
-          statement.executeUpdate();
-          connection.commit();
-          return true;
-        } catch (SQLException | URISyntaxException | EntityConstructionException ignored) {
-          return false;
-        }
+        return this.operation(SqlDatabase.this::prepareCreateStatement, (connection, statement) -> {
+          this.create(entity, connection, statement);
+        });
+      }
+
+      @Override
+      public boolean createAll(@NotNull Collection<E> entities) {
+        return this.operationWithRollback(SqlDatabase.this::prepareCreateStatement,
+            (connection, statement) -> {
+              for (E entity : entities) {
+                this.create(entity, connection, statement);
+                connection.commit();
+              }
+            });
       }
 
       @Override

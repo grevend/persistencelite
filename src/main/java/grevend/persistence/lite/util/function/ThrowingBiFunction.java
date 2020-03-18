@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util;
+package grevend.persistence.lite.util.function;
 
 @FunctionalInterface
-public interface ThrowingFunction<T, R> {
+public interface ThrowingBiFunction<T, U, R> {
 
-  R apply(T t) throws Exception;
+  R apply(T t, U u) throws Exception;
 
 }
