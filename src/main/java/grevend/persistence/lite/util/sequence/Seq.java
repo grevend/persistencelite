@@ -24,6 +24,8 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import grevend.persistence.lite.util.Option;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -40,16 +42,28 @@ import org.jetbrains.annotations.NotNull;
 
 public interface Seq<T> {
 
-  static @NotNull <T> Seq<T> of(@NotNull final Iterator<T> iterator) {
+  static @NotNull <T> Seq<T> of(@NotNull Iterator<T> iterator) {
     return () -> iterator;
   }
 
-  static @NotNull <T> Seq<T> of(@NotNull final Iterable<T> iterable) {
+  static @NotNull <T> Seq<T> of(@NotNull Iterable<T> iterable) {
     return of(iterable.iterator());
   }
 
   static @NotNull <T> Seq<T> concat(@NotNull Seq<T> a, @NotNull Seq<T> b) {
     return a.concat(b);
+  }
+
+  static @NotNull <T> Seq<T> generate(@NotNull Supplier<T> supplier) {
+    return new GeneratorSeq<T>(supplier);
+  }
+
+  public static void main(String[] args) {
+    var list = new ArrayList<Integer>();
+    list.add(null);
+    list.add(null);
+    list.add(12);
+    System.out.println(list.stream().findFirst());
   }
 
   @NotNull Iterator<T> iterator();
@@ -92,10 +106,6 @@ public interface Seq<T> {
   }
 
   default @NotNull Seq<T> skip(int i) {
-    return null;
-  }
-
-  default @NotNull Seq<T> generate(@NotNull Supplier<T> supplier) {
     return null;
   }
 
@@ -146,23 +156,62 @@ public interface Seq<T> {
   }
 
   default @NotNull Optional<T> min(@NotNull Comparator<? super T> comparator) {
-    return Optional.empty();
+    var iterator = this.iterator();
+    if (!iterator.hasNext()) {
+      return Optional.empty();
+    }
+    var max = iterator.next();
+    while (iterator.hasNext()) {
+      var element = iterator.next();
+      if (comparator.compare(max, element) < 0) {
+        max = element;
+      }
+    }
+    return Optional.ofNullable(max);
   }
 
   default @NotNull Optional<T> max(@NotNull Comparator<? super T> comparator) {
-    return Optional.empty();
+    var iterator = this.iterator();
+    if (!iterator.hasNext()) {
+      return Optional.empty();
+    }
+    var max = iterator.next();
+    while (iterator.hasNext()) {
+      var element = iterator.next();
+      if (comparator.compare(max, element) > 0) {
+        max = element;
+      }
+    }
+    return Optional.ofNullable(max);
   }
 
   default @NotNull Optional<T> findFirst() {
-    return Optional.empty();
-  }
-
-  default @NotNull Optional<T> findLast() {
-    return Optional.empty();
+    var iterator = this.iterator();
+    return !iterator.hasNext() ? Optional.empty() : Optional.ofNullable(iterator.next());
   }
 
   default @NotNull Optional<T> findAny() {
-    return Optional.empty();
+    var iterator = this.iterator();
+    if(!iterator.hasNext()) {
+      return Optional.empty();
+    }
+    T last = iterator.next();
+    while(last == null && iterator.hasNext()) {
+      last = iterator.next();
+    }
+    return Optional.ofNullable(last);
+  }
+
+  default @NotNull Optional<T> findLast() {
+    var iterator = this.iterator();
+    if(!iterator.hasNext()) {
+      return Optional.empty();
+    }
+    T last = iterator.next();
+    while(iterator.hasNext()) {
+      last = iterator.next();
+    }
+    return Optional.ofNullable(last);
   }
 
   default int count() {
