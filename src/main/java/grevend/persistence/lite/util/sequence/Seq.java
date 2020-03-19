@@ -58,14 +58,6 @@ public interface Seq<T> {
     return new GeneratorSeq<T>(supplier);
   }
 
-  public static void main(String[] args) {
-    var list = new ArrayList<Integer>();
-    list.add(null);
-    list.add(null);
-    list.add(12);
-    System.out.println(list.stream().findFirst());
-  }
-
   @NotNull Iterator<T> iterator();
 
   default @NotNull Seq<T> filter(@NotNull Predicate<? super T> predicate) {
