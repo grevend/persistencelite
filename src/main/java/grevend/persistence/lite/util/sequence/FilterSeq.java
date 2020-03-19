@@ -31,8 +31,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class FilterSeq<T> implements Seq<T> {
 
-  private Seq<T> seq;
-  private Predicate<? super T> predicate;
+  private final Seq<T> seq;
+  private final Predicate<? super T> predicate;
 
   public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
     this.seq = seq;

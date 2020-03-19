@@ -24,37 +24,54 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.function.Function;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 
-public class MapSeq<T, R> implements Seq<R> {
+public class ConcatSeq<T> implements Seq<T> {
 
-  private final Seq<T> seq;
-  private final Function<? super T, ? extends R> function;
+  private final Seq<T> a;
+  private final Seq<? extends T> b;
 
-  public MapSeq(@NotNull Seq<T> seq, @NotNull Function<? super T, ? extends R> function) {
-    this.seq = seq;
-    this.function = function;
+  public ConcatSeq(@NotNull Seq<T> a, @NotNull Seq<? extends T> b) {
+    this.a = a;
+    this.b = b;
   }
 
   @Override
-  public @NotNull Iterator<R> iterator() {
-    var iterator = this.seq.iterator();
-    var function = this.function;
+  public @NotNull Iterator<T> iterator() {
+    Queue<Iterator<? extends T>> queue = new ArrayDeque<>(
+        List.of(this.a.iterator(), this.b.iterator()));
     return new Iterator<>() {
 
       @Override
       public boolean hasNext() {
-        return iterator.hasNext();
+        while (!queue.isEmpty()) {
+          if (queue.peek().hasNext()) {
+            return true;
+          }
+          queue.poll();
+        }
+        return false;
       }
 
       @Override
-      public R next() {
-        return function.apply(iterator.next());
+      public T next() {
+        if (!this.hasNext()) {
+          throw new NoSuchElementException();
+        }
+        var iterator = queue.poll();
+        if (iterator == null) {
+          throw new IllegalStateException();
+        }
+        var res = iterator.next();
+        queue.offer(iterator);
+        return res;
       }
 
     };
   }
-
 }

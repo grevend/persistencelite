@@ -62,7 +62,8 @@ public interface Seq<T> {
     return new MapSeq<>(this, function);
   }
 
-  default @NotNull <R> Seq<R> flatMap(@NotNull Function<? super T, ? extends Seq<? extends R>> function) {
+  default @NotNull <R> Seq<R> flatMap(
+      @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
     return null;
   }
 
@@ -75,6 +76,14 @@ public interface Seq<T> {
   }
 
   default @NotNull Seq<T> sorted(@NotNull Comparator<? super T> comparator) {
+    return null;
+  }
+
+  default @NotNull Seq<T> reversed() {
+    return null;
+  }
+
+  default @NotNull Seq<T> reversed(@NotNull Comparator<? super T> comparator) {
     return null;
   }
 
@@ -116,8 +125,8 @@ public interface Seq<T> {
     return collector.finisher().apply(resultContainer);
   }
 
-  default @NotNull Seq<T> concat(Seq<? extends T> seq) {
-    return null;
+  default @NotNull Seq<T> concat(@NotNull Seq<? extends T> seq) {
+    return new ConcatSeq<>(this, seq);
   }
 
   default @NotNull List<T> toList() {
