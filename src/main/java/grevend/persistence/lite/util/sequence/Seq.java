@@ -26,48 +26,154 @@ package grevend.persistence.lite.util.sequence;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 public interface Seq<T> {
 
+  static @NotNull <T> Seq<T> of(@NotNull final Iterator<T> iterator) {
+    return () -> iterator;
+  }
+
+  static @NotNull <T> Seq<T> of(@NotNull final Iterable<T> iterable) {
+    return of(iterable.iterator());
+  }
+
+  static @NotNull <T> Seq<T> concat(@NotNull Seq<T> a, @NotNull Seq<T> b) {
+    return a.concat(b);
+  }
+
   @NotNull Iterator<T> iterator();
 
-  @NotNull Seq<T> filter(@NotNull Predicate<? super T> predicate);
+  default @NotNull Seq<T> filter(@NotNull Predicate<? super T> predicate) {
+    return new FilterSeq<>(this, predicate);
+  }
 
-  @NotNull <R> Seq<R> map(@NotNull Function<? super T, ? extends R> function);
+  default @NotNull <R> Seq<R> map(@NotNull Function<? super T, ? extends R> function) {
+    return new MapSeq<>(this, function);
+  }
 
-  @NotNull <R> Seq<R> flatMap(@NotNull Function<? super T, ? extends Seq<? extends R>> function);
+  default @NotNull <R> Seq<R> flatMap(@NotNull Function<? super T, ? extends Seq<? extends R>> function) {
+    return null;
+  }
 
-  @NotNull Seq<T> distinct();
+  default @NotNull Seq<T> distinct() {
+    return null;
+  }
 
-  @NotNull Seq<T> sort(@NotNull Comparator<? super T> comparator);
+  default @NotNull Seq<T> sorted() {
+    return null;
+  }
 
-  @NotNull Seq<T> limit(int i);
+  default @NotNull Seq<T> sorted(@NotNull Comparator<? super T> comparator) {
+    return null;
+  }
 
-  @NotNull Seq<T> skip(int i);
+  default @NotNull Seq<T> limit(int i) {
+    return null;
+  }
 
-  void forEach(@NotNull Consumer<? super T> consumer);
+  default @NotNull Seq<T> skip(int i) {
+    return null;
+  }
 
-  void forEach(@NotNull BiConsumer<? super T, Integer> consumer);
+  default @NotNull Seq<T> generate(@NotNull Supplier<T> supplier) {
+    return null;
+  }
 
-  @NotNull <R, A> R collect(@NotNull Collector<? super T, A, R> collector);
+  default void forEach(@NotNull Consumer<? super T> consumer) {
+    var iterator = this.iterator();
+    while (iterator.hasNext()) {
+      consumer.accept(iterator.next());
+    }
+  }
 
-  @NotNull Optional<T> min(@NotNull Comparator<? super T> comparator);
+  default void forEach(@NotNull BiConsumer<? super T, Integer> consumer) {
+    var iterator = this.iterator();
+    var i = 0;
+    while (iterator.hasNext()) {
+      consumer.accept(iterator.next(), i);
+      i++;
+    }
+  }
 
-  @NotNull Optional<T> max(@NotNull Comparator<? super T> comparator);
+  default @NotNull <R, A> R collect(@NotNull Collector<? super T, A, R> collector) {
+    var iterator = this.iterator();
+    var resultContainer = collector.supplier().get();
+    var accumulator = collector.accumulator();
+    while (iterator.hasNext()) {
+      accumulator.accept(resultContainer, iterator.next());
+    }
+    return collector.finisher().apply(resultContainer);
+  }
 
-  int count();
+  default @NotNull Seq<T> concat(Seq<? extends T> seq) {
+    return null;
+  }
 
-  boolean anyMatch(@NotNull Predicate<? super T> predicate);
+  default @NotNull List<T> toList() {
+    return this.collect(Collectors.toList());
+  }
 
-  boolean allMatch(@NotNull Predicate<? super T> predicate);
+  default @NotNull List<T> toUnmodifiableList() {
+    return this.collect(Collectors.toUnmodifiableList());
+  }
 
-  boolean noneMatch(@NotNull Predicate<? super T> predicate);
+  default @NotNull Set<T> toSet() {
+    return this.collect(Collectors.toSet());
+  }
+
+  default @NotNull Set<T> toUnmodifiableSet() {
+    return this.collect(Collectors.toUnmodifiableSet());
+  }
+
+  default @NotNull Optional<T> min(@NotNull Comparator<? super T> comparator) {
+    return Optional.empty();
+  }
+
+  default @NotNull Optional<T> max(@NotNull Comparator<? super T> comparator) {
+    return Optional.empty();
+  }
+
+  default @NotNull Optional<T> findFirst() {
+    return Optional.empty();
+  }
+
+  default @NotNull Optional<T> findLast() {
+    return Optional.empty();
+  }
+
+  default @NotNull Optional<T> findAny() {
+    return Optional.empty();
+  }
+
+  default int count() {
+    var count = 0;
+    while (this.iterator().hasNext()) {
+      count++;
+    }
+    return count;
+  }
+
+  default boolean anyMatch(@NotNull Predicate<? super T> predicate) {
+    return false;
+  }
+
+  default boolean allMatch(@NotNull Predicate<? super T> predicate) {
+    return false;
+  }
+
+  default boolean noneMatch(@NotNull Predicate<? super T> predicate) {
+    return false;
+  }
 
 }
