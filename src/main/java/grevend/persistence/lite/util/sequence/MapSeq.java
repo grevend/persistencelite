@@ -25,53 +25,33 @@
 package grevend.persistence.lite.util.sequence;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.function.Predicate;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> implements Seq<T> {
+public class MapSeq<T, R> implements Seq<R> {
 
   private final Seq<T> seq;
-  private final Predicate<? super T> predicate;
+  private final Function<? super T, ? extends R> function;
 
-  public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
+  public MapSeq(@NotNull Seq<T> seq, @NotNull Function<? super T, ? extends R> function) {
     this.seq = seq;
-    this.predicate = predicate;
+    this.function = function;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
+  public @NotNull Iterator<R> iterator() {
     var iterator = this.seq.iterator();
-    var predicate = this.predicate;
+    var function = this.function;
     return new Iterator<>() {
-
-      private T next;
-      private boolean isNextSet = false;
 
       @Override
       public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
-
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
-            return true;
-          }
-        }
-        return false;
+        return iterator.hasNext();
       }
 
       @Override
-      public T next() {
-        if (!this.isNextSet && !this.setNext()) {
-          throw new NoSuchElementException();
-        }
-        this.isNextSet = false;
-        return this.next;
+      public R next() {
+        return function.apply(iterator.next());
       }
 
     };

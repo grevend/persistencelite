@@ -24,57 +24,54 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.function.Predicate;
+import java.util.Queue;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> implements Seq<T> {
+public class MergeSeq<T> implements Seq<T> {
 
   private final Seq<T> seq;
-  private final Predicate<? super T> predicate;
+  private final Seq<? extends T>[] sequences;
 
-  public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
+  @SafeVarargs
+  public MergeSeq(@NotNull Seq<T> seq, @NotNull Seq<? extends T>... sequences) {
     this.seq = seq;
-    this.predicate = predicate;
+    this.sequences = sequences;
   }
 
   @Override
   public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var predicate = this.predicate;
+    Queue<Iterator<? extends T>> queue = new ArrayDeque<>();
+    queue.add(this.seq.iterator());
+    queue.addAll(Stream.of(this.sequences).map(Seq::iterator).collect(Collectors.toList()));
     return new Iterator<>() {
-
-      private T next;
-      private boolean isNextSet = false;
 
       @Override
       public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
-
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
+        while (!queue.isEmpty()) {
+          if (queue.peek().hasNext()) {
             return true;
           }
+          queue.poll();
         }
         return false;
       }
 
       @Override
       public T next() {
-        if (!this.isNextSet && !this.setNext()) {
+        if (!this.hasNext()) {
           throw new NoSuchElementException();
         }
-        this.isNextSet = false;
-        return this.next;
+        var iterator = queue.poll();
+        var res = iterator.next();
+        queue.offer(iterator);
+        return res;
       }
 
     };
   }
-
 }

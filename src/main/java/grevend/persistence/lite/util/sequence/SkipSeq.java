@@ -25,56 +25,27 @@
 package grevend.persistence.lite.util.sequence;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> implements Seq<T> {
+public class SkipSeq<T> implements Seq<T> {
 
-  private final Seq<T> seq;
-  private final Predicate<? super T> predicate;
+  private Seq<T> seq;
+  private int maxSize;
 
-  public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
+  public SkipSeq(@NotNull Seq<T> seq, int maxSize) {
     this.seq = seq;
-    this.predicate = predicate;
+    this.maxSize = maxSize;
   }
 
   @Override
   public @NotNull Iterator<T> iterator() {
     var iterator = this.seq.iterator();
-    var predicate = this.predicate;
-    return new Iterator<>() {
-
-      private T next;
-      private boolean isNextSet = false;
-
-      @Override
-      public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
-
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
-            return true;
-          }
-        }
-        return false;
-      }
-
-      @Override
-      public T next() {
-        if (!this.isNextSet && !this.setNext()) {
-          throw new NoSuchElementException();
-        }
-        this.isNextSet = false;
-        return this.next;
-      }
-
-    };
+    var i = 0;
+    while (iterator.hasNext() && i < this.maxSize) {
+      iterator.next();
+      i++;
+    }
+    return iterator;
   }
 
 }
