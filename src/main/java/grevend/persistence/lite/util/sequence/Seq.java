@@ -24,8 +24,6 @@
 
 package grevend.persistence.lite.util.sequence;
 
-import grevend.persistence.lite.util.Option;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +39,22 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 public interface Seq<T> {
+
+  static @NotNull Seq<?> empty() {
+    return () -> new Iterator<>() {
+
+      @Override
+      public boolean hasNext() {
+        return false;
+      }
+
+      @Override
+      public Object next() {
+        return null;
+      }
+
+    };
+  }
 
   static @NotNull <T> Seq<T> of(@NotNull Iterator<T> iterator) {
     return () -> iterator;
@@ -184,11 +198,11 @@ public interface Seq<T> {
 
   default @NotNull Optional<T> findAny() {
     var iterator = this.iterator();
-    if(!iterator.hasNext()) {
+    if (!iterator.hasNext()) {
       return Optional.empty();
     }
     T last = iterator.next();
-    while(last == null && iterator.hasNext()) {
+    while (last == null && iterator.hasNext()) {
       last = iterator.next();
     }
     return Optional.ofNullable(last);
@@ -196,11 +210,11 @@ public interface Seq<T> {
 
   default @NotNull Optional<T> findLast() {
     var iterator = this.iterator();
-    if(!iterator.hasNext()) {
+    if (!iterator.hasNext()) {
       return Optional.empty();
     }
     T last = iterator.next();
-    while(iterator.hasNext()) {
+    while (iterator.hasNext()) {
       last = iterator.next();
     }
     return Optional.ofNullable(last);
@@ -210,6 +224,7 @@ public interface Seq<T> {
     var count = 0;
     while (this.iterator().hasNext()) {
       count++;
+      this.iterator().next();
     }
     return count;
   }
