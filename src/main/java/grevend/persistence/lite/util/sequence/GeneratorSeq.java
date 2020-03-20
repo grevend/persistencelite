@@ -41,16 +41,14 @@ public class GeneratorSeq<T> implements Seq<T> {
     var supplier = this.supplier;
     return new Iterator<>() {
 
-      private T next = null;
-
       @Override
       public boolean hasNext() {
-        return (this.next = supplier.get()) != null;
+        return true;
       }
 
       @Override
       public T next() {
-        return this.next;
+        return supplier.get();
       }
 
     };

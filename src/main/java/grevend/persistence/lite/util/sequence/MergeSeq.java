@@ -32,12 +32,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public class ConcatSeq<T> implements Seq<T> {
+public class MergeSeq<T> implements Seq<T> {
 
   private final Seq<T> seq;
   private final Seq<? extends T>[] sequences;
 
-  public ConcatSeq(@NotNull Seq<T> seq, @NotNull Seq<? extends T>... sequences) {
+  @SafeVarargs
+  public MergeSeq(@NotNull Seq<T> seq, @NotNull Seq<? extends T>... sequences) {
     this.seq = seq;
     this.sequences = sequences;
   }
@@ -55,8 +56,8 @@ public class ConcatSeq<T> implements Seq<T> {
           if (queue.peek().hasNext()) {
             return true;
           }
+          queue.poll();
         }
-        queue.poll();
         return false;
       }
 
@@ -66,9 +67,6 @@ public class ConcatSeq<T> implements Seq<T> {
           throw new NoSuchElementException();
         }
         var iterator = queue.poll();
-        if (iterator == null) {
-          throw new IllegalStateException();
-        }
         var res = iterator.next();
         queue.offer(iterator);
         return res;
@@ -76,5 +74,4 @@ public class ConcatSeq<T> implements Seq<T> {
 
     };
   }
-
 }

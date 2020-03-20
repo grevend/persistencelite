@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,13 +36,19 @@ class SeqTest {
 
   private List<Integer> integers;
   private Seq<Integer> integerSeq;
-  private Seq<?> emptySeq;
+  private Seq<Integer> emptySeq;
 
   @BeforeEach
   void initIntegers() {
     this.integers = List.of(12, 42, 24, 7, 9, 89, 112);
     this.integerSeq = Seq.of(this.integers);
     this.emptySeq = Seq.empty();
+  }
+
+  @Test
+  void testEmptySeq() {
+    assertThat(this.emptySeq.iterator().hasNext()).isFalse();
+    assertThat(this.emptySeq.iterator().next()).isNull();
   }
 
   @Test
@@ -73,6 +80,19 @@ class SeqTest {
   @Test
   void testSeqFindLastWithEmptySeq() {
     var res = this.emptySeq.findLast();
+    assertThat(res).isEmpty();
+  }
+
+  @Test
+  void testSeqFindAny() {
+    var res = Seq.of(null, null, 12, 43).findAny();
+    assertThat(res).isPresent();
+    assertThat(res).get().isEqualTo(12);
+  }
+
+  @Test
+  void testSeqFindAnyWithEmptySeq() {
+    var res = this.emptySeq.findAny();
     assertThat(res).isEmpty();
   }
 
@@ -127,6 +147,93 @@ class SeqTest {
     var res = this.integerSeq.toUnmodifiableSet();
     assertThat(res).containsExactlyInAnyOrderElementsOf(this.integers);
     assertThatThrownBy(() -> res.add(55)).isExactlyInstanceOf(UnsupportedOperationException.class);
+  }
+
+  /*@Test
+  void testSeqConcat() {
+    var res = this.integerSeq.concat(Seq.of(List.of(64, 44))).toList();
+    assertThat(res).containsExactly(12, 42, 24, 7, 9, 89, 112, 64, 44);
+  }*/
+
+  @Test
+  void testSeqMerge() {
+    var res = this.integerSeq.merge(Seq.of(List.of(64, 44))).toList();
+    assertThat(res).containsExactly(12, 64, 42, 44, 24, 7, 9, 89, 112);
+  }
+
+  @Test
+  void testSeqFiler() {
+    var res = this.integerSeq.filter(element -> element < 13).toList();
+    assertThat(res).containsExactly(12, 7, 9);
+  }
+
+  @Test
+  void testSeqMap() {
+    var res = this.integerSeq.map(element -> element > 12).toList();
+    assertThat(res).containsExactly(false, true, true, false, false, true, true);
+  }
+
+  @Test
+  void testSeqGenerate() {
+    var random = new Random();
+    var res = Seq.generate(random::nextInt).limit(10).toList();
+    assertThat(res.size()).isEqualTo(10);
+  }
+
+  @Test
+  void testSeqLimit() {
+    var res = this.integerSeq.limit(4).toList();
+    assertThat(res).containsExactly(12, 42, 24, 7);
+  }
+
+  @Test
+  void testSeqLimitException() {
+    assertThatThrownBy(() -> this.integerSeq.limit(-1))
+        .isExactlyInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void testSeqLimitWithMaxSizeGreaterThenCount() {
+    var res = this.integerSeq.limit(12).toList();
+    assertThat(res).containsExactlyElementsOf(this.integers);
+  }
+
+  @Test
+  void testSeqSkip() {
+    var res = this.integerSeq.skip(4).toList();
+    assertThat(res).containsExactly(9, 89, 112);
+  }
+
+  @Test
+  void testSeqSkipException() {
+    assertThatThrownBy(() -> this.integerSeq.skip(-1))
+        .isExactlyInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void testSeqMin() {
+    var res = this.integerSeq.min(Integer::compareTo);
+    assertThat(res).isPresent();
+    assertThat(res).get().isEqualTo(7);
+  }
+
+  @Test
+  void testSeqMinWithEmptySeq() {
+    var res = this.emptySeq.min(Integer::compareTo);
+    assertThat(res).isEmpty();
+  }
+
+  @Test
+  void testSeqMax() {
+    var res = this.integerSeq.max(Integer::compareTo);
+    assertThat(res).isPresent();
+    assertThat(res).get().isEqualTo(7);
+  }
+
+  @Test
+  void testSeqMaxWithEmptySeq() {
+    var res = this.emptySeq.max(Integer::compareTo);
+    assertThat(res).isEmpty();
   }
 
 }

@@ -24,12 +24,15 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -40,7 +43,7 @@ import org.jetbrains.annotations.NotNull;
 
 public interface Seq<T> {
 
-  static @NotNull Seq<?> empty() {
+  static @NotNull <T> Seq<T> empty() {
     return () -> new Iterator<>() {
 
       @Override
@@ -49,7 +52,7 @@ public interface Seq<T> {
       }
 
       @Override
-      public Object next() {
+      public T next() {
         return null;
       }
 
@@ -64,12 +67,13 @@ public interface Seq<T> {
     return of(iterable.iterator());
   }
 
-  static @NotNull <T> Seq<T> concat(@NotNull Seq<T> a, @NotNull Seq<T> b) {
-    return a.concat(b);
+  @SafeVarargs
+  static @NotNull <T> Seq<T> of(T... values) {
+    return of(Arrays.asList(values));
   }
 
   static @NotNull <T> Seq<T> generate(@NotNull Supplier<T> supplier) {
-    return new GeneratorSeq<T>(supplier);
+    return new GeneratorSeq<>(supplier);
   }
 
   @NotNull Iterator<T> iterator();
@@ -84,6 +88,14 @@ public interface Seq<T> {
 
   default @NotNull <R> Seq<R> flatMap(
       @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
+    return null;
+  }
+
+  default @NotNull Optional<T> reduce(@NotNull BiFunction<T, T, T> accumulator) {
+    return null;
+  }
+
+  default @NotNull Optional<T> reduce(@NotNull BinaryOperator<T> accumulator) {
     return null;
   }
 
@@ -107,12 +119,18 @@ public interface Seq<T> {
     return null;
   }
 
-  default @NotNull Seq<T> limit(int i) {
-    return null;
+  default @NotNull Seq<T> limit(int maxSize) {
+    if (maxSize < 0) {
+      throw new IllegalArgumentException("Value of maxSize must be greater then 0.");
+    }
+    return new LimitSeq<>(this, maxSize);
   }
 
-  default @NotNull Seq<T> skip(int i) {
-    return null;
+  default @NotNull Seq<T> skip(int maxSize) {
+    if (maxSize < 0) {
+      throw new IllegalArgumentException("Value of maxSize must be greater then 0.");
+    }
+    return new SkipSeq<>(this, maxSize);
   }
 
   default void forEach(@NotNull Consumer<? super T> consumer) {
@@ -141,8 +159,12 @@ public interface Seq<T> {
     return collector.finisher().apply(resultContainer);
   }
 
-  default @NotNull Seq<T> concat(@NotNull Seq<? extends T> seq) {
-    return new ConcatSeq<>(this, seq);
+  default @NotNull Seq<T> concat(@NotNull Seq<? extends T>... sequences) {
+    return new ConcatSeq<>(this, sequences);
+  }
+
+  default @NotNull Seq<T> merge(@NotNull Seq<? extends T>... sequences) {
+    return new MergeSeq<>(this, sequences);
   }
 
   default @NotNull List<T> toList() {
@@ -166,14 +188,14 @@ public interface Seq<T> {
     if (!iterator.hasNext()) {
       return Optional.empty();
     }
-    var max = iterator.next();
+    var min = iterator.next();
     while (iterator.hasNext()) {
       var element = iterator.next();
-      if (comparator.compare(max, element) < 0) {
-        max = element;
+      if (comparator.compare(element, min) <= 0) {
+        min = element;
       }
     }
-    return Optional.ofNullable(max);
+    return Optional.ofNullable(min);
   }
 
   default @NotNull Optional<T> max(@NotNull Comparator<? super T> comparator) {
@@ -184,7 +206,7 @@ public interface Seq<T> {
     var max = iterator.next();
     while (iterator.hasNext()) {
       var element = iterator.next();
-      if (comparator.compare(max, element) > 0) {
+      if (comparator.compare(max, element) >= 0) {
         max = element;
       }
     }

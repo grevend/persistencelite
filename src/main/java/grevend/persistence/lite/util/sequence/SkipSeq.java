@@ -24,57 +24,28 @@
 
 package grevend.persistence.lite.util.sequence;
 
-import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public class ConcatSeq<T> implements Seq<T> {
+public class SkipSeq<T> implements Seq<T> {
 
-  private final Seq<T> seq;
-  private final Seq<? extends T>[] sequences;
+  private Seq<T> seq;
+  private int maxSize;
 
-  public ConcatSeq(@NotNull Seq<T> seq, @NotNull Seq<? extends T>... sequences) {
+  public SkipSeq(@NotNull Seq<T> seq, int maxSize) {
     this.seq = seq;
-    this.sequences = sequences;
+    this.maxSize = maxSize;
   }
 
   @Override
   public @NotNull Iterator<T> iterator() {
-    Queue<Iterator<? extends T>> queue = new ArrayDeque<>();
-    queue.add(this.seq.iterator());
-    queue.addAll(Stream.of(this.sequences).map(Seq::iterator).collect(Collectors.toList()));
-    return new Iterator<>() {
-
-      @Override
-      public boolean hasNext() {
-        while (!queue.isEmpty()) {
-          if (queue.peek().hasNext()) {
-            return true;
-          }
-        }
-        queue.poll();
-        return false;
-      }
-
-      @Override
-      public T next() {
-        if (!this.hasNext()) {
-          throw new NoSuchElementException();
-        }
-        var iterator = queue.poll();
-        if (iterator == null) {
-          throw new IllegalStateException();
-        }
-        var res = iterator.next();
-        queue.offer(iterator);
-        return res;
-      }
-
-    };
+    var iterator = this.seq.iterator();
+    var i = 0;
+    while (iterator.hasNext() && i < this.maxSize) {
+      iterator.next();
+      i++;
+    }
+    return iterator;
   }
 
 }
