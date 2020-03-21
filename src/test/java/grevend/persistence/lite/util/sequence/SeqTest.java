@@ -236,4 +236,44 @@ class SeqTest {
     assertThat(res).isEmpty();
   }
 
+  @Test
+  void testSeqIntRangeAscending() {
+    var res = Seq.range(5, 10).toList();
+    assertThat(res).containsExactly(5, 6, 7, 8, 9, 10);
+  }
+
+  @Test
+  void testSeqIntRangeDescending() {
+    var res = Seq.range(10, 5, 2).toList();
+    assertThat(res).containsExactly(10, 8, 6, 5);
+  }
+
+  @Test
+  void testSeqDoubleRangeAscending() {
+    var res = Seq.range(5.0, 10.0).toList();
+    assertThat(res).containsExactly(5.0, 6.0, 7.0, 8.0, 9.0, 10.0);
+  }
+
+  @Test
+  void testSeqDoubleRangeDescending() {
+    var res = Seq.range(10.0, 5.0, 0.5).toList();
+    assertThat(res).containsExactly(10.0, 9.5, 9.0, 8.5, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0);
+  }
+
+  @Test
+  void testSeqCharRangeAscending() {
+    var res = Seq.range('a', 'z').toList();
+    assertThat(res)
+        .containsExactly('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+            'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
+  }
+
+  @Test
+  void testSeqCharRangeDescending() {
+    var res = Seq.range('z', 'a', 2).toList();
+    System.out.println(res);
+    assertThat(res)
+        .containsExactly('z', 'x', 'v', 't', 'r', 'p', 'n', 'l', 'j', 'h', 'f', 'd', 'b', 'a');
+  }
+
 }

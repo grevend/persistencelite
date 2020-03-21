@@ -24,6 +24,7 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import grevend.persistence.lite.util.TriFunction;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -70,6 +71,50 @@ public interface Seq<T> {
   @SafeVarargs
   static @NotNull <T> Seq<T> of(T... values) {
     return of(Arrays.asList(values));
+  }
+
+  static @NotNull <T, S> Seq<T> range(@NotNull T startInclusive,
+      @NotNull T endInclusive, @NotNull TriFunction<T, T, S, T> stepper, S stepSize) {
+    return new RangeSeq<>(startInclusive, endInclusive, stepper, stepSize);
+  }
+
+  static @NotNull Seq<Integer> range(int startInclusive, int endInclusive, int stepSize) {
+    return range(startInclusive, endInclusive,
+        startInclusive < endInclusive ? (current, end, step) -> {
+          var value = current + step;
+          return value > end ? end : value;
+        } : (current, end, step) -> {
+          var value = current - step;
+          return value < end ? end : value;
+        }, stepSize);
+  }
+
+  static @NotNull Seq<Integer> range(int startInclusive, int endInclusive) {
+    return range(startInclusive, endInclusive, 1);
+  }
+
+  static @NotNull Seq<Double> range(double startInclusive, double endInclusive, double stepSize) {
+    return range(startInclusive, endInclusive,
+        startInclusive < endInclusive ? (current, end, step) -> {
+          var value = current + step;
+          return value > end ? end : value;
+        } : (current, end, step) -> {
+          var value = current - step;
+          return value < end ? end : value;
+        }, stepSize);
+  }
+
+  static @NotNull Seq<Double> range(double startInclusive, double endInclusive) {
+    return range(startInclusive, endInclusive, 1.0);
+  }
+
+  static @NotNull Seq<Character> range(char startInclusive, char endInclusive, int stepSize) {
+    return range((int) startInclusive, (int) endInclusive, stepSize)
+        .map(character -> (char) character.intValue());
+  }
+
+  static @NotNull Seq<Character> range(char startInclusive, char endInclusive) {
+    return range(startInclusive, endInclusive, 1);
   }
 
   static @NotNull <T> Seq<T> generate(@NotNull Supplier<T> supplier) {
