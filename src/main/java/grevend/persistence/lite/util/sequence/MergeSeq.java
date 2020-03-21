@@ -63,13 +63,13 @@ public class MergeSeq<T> implements Seq<T> {
 
       @Override
       public T next() {
-        if (!this.hasNext()) {
-          throw new NoSuchElementException();
-        }
+        T element = null;
         var iterator = queue.poll();
-        var res = iterator.next();
-        queue.offer(iterator);
-        return res;
+        if(iterator != null) {
+          element = iterator.next();
+          queue.offer(iterator);
+        }
+        return element;
       }
 
     };

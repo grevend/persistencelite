@@ -27,7 +27,9 @@ package grevend.persistence.lite.util.sequence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -149,11 +151,11 @@ class SeqTest {
     assertThatThrownBy(() -> res.add(55)).isExactlyInstanceOf(UnsupportedOperationException.class);
   }
 
-  /*@Test
+  @Test
   void testSeqConcat() {
     var res = this.integerSeq.concat(Seq.of(List.of(64, 44))).toList();
     assertThat(res).containsExactly(12, 42, 24, 7, 9, 89, 112, 64, 44);
-  }*/
+  }
 
   @Test
   void testSeqMerge() {
@@ -171,6 +173,16 @@ class SeqTest {
   void testSeqMap() {
     var res = this.integerSeq.map(element -> element > 12).toList();
     assertThat(res).containsExactly(false, true, true, false, false, true, true);
+  }
+
+  @Test
+  void testSeqFlatMap() {
+    var a = Arrays.asList(1, 2, 3);
+    var b = Arrays.asList(4, 5);
+    var c = Arrays.asList(6, 7, 8, 9);
+
+    var res = Seq.of(a, b, c).flatMap(Seq::of).toList();
+    assertThat(res).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9);
   }
 
   @Test
@@ -271,9 +283,84 @@ class SeqTest {
   @Test
   void testSeqCharRangeDescending() {
     var res = Seq.range('z', 'a', 2).toList();
-    System.out.println(res);
     assertThat(res)
         .containsExactly('z', 'x', 'v', 't', 'r', 'p', 'n', 'l', 'j', 'h', 'f', 'd', 'b', 'a');
+  }
+
+  @Test
+  void testSeqPeek() {
+    var res = this.integerSeq.peek(System.out::println).toList();
+    assertThat(res).containsExactlyElementsOf(this.integers);
+  }
+
+  @Test
+  void testSeqAnyMatch() {
+    assertThat(this.integerSeq.anyMatch(element -> element == 7)).isTrue();
+    assertThat(this.integerSeq.anyMatch(element -> element == 15)).isFalse();
+  }
+
+  @Test
+  void testSeqAllMatch() {
+    assertThat(this.integerSeq.allMatch(element -> element > 0)).isTrue();
+  }
+
+  @Test
+  void testSeqNoneMatch() {
+    assertThat(this.integerSeq.noneMatch(element -> element > 200)).isTrue();
+  }
+
+  @Test
+  void testSeqJoining() {
+    assertThat(this.integerSeq.joining()).isEqualTo("1242247989112");
+  }
+
+  @Test
+  void testSeqJoiningWithDelimiter() {
+    assertThat(this.integerSeq.joining(", ")).isEqualTo("12, 42, 24, 7, 9, 89, 112");
+  }
+
+  @Test
+  void testSeqReduceBinaryOperator() {
+    var res = this.integerSeq.reduce(Integer::sum);
+    assertThat(res).isPresent();
+    assertThat(res).get().isEqualTo(295);
+  }
+
+  @Test
+  void testSeqReduceBinaryOperatorWithEmptySeq() {
+    var res = this.emptySeq.reduce(Integer::sum);
+    assertThat(res).isEmpty();
+  }
+
+  @Test
+  void testSeqReduceBinaryOperatorWithIdentity() {
+    var res = this.integerSeq.reduce(5, Integer::sum);
+    assertThat(res).isEqualTo(300);
+  }
+
+  @Test
+  void testSeqSorted() {
+    var res = this.integerSeq.sorted().toList();
+    assertThat(res).containsExactly(7, 9, 12, 24, 42, 89, 112);
+  }
+
+  @Test
+  void testSeqSortedWithoutComparable() {
+    var list = List.of(Optional.of(12), Optional.of(42));
+    var res = Seq.of(list).sorted().toList();
+    assertThat(res).containsExactlyElementsOf(list);
+  }
+
+  @Test
+  void testSeqReversed() {
+    var res = this.integerSeq.reversed().toList();
+    assertThat(res).containsExactly(112, 89, 9, 7, 24, 42, 12);
+  }
+
+  @Test
+  void testSeqDistinct() {
+    var res = Seq.of(12, 24, 42, 12, 12, 24, 16).distinct().toList();
+    assertThat(res).containsExactly(12, 24, 42, 16);
   }
 
 }

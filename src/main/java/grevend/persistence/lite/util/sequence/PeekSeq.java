@@ -25,49 +25,35 @@
 package grevend.persistence.lite.util.sequence;
 
 import java.util.Iterator;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> implements Seq<T> {
+public class PeekSeq<T> implements Seq<T> {
 
   private final Seq<T> seq;
-  private final Predicate<? super T> predicate;
+  private final Consumer<T> consumer;
 
-  public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
+  public PeekSeq(@NotNull Seq<T> seq, @NotNull Consumer<T> consumer) {
     this.seq = seq;
-    this.predicate = predicate;
+    this.consumer = consumer;
   }
 
   @Override
   public @NotNull Iterator<T> iterator() {
     var iterator = this.seq.iterator();
-    var predicate = this.predicate;
+    var consumer = this.consumer;
     return new Iterator<>() {
-
-      private T next;
-      private boolean isNextSet = false;
 
       @Override
       public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
-
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
-            return true;
-          }
-        }
-        return false;
+        return iterator.hasNext();
       }
 
       @Override
       public T next() {
-        this.isNextSet = false;
-        return this.next;
+        var next = iterator.next();
+        consumer.accept(next);
+        return next;
       }
 
     };
