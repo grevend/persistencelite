@@ -24,53 +24,53 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.function.Predicate;
+import java.util.Queue;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> implements Seq<T> {
+public class FlatMapSeq<T, R> implements Seq<R> {
 
   private final Seq<T> seq;
-  private final Predicate<? super T> predicate;
+  private final Function<? super T, ? extends Seq<? extends R>> function;
 
-  public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
+  public FlatMapSeq(@NotNull Seq<T> seq,
+      @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
     this.seq = seq;
-    this.predicate = predicate;
+    this.function = function;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
+  public @NotNull Iterator<R> iterator() {
     var iterator = this.seq.iterator();
-    var predicate = this.predicate;
+    var function = this.function;
+    Queue<Iterator<? extends R>> queue = new ArrayDeque<>();
+    if (iterator.hasNext()) {
+      queue.offer(function.apply(iterator.next()).iterator());
+    }
     return new Iterator<>() {
-
-      private T next;
-      private boolean isNextSet = false;
 
       @Override
       public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
-
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
+        while (!queue.isEmpty()) {
+          if (queue.peek().hasNext()) {
             return true;
+          } else {
+            if (iterator.hasNext()) {
+              queue.offer(function.apply(iterator.next()).iterator());
+            }
+            queue.poll();
           }
         }
         return false;
       }
 
       @Override
-      public T next() {
-        this.isNextSet = false;
-        return this.next;
+      public R next() {
+        return queue.element().next();
       }
 
     };
   }
-
 }

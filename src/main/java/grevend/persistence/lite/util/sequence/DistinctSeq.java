@@ -24,41 +24,37 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.function.Predicate;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> implements Seq<T> {
+public class DistinctSeq<T> implements Seq<T> {
 
-  private final Seq<T> seq;
-  private final Predicate<? super T> predicate;
+  private Seq<T> seq;
 
-  public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
+  public DistinctSeq(@NotNull Seq<T> seq) {
     this.seq = seq;
-    this.predicate = predicate;
   }
 
   @Override
   public @NotNull Iterator<T> iterator() {
     var iterator = this.seq.iterator();
-    var predicate = this.predicate;
     return new Iterator<>() {
 
+      private Set<T> observed = new HashSet<>();
       private T next;
-      private boolean isNextSet = false;
 
       @Override
       public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
-
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
+        if (iterator.hasNext()) {
+          var element = iterator.next();
+          if (!this.observed.contains(element)) {
+            this.observed.add(element);
+            this.next = element;
             return true;
+          } else {
+            return this.hasNext();
           }
         }
         return false;
@@ -66,7 +62,6 @@ public class FilterSeq<T> implements Seq<T> {
 
       @Override
       public T next() {
-        this.isNextSet = false;
         return this.next;
       }
 

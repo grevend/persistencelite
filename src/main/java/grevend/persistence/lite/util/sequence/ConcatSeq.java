@@ -26,7 +26,6 @@ package grevend.persistence.lite.util.sequence;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,24 +53,16 @@ public class ConcatSeq<T> implements Seq<T> {
         while (!queue.isEmpty()) {
           if (queue.peek().hasNext()) {
             return true;
+          } else {
+            queue.poll();
           }
         }
-        queue.poll();
         return false;
       }
 
       @Override
       public T next() {
-        if (!this.hasNext()) {
-          throw new NoSuchElementException();
-        }
-        var iterator = queue.poll();
-        if (iterator == null) {
-          throw new IllegalStateException();
-        }
-        var res = iterator.next();
-        queue.offer(iterator);
-        return res;
+        return queue.element().next();
       }
 
     };

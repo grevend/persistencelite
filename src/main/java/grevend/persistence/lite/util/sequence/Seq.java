@@ -26,13 +26,13 @@ package grevend.persistence.lite.util.sequence;
 
 import grevend.persistence.lite.util.TriFunction;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -133,35 +133,57 @@ public interface Seq<T> {
 
   default @NotNull <R> Seq<R> flatMap(
       @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
-    return null;
+    return new FlatMapSeq<>(this, function);
   }
 
-  default @NotNull Optional<T> reduce(@NotNull BiFunction<T, T, T> accumulator) {
-    return null;
+  default @NotNull T reduce(@NotNull T identity, @NotNull BinaryOperator<T> accumulator) {
+    var current = identity;
+    var iterator = this.iterator();
+    if (iterator.hasNext()) {
+      while (iterator.hasNext()) {
+        current = accumulator.apply(current, iterator.next());
+      }
+    }
+    return current;
   }
 
   default @NotNull Optional<T> reduce(@NotNull BinaryOperator<T> accumulator) {
-    return null;
+    var iterator = this.iterator();
+    if (!iterator.hasNext()) {
+      return Optional.empty();
+    } else {
+      var current = iterator.next();
+      if (iterator.hasNext()) {
+        while (iterator.hasNext()) {
+          current = accumulator.apply(current, iterator.next());
+        }
+      }
+      return Optional.ofNullable(current);
+    }
+  }
+
+  default @NotNull Seq<T> peek(@NotNull Consumer<T> consumer) {
+    return new PeekSeq<>(this, consumer);
   }
 
   default @NotNull Seq<T> distinct() {
-    return null;
+    return new DistinctSeq<>(this);
   }
 
   default @NotNull Seq<T> sorted() {
-    return null;
+    return this.sorted(new GenericComparator<>());
   }
 
   default @NotNull Seq<T> sorted(@NotNull Comparator<? super T> comparator) {
-    return null;
+    var list = this.toList();
+    list.sort(comparator);
+    return of(list);
   }
 
   default @NotNull Seq<T> reversed() {
-    return null;
-  }
-
-  default @NotNull Seq<T> reversed(@NotNull Comparator<? super T> comparator) {
-    return null;
+    var list = this.toList();
+    Collections.reverse(list);
+    return of(list);
   }
 
   default @NotNull Seq<T> limit(int maxSize) {
@@ -228,6 +250,14 @@ public interface Seq<T> {
     return this.collect(Collectors.toUnmodifiableSet());
   }
 
+  default @NotNull String joining() {
+    return this.map(T::toString).collect(Collectors.joining());
+  }
+
+  default @NotNull String joining(@NotNull CharSequence delimiter) {
+    return this.map(T::toString).collect(Collectors.joining(delimiter));
+  }
+
   default @NotNull Optional<T> min(@NotNull Comparator<? super T> comparator) {
     var iterator = this.iterator();
     if (!iterator.hasNext()) {
@@ -236,7 +266,7 @@ public interface Seq<T> {
     var min = iterator.next();
     while (iterator.hasNext()) {
       var element = iterator.next();
-      if (comparator.compare(element, min) <= 0) {
+      if (comparator.compare(element, min) < 0) {
         min = element;
       }
     }
@@ -251,7 +281,7 @@ public interface Seq<T> {
     var max = iterator.next();
     while (iterator.hasNext()) {
       var element = iterator.next();
-      if (comparator.compare(max, element) >= 0) {
+      if (comparator.compare(max, element) > 0) {
         max = element;
       }
     }
@@ -297,15 +327,34 @@ public interface Seq<T> {
   }
 
   default boolean anyMatch(@NotNull Predicate<? super T> predicate) {
+    var iterator = new MapSeq<>(this, predicate::test).iterator();
+    while (iterator.hasNext()) {
+      if (iterator.next()) {
+        return true;
+      }
+    }
     return false;
   }
 
   default boolean allMatch(@NotNull Predicate<? super T> predicate) {
-    return false;
+    return !this.anyMatch(predicate.negate());
   }
 
   default boolean noneMatch(@NotNull Predicate<? super T> predicate) {
-    return false;
+    return !this.allMatch(predicate);
+  }
+
+  class GenericComparator<T> implements Comparator<T> {
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public int compare(T a, T b) {
+      if (a instanceof Comparable) {
+        return ((Comparable<T>) a).compareTo(b);
+      }
+      return 0;
+    }
+
   }
 
 }
