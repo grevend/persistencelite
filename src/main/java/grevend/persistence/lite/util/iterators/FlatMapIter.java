@@ -31,14 +31,14 @@ import java.util.Queue;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class FlatMapIter<T, R, U extends Seq<R, U>> implements Iterator<R> {
+public class FlatMapIter<T, R, U extends Seq<R, ?>> implements Iterator<R> {
 
   private final Iterator<T> iterator;
-  private final Function<? super T, ? extends Seq<? extends R, U>> function;
+  private final Function<? super T, ? extends Seq<? extends R, ?>> function;
   private final Queue<Iterator<? extends R>> queue;
 
   public FlatMapIter(@NotNull Iterator<T> iterator,
-      @NotNull Function<? super T, ? extends Seq<? extends R, U>> function) {
+      @NotNull Function<? super T, ? extends Seq<? extends R, ?>> function) {
     this.iterator = iterator;
     this.function = function;
     this.queue = new ArrayDeque<>();

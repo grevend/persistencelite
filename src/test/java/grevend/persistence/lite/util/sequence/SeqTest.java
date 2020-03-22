@@ -175,7 +175,7 @@ class SeqTest<SI extends Seq<Integer, SI>> {
     assertThat(res).containsExactly(false, true, true, false, false, true, true);
   }
 
-  /*@Test
+  @Test
   void testSeqFlatMap() {
     var a = Arrays.asList(1, 2, 3);
     var b = Arrays.asList(4, 5);
@@ -183,7 +183,7 @@ class SeqTest<SI extends Seq<Integer, SI>> {
 
     var res = Seq.of(a, b, c).flatMap(Seq::of).toList();
     assertThat(res).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9);
-  }*/
+  }
 
   @Test
   void testSeqGenerate() {

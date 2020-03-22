@@ -91,6 +91,11 @@ public class Seq<T, S extends Seq<T, S>> {
     return of(Arrays.asList(values));
   }
 
+  @SafeVarargs
+  public static @NotNull <T extends Number> NumberSeq<T> of(T... values) {
+    return new NumberSeq<>(Arrays.asList(values).iterator());
+  }
+
   public static @NotNull <T, S extends Seq<T, S>, S2> Seq<T, S> range(@NotNull T startInclusive,
       @NotNull T endInclusive, @NotNull TriFunction<T, T, S2, T> stepper, @NotNull S2 stepSize) {
     return of(new RangeIter<>(startInclusive, endInclusive, stepper, stepSize));
@@ -148,13 +153,13 @@ public class Seq<T, S extends Seq<T, S>> {
   @SuppressWarnings("unchecked")
   public @NotNull <R, U extends Seq<R, U>> U map(
       @NotNull Function<? super T, ? extends R> function) {
-    return (U) of(new MapIter<>(this.iterator, function));
+    return (U) Seq.<R, U>of(new MapIter<>(this.iterator, function));
   }
 
   @SuppressWarnings("unchecked")
   public @NotNull <R, U extends Seq<R, U>> U flatMap(
-      @NotNull Function<? super T, ? extends Seq<? extends R, U>> function) {
-    return (U) of(new FlatMapIter<>(this.iterator, function));
+      @NotNull Function<? super T, ? extends Seq<? extends R, ?>> function) {
+    return (U) Seq.<R, U>of(new FlatMapIter<>(this.iterator, function));
   }
 
   public @NotNull T reduce(@NotNull T identity, @NotNull BinaryOperator<T> accumulator) {

@@ -25,7 +25,6 @@
 package grevend.persistence.lite.util.sequence;
 
 import grevend.persistence.lite.util.Utils;
-import java.util.Arrays;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,11 +32,6 @@ public class NumberSeq<T extends Number> extends Seq<T, NumberSeq<T>> {
 
   NumberSeq(@NotNull Iterator<T> iterator) {
     super(iterator);
-  }
-
-  @SafeVarargs
-  public static @NotNull <T extends Number> NumberSeq<T> of(T... values) {
-    return new NumberSeq<T>(Arrays.asList(values).iterator());
   }
 
   @SuppressWarnings("unchecked")
