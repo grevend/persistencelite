@@ -22,36 +22,44 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
-import java.util.function.Supplier;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
-public class GeneratorSeq<T> implements Seq<T> {
+public class FilterIter<T> extends ChainIter<T> {
 
-  private final Supplier<T> supplier;
+  private final Predicate<? super T> predicate;
+  private T next;
+  private boolean isNextSet = false;
 
-  public GeneratorSeq(@NotNull Supplier<T> supplier) {
-    this.supplier = supplier;
+  public FilterIter(@NotNull Iterator<T> iterator, @NotNull Predicate<? super T> predicate) {
+    super(iterator);
+    this.predicate = predicate;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var supplier = this.supplier;
-    return new Iterator<>() {
+  public boolean hasNext() {
+    return this.isNextSet || this.setNext();
+  }
 
-      @Override
-      public boolean hasNext() {
+  private boolean setNext() {
+    while (this.iterator.hasNext()) {
+      var element = this.iterator.next();
+      if (this.predicate.test(element)) {
+        this.next = element;
+        this.isNextSet = true;
         return true;
       }
+    }
+    return false;
+  }
 
-      @Override
-      public T next() {
-        return supplier.get();
-      }
-
-    };
+  @Override
+  public T next() {
+    this.isNextSet = false;
+    return this.next;
   }
 
 }

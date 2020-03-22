@@ -24,53 +24,25 @@
 
 package grevend.persistence.lite.util.sequence;
 
-import java.util.ArrayDeque;
+import grevend.persistence.lite.util.Utils;
+import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Queue;
-import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class FlatMapSeq<T, R> implements Seq<R> {
+public class NumberSeq<T extends Number> extends Seq<T, NumberSeq<T>> {
 
-  private final Seq<T> seq;
-  private final Function<? super T, ? extends Seq<? extends R>> function;
-
-  public FlatMapSeq(@NotNull Seq<T> seq,
-      @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
-    this.seq = seq;
-    this.function = function;
+  NumberSeq(@NotNull Iterator<T> iterator) {
+    super(iterator);
   }
 
-  @Override
-  public @NotNull Iterator<R> iterator() {
-    var iterator = this.seq.iterator();
-    var function = this.function;
-    Queue<Iterator<? extends R>> queue = new ArrayDeque<>();
-    if (iterator.hasNext()) {
-      queue.offer(function.apply(iterator.next()).iterator());
-    }
-    return new Iterator<>() {
-
-      @Override
-      public boolean hasNext() {
-        while (!queue.isEmpty()) {
-          if (queue.peek().hasNext()) {
-            return true;
-          } else {
-            if (iterator.hasNext()) {
-              queue.offer(function.apply(iterator.next()).iterator());
-            }
-            queue.poll();
-          }
-        }
-        return false;
-      }
-
-      @Override
-      public R next() {
-        return queue.element().next();
-      }
-
-    };
+  @SafeVarargs
+  public static @NotNull <T extends Number> NumberSeq<T> of(T... values) {
+    return new NumberSeq<T>(Arrays.asList(values).iterator());
   }
+
+  @SuppressWarnings("unchecked")
+  public @NotNull T sum() {
+    return this.reduce((T) (Number) 0, Utils::add);
+  }
+
 }

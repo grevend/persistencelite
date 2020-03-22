@@ -22,41 +22,17 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
-public class LimitSeq<T> implements Seq<T> {
+public abstract class ChainIter<T> implements Iterator<T> {
 
-  private Seq<T> seq;
-  private int maxSize;
+  protected final Iterator<T> iterator;
 
-  public LimitSeq(@NotNull Seq<T> seq, int maxSize) {
-    this.seq = seq;
-    this.maxSize = maxSize;
-  }
-
-  @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var maxSize = this.maxSize;
-    return new Iterator<>() {
-
-      private int i = 0;
-
-      @Override
-      public boolean hasNext() {
-        return this.i < maxSize && iterator.hasNext();
-      }
-
-      @Override
-      public T next() {
-        this.i++;
-        return iterator.next();
-      }
-
-    };
+  ChainIter(@NotNull Iterator<T> iterator) {
+    this.iterator = iterator;
   }
 
 }

@@ -25,6 +25,18 @@
 package grevend.persistence.lite.util.sequence;
 
 import grevend.persistence.lite.util.TriFunction;
+import grevend.persistence.lite.util.Utils;
+import grevend.persistence.lite.util.iterators.ConcatIter;
+import grevend.persistence.lite.util.iterators.DistinctIter;
+import grevend.persistence.lite.util.iterators.FilterIter;
+import grevend.persistence.lite.util.iterators.FlatMapIter;
+import grevend.persistence.lite.util.iterators.GeneratorIter;
+import grevend.persistence.lite.util.iterators.LimitIter;
+import grevend.persistence.lite.util.iterators.MapIter;
+import grevend.persistence.lite.util.iterators.MergeIter;
+import grevend.persistence.lite.util.iterators.PeekIter;
+import grevend.persistence.lite.util.iterators.RangeIter;
+import grevend.persistence.lite.util.iterators.SkipIter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,10 +54,16 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
-public interface Seq<T> {
+public class Seq<T, S extends Seq<T, S>> {
 
-  static @NotNull <T> Seq<T> empty() {
-    return () -> new Iterator<>() {
+  protected Iterator<T> iterator;
+
+  Seq(@NotNull Iterator<T> iterator) {
+    this.iterator = iterator;
+  }
+
+  public static @NotNull <T, S extends Seq<T, S>> Seq<T, S> empty() {
+    return new Seq<>(new Iterator<>() {
 
       @Override
       public boolean hasNext() {
@@ -57,215 +75,228 @@ public interface Seq<T> {
         return null;
       }
 
-    };
+    });
   }
 
-  static @NotNull <T> Seq<T> of(@NotNull Iterator<T> iterator) {
-    return () -> iterator;
+  public static @NotNull <T, S extends Seq<T, S>> Seq<T, S> of(@NotNull Iterator<T> iterator) {
+    return new Seq<>(iterator);
   }
 
-  static @NotNull <T> Seq<T> of(@NotNull Iterable<T> iterable) {
+  public static @NotNull <T, S extends Seq<T, S>> Seq<T, S> of(@NotNull Iterable<T> iterable) {
     return of(iterable.iterator());
   }
 
   @SafeVarargs
-  static @NotNull <T> Seq<T> of(T... values) {
+  public static @NotNull <T, S extends Seq<T, S>> Seq<T, S> of(T... values) {
     return of(Arrays.asList(values));
   }
 
-  static @NotNull <T, S> Seq<T> range(@NotNull T startInclusive,
-      @NotNull T endInclusive, @NotNull TriFunction<T, T, S, T> stepper, S stepSize) {
-    return new RangeSeq<>(startInclusive, endInclusive, stepper, stepSize);
+  public static @NotNull <T, S extends Seq<T, S>, S2> Seq<T, S> range(@NotNull T startInclusive,
+      @NotNull T endInclusive, @NotNull TriFunction<T, T, S2, T> stepper, @NotNull S2 stepSize) {
+    return of(new RangeIter<>(startInclusive, endInclusive, stepper, stepSize));
   }
 
-  static @NotNull Seq<Integer> range(int startInclusive, int endInclusive, int stepSize) {
-    return range(startInclusive, endInclusive,
-        startInclusive < endInclusive ? (current, end, step) -> {
-          var value = current + step;
-          return value > end ? end : value;
+  public static @NotNull <T extends Number> NumberSeq<T> range(@NotNull T startInclusive,
+      @NotNull T endInclusive, @NotNull TriFunction<T, T, T, T> stepper, @NotNull T stepSize) {
+    return new NumberSeq<>(new RangeIter<>(startInclusive, endInclusive, stepper, stepSize));
+  }
+
+  public static @NotNull <T extends Number> NumberSeq<T> range(@NotNull T startInclusive,
+      @NotNull T endInclusive, @NotNull T stepSize) {
+    return new NumberSeq<>(new RangeIter<>(startInclusive, endInclusive,
+        Utils.lessThan(startInclusive, endInclusive) ? (current, end, step) -> {
+          var value = Utils.add(current, step);
+          return Utils.greaterThan(value, end) ? end : value;
         } : (current, end, step) -> {
-          var value = current - step;
-          return value < end ? end : value;
-        }, stepSize);
+          var value = Utils.sub(current, step);
+          return Utils.lessThan(value, end) ? end : value;
+        }, stepSize));
   }
 
-  static @NotNull Seq<Integer> range(int startInclusive, int endInclusive) {
-    return range(startInclusive, endInclusive, 1);
+  @SuppressWarnings("unchecked")
+  public static @NotNull <T extends Number> NumberSeq<T> range(@NotNull T startInclusive,
+      @NotNull T endInclusive) {
+    return range(startInclusive, endInclusive, (T) (Number) 1);
   }
 
-  static @NotNull Seq<Double> range(double startInclusive, double endInclusive, double stepSize) {
-    return range(startInclusive, endInclusive,
-        startInclusive < endInclusive ? (current, end, step) -> {
-          var value = current + step;
-          return value > end ? end : value;
-        } : (current, end, step) -> {
-          var value = current - step;
-          return value < end ? end : value;
-        }, stepSize);
-  }
-
-  static @NotNull Seq<Double> range(double startInclusive, double endInclusive) {
-    return range(startInclusive, endInclusive, 1.0);
-  }
-
-  static @NotNull Seq<Character> range(char startInclusive, char endInclusive, int stepSize) {
+  public static @NotNull <S extends Seq<Character, S>> Seq<Character, S> range(char startInclusive,
+      char endInclusive, int stepSize) {
     return range((int) startInclusive, (int) endInclusive, stepSize)
         .map(character -> (char) character.intValue());
   }
 
-  static @NotNull Seq<Character> range(char startInclusive, char endInclusive) {
+  public static @NotNull <S extends Seq<Character, S>> Seq<Character, S> range(char startInclusive,
+      char endInclusive) {
     return range(startInclusive, endInclusive, 1);
   }
 
-  static @NotNull <T> Seq<T> generate(@NotNull Supplier<T> supplier) {
-    return new GeneratorSeq<>(supplier);
+  @SuppressWarnings("unchecked")
+  public static @NotNull <T, S extends Seq<T, S>> S generate(@NotNull Supplier<T> supplier) {
+    return (S) of(new GeneratorIter<>(supplier));
   }
 
-  @NotNull Iterator<T> iterator();
-
-  default @NotNull Seq<T> filter(@NotNull Predicate<? super T> predicate) {
-    return new FilterSeq<>(this, predicate);
+  public @NotNull Iterator<T> iterator() {
+    return this.iterator;
   }
 
-  default @NotNull <R> Seq<R> map(@NotNull Function<? super T, ? extends R> function) {
-    return new MapSeq<>(this, function);
+  @SuppressWarnings("unchecked")
+  public @NotNull S filter(@NotNull Predicate<? super T> predicate) {
+    this.iterator = new FilterIter<>(this.iterator, predicate);
+    return (S) this;
   }
 
-  default @NotNull <R> Seq<R> flatMap(
-      @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
-    return new FlatMapSeq<>(this, function);
+  @SuppressWarnings("unchecked")
+  public @NotNull <R, U extends Seq<R, U>> U map(
+      @NotNull Function<? super T, ? extends R> function) {
+    return (U) of(new MapIter<>(this.iterator, function));
   }
 
-  default @NotNull T reduce(@NotNull T identity, @NotNull BinaryOperator<T> accumulator) {
+  @SuppressWarnings("unchecked")
+  public @NotNull <R, U extends Seq<R, U>> U flatMap(
+      @NotNull Function<? super T, ? extends Seq<? extends R, U>> function) {
+    return (U) of(new FlatMapIter<>(this.iterator, function));
+  }
+
+  public @NotNull T reduce(@NotNull T identity, @NotNull BinaryOperator<T> accumulator) {
     var current = identity;
-    var iterator = this.iterator();
-    if (iterator.hasNext()) {
-      while (iterator.hasNext()) {
-        current = accumulator.apply(current, iterator.next());
+    if (this.iterator.hasNext()) {
+      while (this.iterator.hasNext()) {
+        current = accumulator.apply(current, this.iterator.next());
       }
     }
     return current;
   }
 
-  default @NotNull Optional<T> reduce(@NotNull BinaryOperator<T> accumulator) {
-    var iterator = this.iterator();
-    if (!iterator.hasNext()) {
+  public @NotNull Optional<T> reduce(@NotNull BinaryOperator<T> accumulator) {
+    if (!this.iterator.hasNext()) {
       return Optional.empty();
     } else {
-      var current = iterator.next();
-      if (iterator.hasNext()) {
-        while (iterator.hasNext()) {
-          current = accumulator.apply(current, iterator.next());
+      var current = this.iterator.next();
+      if (this.iterator.hasNext()) {
+        while (this.iterator.hasNext()) {
+          current = accumulator.apply(current, this.iterator.next());
         }
       }
       return Optional.ofNullable(current);
     }
   }
 
-  default @NotNull Seq<T> peek(@NotNull Consumer<T> consumer) {
-    return new PeekSeq<>(this, consumer);
+  @SuppressWarnings("unchecked")
+  public @NotNull S peek(@NotNull Consumer<T> consumer) {
+    this.iterator = new PeekIter<>(this.iterator, consumer);
+    return (S) this;
   }
 
-  default @NotNull Seq<T> distinct() {
-    return new DistinctSeq<>(this);
+  @SuppressWarnings("unchecked")
+  public @NotNull S distinct() {
+    this.iterator = new DistinctIter<>(this.iterator);
+    return (S) this;
   }
 
-  default @NotNull Seq<T> sorted() {
+  public @NotNull S sorted() {
     return this.sorted(new GenericComparator<>());
   }
 
-  default @NotNull Seq<T> sorted(@NotNull Comparator<? super T> comparator) {
+  @SuppressWarnings("unchecked")
+  public @NotNull S sorted(@NotNull Comparator<? super T> comparator) {
     var list = this.toList();
     list.sort(comparator);
-    return of(list);
+    return (S) of(list);
   }
 
-  default @NotNull Seq<T> reversed() {
+  @SuppressWarnings("unchecked")
+  public @NotNull S reversed() {
     var list = this.toList();
     Collections.reverse(list);
-    return of(list);
+    return (S) of(list);
   }
 
-  default @NotNull Seq<T> limit(int maxSize) {
+  @SuppressWarnings("unchecked")
+  public @NotNull S limit(int maxSize) {
     if (maxSize < 0) {
       throw new IllegalArgumentException("Value of maxSize must be greater then 0.");
     }
-    return new LimitSeq<>(this, maxSize);
+    this.iterator = new LimitIter<>(this.iterator, maxSize);
+    return (S) this;
   }
 
-  default @NotNull Seq<T> skip(int maxSize) {
+  @SuppressWarnings("unchecked")
+  public @NotNull S skip(int maxSize) {
     if (maxSize < 0) {
       throw new IllegalArgumentException("Value of maxSize must be greater then 0.");
     }
-    return new SkipSeq<>(this, maxSize);
+    this.iterator = new SkipIter<>(this.iterator, maxSize);
+    return (S) this;
   }
 
-  default void forEach(@NotNull Consumer<? super T> consumer) {
-    var iterator = this.iterator();
-    while (iterator.hasNext()) {
-      consumer.accept(iterator.next());
+  public void forEach(@NotNull Consumer<? super T> consumer) {
+    while (this.iterator.hasNext()) {
+      consumer.accept(this.iterator.next());
     }
   }
 
-  default void forEach(@NotNull BiConsumer<? super T, Integer> consumer) {
-    var iterator = this.iterator();
+  public void forEach(@NotNull BiConsumer<? super T, Integer> consumer) {
     var i = 0;
-    while (iterator.hasNext()) {
-      consumer.accept(iterator.next(), i);
+    while (this.iterator.hasNext()) {
+      consumer.accept(this.iterator.next(), i);
       i++;
     }
   }
 
-  default @NotNull <R, A> R collect(@NotNull Collector<? super T, A, R> collector) {
-    var iterator = this.iterator();
+  public @NotNull <R, A> R collect(@NotNull Collector<? super T, A, R> collector) {
     var resultContainer = collector.supplier().get();
     var accumulator = collector.accumulator();
-    while (iterator.hasNext()) {
-      accumulator.accept(resultContainer, iterator.next());
+    while (this.iterator.hasNext()) {
+      accumulator.accept(resultContainer, this.iterator.next());
     }
     return collector.finisher().apply(resultContainer);
   }
 
-  default @NotNull Seq<T> concat(@NotNull Seq<? extends T>... sequences) {
-    return new ConcatSeq<>(this, sequences);
+  @SuppressWarnings("unchecked")
+  public @NotNull S concat(@NotNull Seq<T, S>... sequences) {
+    this.iterator = new ConcatIter<>(this.iterator,
+        Seq.of(sequences).map(seq -> seq.iterator).toList());
+    return (S) this;
   }
 
-  default @NotNull Seq<T> merge(@NotNull Seq<? extends T>... sequences) {
-    return new MergeSeq<>(this, sequences);
+  @SuppressWarnings("unchecked")
+  public @NotNull S merge(@NotNull Seq<T, S>... sequences) {
+    this.iterator = new MergeIter<>(this.iterator,
+        Seq.of(sequences).map(seq -> seq.iterator).toList());
+    return (S) this;
   }
 
-  default @NotNull List<T> toList() {
+  public @NotNull List<T> toList() {
     return this.collect(Collectors.toList());
   }
 
-  default @NotNull List<T> toUnmodifiableList() {
+  public @NotNull List<T> toUnmodifiableList() {
     return this.collect(Collectors.toUnmodifiableList());
   }
 
-  default @NotNull Set<T> toSet() {
+  public @NotNull Set<T> toSet() {
     return this.collect(Collectors.toSet());
   }
 
-  default @NotNull Set<T> toUnmodifiableSet() {
+  public @NotNull Set<T> toUnmodifiableSet() {
     return this.collect(Collectors.toUnmodifiableSet());
   }
 
-  default @NotNull String joining() {
+  public @NotNull String joining() {
     return this.map(T::toString).collect(Collectors.joining());
   }
 
-  default @NotNull String joining(@NotNull CharSequence delimiter) {
+  public @NotNull String joining(@NotNull CharSequence delimiter) {
     return this.map(T::toString).collect(Collectors.joining(delimiter));
   }
 
-  default @NotNull Optional<T> min(@NotNull Comparator<? super T> comparator) {
-    var iterator = this.iterator();
-    if (!iterator.hasNext()) {
+  public @NotNull Optional<T> min(@NotNull Comparator<? super T> comparator) {
+    if (!this.iterator.hasNext()) {
       return Optional.empty();
     }
-    var min = iterator.next();
-    while (iterator.hasNext()) {
-      var element = iterator.next();
+    var min = this.iterator.next();
+    while (this.iterator.hasNext()) {
+      var element = this.iterator.next();
       if (comparator.compare(element, min) < 0) {
         min = element;
       }
@@ -273,14 +304,13 @@ public interface Seq<T> {
     return Optional.ofNullable(min);
   }
 
-  default @NotNull Optional<T> max(@NotNull Comparator<? super T> comparator) {
-    var iterator = this.iterator();
-    if (!iterator.hasNext()) {
+  public @NotNull Optional<T> max(@NotNull Comparator<? super T> comparator) {
+    if (!this.iterator.hasNext()) {
       return Optional.empty();
     }
-    var max = iterator.next();
-    while (iterator.hasNext()) {
-      var element = iterator.next();
+    var max = this.iterator.next();
+    while (this.iterator.hasNext()) {
+      var element = this.iterator.next();
       if (comparator.compare(max, element) > 0) {
         max = element;
       }
@@ -288,46 +318,43 @@ public interface Seq<T> {
     return Optional.ofNullable(max);
   }
 
-  default @NotNull Optional<T> findFirst() {
-    var iterator = this.iterator();
-    return !iterator.hasNext() ? Optional.empty() : Optional.ofNullable(iterator.next());
+  public @NotNull Optional<T> findFirst() {
+    return !this.iterator.hasNext() ? Optional.empty() : Optional.ofNullable(this.iterator.next());
   }
 
-  default @NotNull Optional<T> findAny() {
-    var iterator = this.iterator();
-    if (!iterator.hasNext()) {
+  public @NotNull Optional<T> findAny() {
+    if (!this.iterator.hasNext()) {
       return Optional.empty();
     }
-    T last = iterator.next();
-    while (last == null && iterator.hasNext()) {
-      last = iterator.next();
+    T last = this.iterator.next();
+    while (last == null && this.iterator.hasNext()) {
+      last = this.iterator.next();
     }
     return Optional.ofNullable(last);
   }
 
-  default @NotNull Optional<T> findLast() {
-    var iterator = this.iterator();
-    if (!iterator.hasNext()) {
+  public @NotNull Optional<T> findLast() {
+    if (!this.iterator.hasNext()) {
       return Optional.empty();
     }
-    T last = iterator.next();
-    while (iterator.hasNext()) {
-      last = iterator.next();
+    T last = this.iterator.next();
+    while (this.iterator.hasNext()) {
+      last = this.iterator.next();
     }
     return Optional.ofNullable(last);
   }
 
-  default int count() {
+  public int count() {
     var count = 0;
-    while (this.iterator().hasNext()) {
+    while (this.iterator.hasNext()) {
       count++;
-      this.iterator().next();
+      this.iterator.next();
     }
     return count;
   }
 
-  default boolean anyMatch(@NotNull Predicate<? super T> predicate) {
-    var iterator = new MapSeq<>(this, predicate::test).iterator();
+  public boolean anyMatch(@NotNull Predicate<? super T> predicate) {
+    var iterator = new MapIter<>(this.iterator, predicate::test);
     while (iterator.hasNext()) {
       if (iterator.next()) {
         return true;
@@ -336,15 +363,15 @@ public interface Seq<T> {
     return false;
   }
 
-  default boolean allMatch(@NotNull Predicate<? super T> predicate) {
+  public boolean allMatch(@NotNull Predicate<? super T> predicate) {
     return !this.anyMatch(predicate.negate());
   }
 
-  default boolean noneMatch(@NotNull Predicate<? super T> predicate) {
+  public boolean noneMatch(@NotNull Predicate<? super T> predicate) {
     return !this.allMatch(predicate);
   }
 
-  class GenericComparator<T> implements Comparator<T> {
+  private static final class GenericComparator<T> implements Comparator<T> {
 
     @Override
     @SuppressWarnings("unchecked")

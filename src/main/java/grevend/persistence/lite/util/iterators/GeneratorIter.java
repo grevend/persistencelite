@@ -22,30 +22,28 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 
-public class SkipSeq<T> implements Seq<T> {
+public class GeneratorIter<T> implements Iterator<T> {
 
-  private Seq<T> seq;
-  private int maxSize;
+  private final Supplier<T> supplier;
 
-  public SkipSeq(@NotNull Seq<T> seq, int maxSize) {
-    this.seq = seq;
-    this.maxSize = maxSize;
+  public GeneratorIter(@NotNull Supplier<T> supplier) {
+    this.supplier = supplier;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var i = 0;
-    while (iterator.hasNext() && i < this.maxSize) {
-      iterator.next();
-      i++;
-    }
-    return iterator;
+  public boolean hasNext() {
+    return true;
+  }
+
+  @Override
+  public T next() {
+    return this.supplier.get();
   }
 
 }

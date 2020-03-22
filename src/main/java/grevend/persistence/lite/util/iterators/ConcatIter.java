@@ -22,41 +22,40 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
+import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.function.Consumer;
+import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 
-public class PeekSeq<T> implements Seq<T> {
+public class ConcatIter<T> extends ChainIter<T> {
 
-  private final Seq<T> seq;
-  private final Consumer<T> consumer;
+  private final Queue<Iterator<? extends T>> queue;
 
-  public PeekSeq(@NotNull Seq<T> seq, @NotNull Consumer<T> consumer) {
-    this.seq = seq;
-    this.consumer = consumer;
+  public ConcatIter(@NotNull Iterator<T> iterator, @NotNull Collection<Iterator<T>> iterators) {
+    super(iterator);
+    this.queue = new ArrayDeque<>();
+    this.queue.add(iterator);
+    this.queue.addAll(iterators);
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var consumer = this.consumer;
-    return new Iterator<>() {
-
-      @Override
-      public boolean hasNext() {
-        return iterator.hasNext();
+  public boolean hasNext() {
+    while (!this.queue.isEmpty()) {
+      if (this.queue.peek().hasNext()) {
+        return true;
+      } else {
+        this.queue.poll();
       }
+    }
+    return false;
+  }
 
-      @Override
-      public T next() {
-        var next = iterator.next();
-        consumer.accept(next);
-        return next;
-      }
-
-    };
+  @Override
+  public T next() {
+    return this.queue.element().next();
   }
 
 }

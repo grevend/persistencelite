@@ -22,53 +22,31 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
-import grevend.persistence.lite.util.TriFunction;
 import java.util.Iterator;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
-public class RangeSeq<T, S> implements Seq<T> {
+public class PeekIter<T> extends ChainIter<T> {
 
-  private T start, end;
-  private TriFunction<T, T, S, T> stepper;
-  private S step;
+  private final Consumer<T> consumer;
 
-  public RangeSeq(@NotNull T start, @NotNull T end, @NotNull TriFunction<T, T, S, T> stepper,
-      S step) {
-    this.start = start;
-    this.end = end;
-    this.stepper = stepper;
-    this.step = step;
+  public PeekIter(@NotNull Iterator<T> iterator, @NotNull Consumer<T> consumer) {
+    super(iterator);
+    this.consumer = consumer;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var start = this.start;
-    var end = this.end;
-    var step = this.step;
-    var stepper = this.stepper;
-    return new Iterator<>() {
+  public boolean hasNext() {
+    return this.iterator.hasNext();
+  }
 
-      private T current;
-
-      @Override
-      public boolean hasNext() {
-        return !end.equals(this.current);
-      }
-
-      @Override
-      public T next() {
-        if (this.current == null) {
-          return (this.current = start);
-        }
-        if (this.hasNext()) {
-          this.current = stepper.apply(this.current, end, step);
-        }
-        return this.current;
-      }
-
-    };
+  @Override
+  public T next() {
+    var next = this.iterator.next();
+    this.consumer.accept(next);
+    return next;
   }
 
 }

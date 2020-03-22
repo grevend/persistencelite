@@ -22,56 +22,42 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
-import java.util.ArrayDeque;
+import grevend.persistence.lite.util.TriFunction;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public class MergeSeq<T> implements Seq<T> {
+public class RangeIter<T, S> implements Iterator<T> {
 
-  private final Seq<T> seq;
-  private final Seq<? extends T>[] sequences;
+  private final T start, end;
+  private final TriFunction<T, T, S, T> stepper;
+  private final S step;
 
-  @SafeVarargs
-  public MergeSeq(@NotNull Seq<T> seq, @NotNull Seq<? extends T>... sequences) {
-    this.seq = seq;
-    this.sequences = sequences;
+  private T current;
+
+  public RangeIter(@NotNull T start, @NotNull T end, @NotNull TriFunction<T, T, S, T> stepper,
+      @NotNull S step) {
+    this.start = start;
+    this.end = end;
+    this.stepper = stepper;
+    this.step = step;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    Queue<Iterator<? extends T>> queue = new ArrayDeque<>();
-    queue.add(this.seq.iterator());
-    queue.addAll(Stream.of(this.sequences).map(Seq::iterator).collect(Collectors.toList()));
-    return new Iterator<>() {
-
-      @Override
-      public boolean hasNext() {
-        while (!queue.isEmpty()) {
-          if (queue.peek().hasNext()) {
-            return true;
-          }
-          queue.poll();
-        }
-        return false;
-      }
-
-      @Override
-      public T next() {
-        T element = null;
-        var iterator = queue.poll();
-        if(iterator != null) {
-          element = iterator.next();
-          queue.offer(iterator);
-        }
-        return element;
-      }
-
-    };
+  public boolean hasNext() {
+    return !this.end.equals(this.current);
   }
+
+  @Override
+  public T next() {
+    if (this.current == null) {
+      return (this.current = this.start);
+    }
+    if (this.hasNext()) {
+      this.current = this.stepper.apply(this.current, this.end, this.step);
+    }
+    return this.current;
+  }
+
 }

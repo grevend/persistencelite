@@ -22,50 +22,41 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
-import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Queue;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public class ConcatSeq<T> implements Seq<T> {
+public class DistinctIter<T> extends ChainIter<T> {
 
-  private final Seq<T> seq;
-  private final Seq<? extends T>[] sequences;
+  private Set<T> observed;
+  private T next;
 
-  public ConcatSeq(@NotNull Seq<T> seq, @NotNull Seq<? extends T>... sequences) {
-    this.seq = seq;
-    this.sequences = sequences;
+  public DistinctIter(@NotNull Iterator<T> iterator) {
+    super(iterator);
+    this.observed = new HashSet<>();
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    Queue<Iterator<? extends T>> queue = new ArrayDeque<>();
-    queue.add(this.seq.iterator());
-    queue.addAll(Stream.of(this.sequences).map(Seq::iterator).collect(Collectors.toList()));
-    return new Iterator<>() {
-
-      @Override
-      public boolean hasNext() {
-        while (!queue.isEmpty()) {
-          if (queue.peek().hasNext()) {
-            return true;
-          } else {
-            queue.poll();
-          }
-        }
-        return false;
+  public boolean hasNext() {
+    if (this.iterator.hasNext()) {
+      var element = this.iterator.next();
+      if (!this.observed.contains(element)) {
+        this.observed.add(element);
+        this.next = element;
+        return true;
+      } else {
+        return this.hasNext();
       }
+    }
+    return false;
+  }
 
-      @Override
-      public T next() {
-        return queue.element().next();
-      }
-
-    };
+  @Override
+  public T next() {
+    return this.next;
   }
 
 }

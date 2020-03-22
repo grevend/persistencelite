@@ -55,7 +55,7 @@ public interface Dao<E> {
     return this.retrieveAll().parallelStream();
   }
 
-  default @NotNull Seq<E> sequence() {
+  default @NotNull <S extends Seq<E, S>> Seq<E, S> sequence() {
     return Seq.of(this.retrieveAll());
   }
 

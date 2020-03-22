@@ -22,55 +22,30 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
-import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterSeq<T> implements Seq<T> {
+public class SkipIter<T> extends ChainIter<T> {
 
-  private final Seq<T> seq;
-  private final Predicate<? super T> predicate;
-
-  public FilterSeq(@NotNull Seq<T> seq, @NotNull Predicate<? super T> predicate) {
-    this.seq = seq;
-    this.predicate = predicate;
+  public SkipIter(@NotNull Iterator<T> iterator, int maxSize) {
+    super(iterator);
+    var i = 0;
+    while (iterator.hasNext() && i < maxSize) {
+      iterator.next();
+      i++;
+    }
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var predicate = this.predicate;
-    return new Iterator<>() {
+  public boolean hasNext() {
+    return this.iterator.hasNext();
+  }
 
-      private T next;
-      private boolean isNextSet = false;
-
-      @Override
-      public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-      }
-
-      private boolean setNext() {
-        while (iterator.hasNext()) {
-          var obj = iterator.next();
-          if (predicate.test(obj)) {
-            this.next = obj;
-            this.isNextSet = true;
-            return true;
-          }
-        }
-        return false;
-      }
-
-      @Override
-      public T next() {
-        this.isNextSet = false;
-        return this.next;
-      }
-
-    };
+  @Override
+  public T next() {
+    return this.iterator.next();
   }
 
 }

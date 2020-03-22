@@ -22,39 +22,31 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class MapSeq<T, R> implements Seq<R> {
+public class MapIter<T, R> implements Iterator<R> {
 
-  private final Seq<T> seq;
+  private final Iterator<T> iterator;
   private final Function<? super T, ? extends R> function;
 
-  public MapSeq(@NotNull Seq<T> seq, @NotNull Function<? super T, ? extends R> function) {
-    this.seq = seq;
+  public MapIter(@NotNull Iterator<T> iterator,
+      @NotNull Function<? super T, ? extends R> function) {
+    this.iterator = iterator;
     this.function = function;
   }
 
   @Override
-  public @NotNull Iterator<R> iterator() {
-    var iterator = this.seq.iterator();
-    var function = this.function;
-    return new Iterator<>() {
+  public boolean hasNext() {
+    return this.iterator.hasNext();
+  }
 
-      @Override
-      public boolean hasNext() {
-        return iterator.hasNext();
-      }
-
-      @Override
-      public R next() {
-        return function.apply(iterator.next());
-      }
-
-    };
+  @Override
+  public R next() {
+    return this.function.apply(this.iterator.next());
   }
 
 }

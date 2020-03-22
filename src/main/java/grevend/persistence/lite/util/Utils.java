@@ -30,6 +30,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Predicate;
+import org.jetbrains.annotations.NotNull;
 
 public class Utils {
 
@@ -56,6 +57,64 @@ public class Utils {
       return a.getClass().isArray() &&
           !Utils.arrayPrimitives.contains(a.getClass().getCanonicalName()) ?
           Arrays.toString((A[]) a) : a.toString();
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static @NotNull <T extends Number> T add(@NotNull T a, @NotNull T b) {
+    if (a instanceof Integer && b instanceof Integer) {
+      return (T) (Integer) (((Integer) a) + ((Integer) b));
+    } else if (a instanceof Double) {
+      if (b instanceof Double) {
+        return (T) (Double) (((Double) a) + ((Double) b));
+      } else {
+        return (T) (Double) (((Double) a) + ((Integer) b));
+      }
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static @NotNull <T extends Number> T sub(@NotNull T a, @NotNull T b) {
+    if (a instanceof Integer && b instanceof Integer) {
+      return (T) (Integer) (((Integer) a) - ((Integer) b));
+    } else if (a instanceof Double) {
+      if (b instanceof Double) {
+        return (T) (Double) (((Double) a) - ((Double) b));
+      } else {
+        return (T) (Double) (((Double) a) - ((Integer) b));
+      }
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  public static @NotNull <T extends Number> boolean greaterThan(@NotNull T a, @NotNull T b) {
+    if (a instanceof Integer && b instanceof Integer) {
+      return (((Integer) a) > ((Integer) b));
+    } else if (a instanceof Double) {
+      if (b instanceof Double) {
+        return (((Double) a) > ((Double) b));
+      } else {
+        return (((Double) a) > ((Integer) b));
+      }
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  public static @NotNull <T extends Number> boolean lessThan(@NotNull T a, @NotNull T b) {
+    if (a instanceof Integer && b instanceof Integer) {
+      return (((Integer) a) < ((Integer) b));
+    } else if (a instanceof Double) {
+      if (b instanceof Double) {
+        return (((Double) a) < ((Double) b));
+      } else {
+        return (((Double) a) < ((Integer) b));
+      }
+    } else {
+      throw new IllegalArgumentException();
     }
   }
 
