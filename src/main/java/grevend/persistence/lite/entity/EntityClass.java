@@ -207,7 +207,11 @@ public class EntityClass<E> {
         Field field = this.entityClass.getField(attribute.getB());
         boolean isAccessible = field.canAccess(obj);
         field.setAccessible(true);
-        if (attribute.getA().equals(Option.class)) {
+        if (attribute.getA().isEnum()) {
+          var method = attribute.getA().getMethod("valueOf", String.class);
+          method.setAccessible(true);
+          field.set(obj, method.invoke(null, values.apply(attribute.getC())));
+        } else if (attribute.getA().equals(Option.class)) {
           if (!(values.apply(attribute.getC()) instanceof Serializable)
               && values.apply(attribute.getC()) != null) {
             throw new EntityImplementationException(
