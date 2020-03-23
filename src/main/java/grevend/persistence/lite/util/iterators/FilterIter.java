@@ -22,30 +22,44 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
-public class SkipSeq<T> implements Seq<T> {
+public class FilterIter<T> extends ChainIter<T> {
 
-  private Seq<T> seq;
-  private int maxSize;
+  private final Predicate<? super T> predicate;
+  private T next;
+  private boolean isNextSet = false;
 
-  public SkipSeq(@NotNull Seq<T> seq, int maxSize) {
-    this.seq = seq;
-    this.maxSize = maxSize;
+  public FilterIter(@NotNull Iterator<T> iterator, @NotNull Predicate<? super T> predicate) {
+    super(iterator);
+    this.predicate = predicate;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var i = 0;
-    while (iterator.hasNext() && i < this.maxSize) {
-      iterator.next();
-      i++;
+  public boolean hasNext() {
+    return this.isNextSet || this.setNext();
+  }
+
+  private boolean setNext() {
+    while (this.iterator.hasNext()) {
+      var element = this.iterator.next();
+      if (this.predicate.test(element)) {
+        this.next = element;
+        this.isNextSet = true;
+        return true;
+      }
     }
-    return iterator;
+    return false;
+  }
+
+  @Override
+  public T next() {
+    this.isNextSet = false;
+    return this.next;
   }
 
 }

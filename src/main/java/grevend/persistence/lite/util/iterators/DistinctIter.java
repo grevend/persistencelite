@@ -22,50 +22,41 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public class DistinctSeq<T> implements Seq<T> {
+public class DistinctIter<T> extends ChainIter<T> {
 
-  private Seq<T> seq;
+  private Set<T> observed;
+  private T next;
 
-  public DistinctSeq(@NotNull Seq<T> seq) {
-    this.seq = seq;
+  public DistinctIter(@NotNull Iterator<T> iterator) {
+    super(iterator);
+    this.observed = new HashSet<>();
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    return new Iterator<>() {
-
-      private Set<T> observed = new HashSet<>();
-      private T next;
-
-      @Override
-      public boolean hasNext() {
-        if (iterator.hasNext()) {
-          var element = iterator.next();
-          if (!this.observed.contains(element)) {
-            this.observed.add(element);
-            this.next = element;
-            return true;
-          } else {
-            return this.hasNext();
-          }
-        }
-        return false;
+  public boolean hasNext() {
+    if (this.iterator.hasNext()) {
+      var element = this.iterator.next();
+      if (!this.observed.contains(element)) {
+        this.observed.add(element);
+        this.next = element;
+        return true;
+      } else {
+        return this.hasNext();
       }
+    }
+    return false;
+  }
 
-      @Override
-      public T next() {
-        return this.next;
-      }
-
-    };
+  @Override
+  public T next() {
+    return this.next;
   }
 
 }

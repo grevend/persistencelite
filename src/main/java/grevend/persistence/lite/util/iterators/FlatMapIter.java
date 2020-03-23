@@ -22,55 +22,49 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
+import grevend.persistence.lite.util.sequence.Seq;
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class FlatMapSeq<T, R> implements Seq<R> {
+public class FlatMapIter<T, R, U extends Seq<R, ?>> implements Iterator<R> {
 
-  private final Seq<T> seq;
-  private final Function<? super T, ? extends Seq<? extends R>> function;
+  private final Iterator<T> iterator;
+  private final Function<? super T, ? extends Seq<? extends R, ?>> function;
+  private final Queue<Iterator<? extends R>> queue;
 
-  public FlatMapSeq(@NotNull Seq<T> seq,
-      @NotNull Function<? super T, ? extends Seq<? extends R>> function) {
-    this.seq = seq;
+  public FlatMapIter(@NotNull Iterator<T> iterator,
+      @NotNull Function<? super T, ? extends Seq<? extends R, ?>> function) {
+    this.iterator = iterator;
     this.function = function;
+    this.queue = new ArrayDeque<>();
+    if (iterator.hasNext()) {
+      this.queue.offer(function.apply(iterator.next()).iterator());
+    }
   }
 
   @Override
-  public @NotNull Iterator<R> iterator() {
-    var iterator = this.seq.iterator();
-    var function = this.function;
-    Queue<Iterator<? extends R>> queue = new ArrayDeque<>();
-    if (iterator.hasNext()) {
-      queue.offer(function.apply(iterator.next()).iterator());
-    }
-    return new Iterator<>() {
-
-      @Override
-      public boolean hasNext() {
-        while (!queue.isEmpty()) {
-          if (queue.peek().hasNext()) {
-            return true;
-          } else {
-            if (iterator.hasNext()) {
-              queue.offer(function.apply(iterator.next()).iterator());
-            }
-            queue.poll();
-          }
+  public boolean hasNext() {
+    while (!this.queue.isEmpty()) {
+      if (this.queue.peek().hasNext()) {
+        return true;
+      } else {
+        if (this.iterator.hasNext()) {
+          this.queue.offer(this.function.apply(this.iterator.next()).iterator());
         }
-        return false;
+        this.queue.poll();
       }
-
-      @Override
-      public R next() {
-        return queue.element().next();
-      }
-
-    };
+    }
+    return false;
   }
+
+  @Override
+  public R next() {
+    return this.queue.element().next();
+  }
+
 }

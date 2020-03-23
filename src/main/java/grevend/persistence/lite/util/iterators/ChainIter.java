@@ -22,41 +22,17 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
-import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
-public class PeekSeq<T> implements Seq<T> {
+public abstract class ChainIter<T> implements Iterator<T> {
 
-  private final Seq<T> seq;
-  private final Consumer<T> consumer;
+  protected final Iterator<T> iterator;
 
-  public PeekSeq(@NotNull Seq<T> seq, @NotNull Consumer<T> consumer) {
-    this.seq = seq;
-    this.consumer = consumer;
-  }
-
-  @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var consumer = this.consumer;
-    return new Iterator<>() {
-
-      @Override
-      public boolean hasNext() {
-        return iterator.hasNext();
-      }
-
-      @Override
-      public T next() {
-        var next = iterator.next();
-        consumer.accept(next);
-        return next;
-      }
-
-    };
+  ChainIter(@NotNull Iterator<T> iterator) {
+    this.iterator = iterator;
   }
 
 }

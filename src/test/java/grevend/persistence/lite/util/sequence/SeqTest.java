@@ -34,11 +34,11 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class SeqTest {
+class SeqTest<SI extends Seq<Integer, SI>> {
 
   private List<Integer> integers;
-  private Seq<Integer> integerSeq;
-  private Seq<Integer> emptySeq;
+  private Seq<Integer, SI> integerSeq;
+  private Seq<Integer, SI> emptySeq;
 
   @BeforeEach
   void initIntegers() {

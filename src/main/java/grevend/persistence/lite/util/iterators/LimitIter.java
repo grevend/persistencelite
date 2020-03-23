@@ -22,36 +22,30 @@
  * SOFTWARE.
  */
 
-package grevend.persistence.lite.util.sequence;
+package grevend.persistence.lite.util.iterators;
 
 import java.util.Iterator;
-import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 
-public class GeneratorSeq<T> implements Seq<T> {
+public class LimitIter<T> extends ChainIter<T> {
 
-  private final Supplier<T> supplier;
+  private final int maxSize;
+  private int i = 0;
 
-  public GeneratorSeq(@NotNull Supplier<T> supplier) {
-    this.supplier = supplier;
+  public LimitIter(@NotNull Iterator<T> iterator, int maxSize) {
+    super(iterator);
+    this.maxSize = maxSize;
   }
 
   @Override
-  public @NotNull Iterator<T> iterator() {
-    var supplier = this.supplier;
-    return new Iterator<>() {
+  public boolean hasNext() {
+    return this.i < this.maxSize && this.iterator.hasNext();
+  }
 
-      @Override
-      public boolean hasNext() {
-        return true;
-      }
-
-      @Override
-      public T next() {
-        return supplier.get();
-      }
-
-    };
+  @Override
+  public T next() {
+    this.i++;
+    return this.iterator.next();
   }
 
 }

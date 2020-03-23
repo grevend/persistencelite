@@ -24,39 +24,19 @@
 
 package grevend.persistence.lite.util.sequence;
 
+import grevend.persistence.lite.util.Utils;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
-public class LimitSeq<T> implements Seq<T> {
+public class NumberSeq<T extends Number> extends Seq<T, NumberSeq<T>> {
 
-  private Seq<T> seq;
-  private int maxSize;
-
-  public LimitSeq(@NotNull Seq<T> seq, int maxSize) {
-    this.seq = seq;
-    this.maxSize = maxSize;
+  NumberSeq(@NotNull Iterator<T> iterator) {
+    super(iterator);
   }
 
-  @Override
-  public @NotNull Iterator<T> iterator() {
-    var iterator = this.seq.iterator();
-    var maxSize = this.maxSize;
-    return new Iterator<>() {
-
-      private int i = 0;
-
-      @Override
-      public boolean hasNext() {
-        return this.i < maxSize && iterator.hasNext();
-      }
-
-      @Override
-      public T next() {
-        this.i++;
-        return iterator.next();
-      }
-
-    };
+  @SuppressWarnings("unchecked")
+  public @NotNull T sum() {
+    return this.reduce((T) (Number) 0, Utils::add);
   }
 
 }
