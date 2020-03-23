@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,9 +56,20 @@ public class EntityClass<E> {
   private List<Field> entityFields = null;
   private List<Triplet<Class<?>, String, String>> entityAttributes;
 
+  private final Predicate<Constructor<?>> isArgsConstructorViable = constructor -> {
+    try {
+      Class<?>[] types = this.entityAttributes.stream().map(Triplet::getA).toArray(Class<?>[]::new);
+      this.getEntityClass().getConstructor(types);
+      return true;
+    } catch (NoSuchMethodException e) {
+      return false;
+    }
+  };
+
   private EntityClass(@NotNull Class<E> entityClass) {
     this.entityClass = entityClass;
     this.entityAttributes = new ArrayList<>();
+    this.entityAttributes.addAll(this.getAttributes());
   }
 
   @SuppressWarnings("unchecked")
@@ -78,6 +90,20 @@ public class EntityClass<E> {
     return this.getConstructor().isPresent();
   }
 
+  public boolean hasViableNoArgsConstructor() {
+    if (this.hasViableConstructor()) {
+      return this.getConstructor().get().getParameterCount() == 0;
+    }
+    return false;
+  }
+
+  public boolean hasViableArgsConstructor() {
+    if (this.hasViableConstructor()) {
+      return this.getConstructor().get().getParameterCount() == this.entityAttributes.size();
+    }
+    return false;
+  }
+
   public boolean hasViableFields() {
     return this.getFields().size() > 0;
   }
@@ -94,10 +120,11 @@ public class EntityClass<E> {
   private @NotNull Optional<Constructor<E>> getConstructor() {
     if (this.entityConstructor.isEmpty()) {
       List<Constructor<?>> constructors = Arrays.stream(this.entityClass.getDeclaredConstructors())
-          .filter(isConstructorViable).collect(Collectors.toList());
+          .filter(isConstructorViable.or(this.isArgsConstructorViable))
+          .collect(Collectors.toList());
       this.entityConstructor =
-          constructors.size() > 0 ? Optional.ofNullable((Constructor<E>) constructors.get(0)) :
-              Optional.empty();
+          constructors.size() > 0 ? Optional.ofNullable((Constructor<E>) constructors.get(0))
+              : Optional.empty();
     }
     return this.entityConstructor;
   }
@@ -261,7 +288,7 @@ public class EntityClass<E> {
         + this.entityAttributes + '}';
   }
 
-  private static final class EntityClassCache {
+  static final class EntityClassCache {
 
     private static EntityClassCache entityClassCache;
 
@@ -271,11 +298,15 @@ public class EntityClass<E> {
       this.entityClasses = new HashMap<>();
     }
 
-    private static EntityClassCache getInstance() {
+    static EntityClassCache getInstance() {
       if (entityClassCache == null) {
         entityClassCache = new EntityClassCache();
       }
       return entityClassCache;
+    }
+
+    void clearCache() {
+      this.entityClasses.clear();
     }
 
   }

@@ -43,7 +43,6 @@ public class Utils {
   public static Predicate<Field> isFieldViable = field -> !field.isSynthetic()
       && !field.isAnnotationPresent(Ignore.class)
       && !Modifier.isAbstract(field.getModifiers())
-      && !Modifier.isFinal(field.getModifiers())
       && !Modifier.isStatic(field.getModifiers())
       && !Modifier.isTransient(field.getModifiers());
   public static Predicate<Constructor<?>> isConstructorViable =

@@ -93,6 +93,21 @@ class EntityClassTest {
     assertThat(dummyEntity).isNotNull();
   }
 
+  @Test
+  void testEntityHasNoArgsConstructor() {
+    assertThat(EntityClass.of(DummyEntity.class).hasViableNoArgsConstructor()).isFalse();
+    assertThat(EntityClass.of(DummyEntity2.class).hasViableNoArgsConstructor()).isTrue();
+  }
+
+  @Test
+  void testEntityHasArgsConstructor() {
+    EntityClass.EntityClassCache.getInstance().clearCache();
+    assertThat(EntityClass.of(DummyEntity.class).hasViableArgsConstructor()).isFalse();
+    assertThat(EntityClass.of(DummyEntity2.class).hasViableArgsConstructor()).isTrue();
+    assertThat(EntityClass.of(DummyEntity3.class).hasViableArgsConstructor()).isFalse();
+    assertThat(EntityClass.of(DummyEntity5.class).hasViableArgsConstructor()).isTrue();
+  }
+
   @Entity(name = "dummy")
   private static class DummyEntity {
 
@@ -114,10 +129,24 @@ class EntityClassTest {
   public static class DummyEntity3 {
 
     public int id;
+
   }
 
   @Entity(name = "dummy4")
   private static class DummyEntity4 implements Serializable {
+
+  }
+
+  @Entity(name = "dummy5")
+  private static class DummyEntity5 {
+
+    private long test;
+    private int id;
+
+    public DummyEntity5(long test, int id) {
+      this.id = id;
+      this.test = test;
+    }
 
   }
 
