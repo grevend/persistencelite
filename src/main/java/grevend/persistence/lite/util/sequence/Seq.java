@@ -31,6 +31,7 @@ import grevend.persistence.lite.util.iterators.DistinctIter;
 import grevend.persistence.lite.util.iterators.FilterIter;
 import grevend.persistence.lite.util.iterators.FlatMapIter;
 import grevend.persistence.lite.util.iterators.GeneratorIter;
+import grevend.persistence.lite.util.iterators.GeneratorWithSeedIter;
 import grevend.persistence.lite.util.iterators.LimitIter;
 import grevend.persistence.lite.util.iterators.MapIter;
 import grevend.persistence.lite.util.iterators.MergeIter;
@@ -42,6 +43,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -50,6 +53,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -82,8 +86,18 @@ public class Seq<T, S extends Seq<T, S>> {
     return new Seq<>(iterator);
   }
 
+  public static @NotNull <T extends Number, S extends NumberSeq<T>> NumberSeq<T> ofNumeric(
+      @NotNull Iterator<T> iterator) {
+    return new NumberSeq<>(iterator);
+  }
+
   public static @NotNull <T, S extends Seq<T, S>> Seq<T, S> of(@NotNull Iterable<T> iterable) {
     return of(iterable.iterator());
+  }
+
+  public static @NotNull <T extends Number, S extends NumberSeq<T>> NumberSeq<T> ofNumeric(
+      @NotNull Iterable<T> iterable) {
+    return ofNumeric(iterable.iterator());
   }
 
   @SafeVarargs
@@ -93,6 +107,11 @@ public class Seq<T, S extends Seq<T, S>> {
 
   @SafeVarargs
   public static @NotNull <T extends Number> NumberSeq<T> of(T... values) {
+    return new NumberSeq<>(Arrays.asList(values).iterator());
+  }
+
+  @SafeVarargs
+  public static @NotNull <T extends Number> NumberSeq<T> ofNumbers(T... values) {
     return new NumberSeq<>(Arrays.asList(values).iterator());
   }
 
@@ -140,6 +159,12 @@ public class Seq<T, S extends Seq<T, S>> {
     return (S) of(new GeneratorIter<>(supplier));
   }
 
+  @SuppressWarnings("unchecked")
+  public static @NotNull <T, S extends Seq<T, S>> S generate(@NotNull T seed,
+      @NotNull UnaryOperator<T> function) {
+    return (S) of(new GeneratorWithSeedIter<>(seed, function));
+  }
+
   public @NotNull Iterator<T> iterator() {
     return this.iterator;
   }
@@ -154,6 +179,19 @@ public class Seq<T, S extends Seq<T, S>> {
   public @NotNull <R, U extends Seq<R, U>> U map(
       @NotNull Function<? super T, ? extends R> function) {
     return (U) Seq.<R, U>of(new MapIter<>(this.iterator, function));
+  }
+
+  @SuppressWarnings("unchecked")
+  public @NotNull <R, U extends Seq<R, U>> U mapNotNull(
+      @NotNull Function<? super T, ? extends R> function) {
+    return (U) Seq.<R, U>of(
+        new FilterIter<>(new MapIter<>(this.iterator, function), Objects::nonNull));
+  }
+
+  @SuppressWarnings("unchecked")
+  public @NotNull <R extends Number, U extends NumberSeq<R>> U mapToNumber(
+      @NotNull Function<? super T, ? extends R> function) {
+    return (U) ofNumeric(new MapIter<>(this.iterator, function));
   }
 
   @SuppressWarnings("unchecked")
@@ -206,6 +244,17 @@ public class Seq<T, S extends Seq<T, S>> {
   public @NotNull S sorted(@NotNull Comparator<? super T> comparator) {
     var list = this.toList();
     list.sort(comparator);
+    return (S) of(list);
+  }
+
+  public @NotNull S sortedDescending() {
+    return this.sortedDescending(new GenericComparator<>().reversed());
+  }
+
+  @SuppressWarnings("unchecked")
+  public @NotNull S sortedDescending(@NotNull Comparator<? super T> comparator) {
+    var list = this.toList();
+    list.sort(comparator.reversed());
     return (S) of(list);
   }
 
@@ -285,6 +334,23 @@ public class Seq<T, S extends Seq<T, S>> {
 
   public @NotNull Set<T> toUnmodifiableSet() {
     return this.collect(Collectors.toUnmodifiableSet());
+  }
+
+  public @NotNull <K> Map<? extends K, List<T>> groupBy(
+      @NotNull Function<? super T, ? extends K> classifier) {
+    return this.collect(Collectors.groupingBy(classifier));
+  }
+
+  public @NotNull <K, A, D> Map<? extends K, D> groupBy(
+      @NotNull Function<? super T, ? extends K> classifier,
+      @NotNull Collector<? super T, A, D> downstream) {
+    return this.collect(Collectors.groupingBy(classifier, downstream));
+  }
+
+  public @NotNull <K, A, D, M extends Map<K, D>> Map<? extends K, D> groupBy(
+      @NotNull Function<? super T, ? extends K> classifier, @NotNull Supplier<M> mapFactory,
+      @NotNull Collector<? super T, A, D> downstream) {
+    return this.collect(Collectors.groupingBy(classifier, mapFactory, downstream));
   }
 
   public @NotNull String joining() {
