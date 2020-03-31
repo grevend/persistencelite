@@ -35,10 +35,11 @@ import org.jetbrains.annotations.NotNull;
 
 public interface Dao<E> {
 
-  boolean create(@NotNull E entity);
+  Dao<E> create(@NotNull E entity);
 
-  default boolean createAll(@NotNull Collection<E> entities) {
-    return entities.stream().allMatch(this::create);
+  default Dao<E> createAll(@NotNull Collection<E> entities) {
+    entities.forEach(this::create);
+    return this;
   }
 
   @NotNull Optional<E> retrieveByKey(@NotNull Tuple key);
@@ -59,22 +60,26 @@ public interface Dao<E> {
     return Seq.of(this.retrieveAll());
   }
 
-  default boolean update(@NotNull E entity) {
-    return this.delete(entity) && this.create(entity);
+  default Dao<E> update(@NotNull E entity) {
+    this.delete(entity);
+    this.create(entity);
+    return this;
   }
 
-  default boolean updateAll(@NotNull Collection<E> entities) {
-    return entities.stream().allMatch(this::update);
+  default Dao<E> updateAll(@NotNull Collection<E> entities) {
+    entities.forEach(this::update);
+    return this;
   }
 
-  boolean delete(@NotNull E entity);
+  Dao<E> delete(@NotNull E entity);
 
-  boolean deleteByKey(@NotNull Tuple key);
+  Dao<E> deleteByKey(@NotNull Tuple key);
 
-  boolean deleteByAttributes(@NotNull Map<String, ?> attributes);
+  Dao<E> deleteByAttributes(@NotNull Map<String, ?> attributes);
 
-  default boolean deleteAll(@NotNull Collection<E> entities) {
-    return entities.stream().allMatch(this::delete);
+  default Dao<E> deleteAll(@NotNull Collection<E> entities) {
+    entities.forEach(this::delete);
+    return this;
   }
 
   @NotNull Database getDatabase();

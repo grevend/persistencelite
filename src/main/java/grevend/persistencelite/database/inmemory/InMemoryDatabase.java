@@ -98,12 +98,11 @@ public class InMemoryDatabase extends Database {
     return new Dao<>() {
 
       @Override
-      public boolean create(@NotNull E entity) {
+      public Dao<E> create(@NotNull E entity) {
         if (!InMemoryDatabase.this.storage.get(entityClass).contains(entity)) {
           InMemoryDatabase.this.storage.get(entityClass).add(entity);
-          return true;
         }
-        return false;
+        return this;
       }
 
       @Override
@@ -131,22 +130,22 @@ public class InMemoryDatabase extends Database {
       }
 
       @Override
-      public boolean delete(@NotNull E entity) {
+      public Dao<E> delete(@NotNull E entity) {
         if (InMemoryDatabase.this.storage.containsKey(entityClass)) {
           InMemoryDatabase.this.storage.get(entityClass).remove(entity);
-          return true;
         }
-        return false;
+        return this;
       }
 
       @Override
-      public boolean deleteByKey(@NotNull Tuple key) {
+      public Dao<E> deleteByKey(@NotNull Tuple key) {
         var entity = this.retrieveByKey(key);
-        return entity.isPresent() && this.delete(entity.get());
+        entity.ifPresent(this::delete);
+        return this;
       }
 
       @Override
-      public boolean deleteByAttributes(@NotNull Map<String, ?> attributes) {
+      public Dao<E> deleteByAttributes(@NotNull Map<String, ?> attributes) {
         return this.deleteAll(this.retrieveByAttributes(attributes));
       }
 

@@ -199,20 +199,22 @@ public class SqlDatabase extends Database {
       }
 
       @Override
-      public boolean create(@NotNull E entity) {
-        return this.operation(SqlDatabase.this::prepareCreateStatement,
+      public Dao<E> create(@NotNull E entity) {
+        this.operation(SqlDatabase.this::prepareCreateStatement,
             (connection, statement) -> this.create(entity, connection, statement));
+        return this;
       }
 
       @Override
-      public boolean createAll(@NotNull Collection<E> entities) {
-        return this.operationWithRollback(SqlDatabase.this::prepareCreateStatement,
+      public Dao<E> createAll(@NotNull Collection<E> entities) {
+        this.operationWithRollback(SqlDatabase.this::prepareCreateStatement,
             (connection, statement) -> {
               for (E entity : entities) {
                 this.create(entity, connection, statement);
                 connection.commit();
               }
             });
+        return this;
       }
 
       @Override
@@ -276,16 +278,17 @@ public class SqlDatabase extends Database {
       }
 
       @Override
-      public boolean delete(@NotNull E entity) {
-        return this.operation((connection, entityClass) -> SqlDatabase.this
+      public Dao<E> delete(@NotNull E entity) {
+        this.operation((connection, entityClass) -> SqlDatabase.this
                 .prepareDeleteWithAttributesStatement(connection, entityClass,
                     keys.stream().map(Triplet::getC).collect(Collectors.toList())),
             (connection, statement) -> this.delete(entity, connection, statement));
+        return this;
       }
 
       @Override
-      public boolean deleteAll(@NotNull Collection<E> entities) {
-        return this.operationWithRollback((connection, entityClass) -> SqlDatabase.this
+      public Dao<E> deleteAll(@NotNull Collection<E> entities) {
+        this.operationWithRollback((connection, entityClass) -> SqlDatabase.this
                 .prepareDeleteWithAttributesStatement(connection, entityClass,
                     keys.stream().map(Triplet::getC).collect(Collectors.toList())),
             (connection, statement) -> {
@@ -294,27 +297,30 @@ public class SqlDatabase extends Database {
                 connection.commit();
               }
             });
+        return this;
       }
 
       @Override
-      public boolean deleteByKey(@NotNull Tuple key) {
-        return this.operation((connection, entityClass) -> SqlDatabase.this
+      public Dao<E> deleteByKey(@NotNull Tuple key) {
+        this.operation((connection, entityClass) -> SqlDatabase.this
                 .prepareDeleteWithAttributesStatement(connection, entityClass,
                     keys.stream().map(Triplet::getC).collect(Collectors.toList())),
             (connection, statement) -> {
               this.setStatementValues(key, statement, keys);
               statement.executeUpdate();
             });
+        return this;
       }
 
       @Override
-      public boolean deleteByAttributes(@NotNull Map<String, ?> attributes) {
-        return this.operation((connection, entityClass) -> SqlDatabase.this
+      public Dao<E> deleteByAttributes(@NotNull Map<String, ?> attributes) {
+        this.operation((connection, entityClass) -> SqlDatabase.this
                 .prepareDeleteWithAttributesStatement(connection, entityClass, attributes.keySet()),
             (connection, statement) -> {
               this.setStatementValues(attributes, statement);
               statement.executeUpdate();
             });
+        return this;
       }
 
       @Override
