@@ -36,4 +36,9 @@ class UtilAnnotationTest {
     TestUtil.assertAnnotationRetentionAndTarget(Ignore.class, ElementType.FIELD);
   }
 
+  @Test
+  void testPrimaryKey() {
+    assertAnnotationRetentionAndTarget(PrimaryKey.class, ElementType.FIELD);
+  }
+
 }
