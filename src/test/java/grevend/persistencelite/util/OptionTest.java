@@ -33,47 +33,47 @@ import org.junit.jupiter.api.Test;
 
 class OptionTest {
 
-  @Test
-  void testOptionOf() {
-    Option<Integer> integerOption = Option.of(12);
-    assertThat(integerOption.isPresent()).isTrue();
-    assertThat(integerOption.isEmpty()).isFalse();
-    assertThat(integerOption.get()).isEqualTo(12);
-  }
+    @Test
+    void testOptionOf() {
+        Option<Integer> integerOption = Option.of(12);
+        assertThat(integerOption.isPresent()).isTrue();
+        assertThat(integerOption.isEmpty()).isFalse();
+        assertThat(integerOption.get()).isEqualTo(12);
+    }
 
-  @Test
-  void testOptionOfNull() {
-    Option<Integer> integerOption = Option.of(null);
-    assertThat(integerOption.isPresent()).isFalse();
-    assertThat(integerOption.isEmpty()).isTrue();
-    assertThatThrownBy(integerOption::get).isExactlyInstanceOf(NoSuchElementException.class);
-  }
+    @Test
+    void testOptionOfNull() {
+        Option<Integer> integerOption = Option.of(null);
+        assertThat(integerOption.isPresent()).isFalse();
+        assertThat(integerOption.isEmpty()).isTrue();
+        assertThatThrownBy(integerOption::get).isExactlyInstanceOf(NoSuchElementException.class);
+    }
 
-  @Test
-  void testOptionFromOptional() {
-    Option<Integer> integerOption = Option.ofOptional(Optional.of(12));
-    assertThat(integerOption.isPresent()).isTrue();
-    assertThat(integerOption.isEmpty()).isFalse();
-    assertThat(integerOption.get()).isEqualTo(12);
-  }
+    @Test
+    void testOptionFromOptional() {
+        Option<Integer> integerOption = Option.ofOptional(Optional.of(12));
+        assertThat(integerOption.isPresent()).isTrue();
+        assertThat(integerOption.isEmpty()).isFalse();
+        assertThat(integerOption.get()).isEqualTo(12);
+    }
 
-  @Test
-  void testOptionFromEmptyOptional() {
-    Option<Integer> integerOption = Option.ofOptional(Optional.empty());
-    assertThat(integerOption.isPresent()).isFalse();
-    assertThat(integerOption.isEmpty()).isTrue();
-    assertThatThrownBy(integerOption::get).isExactlyInstanceOf(NoSuchElementException.class);
-  }
+    @Test
+    void testOptionFromEmptyOptional() {
+        Option<Integer> integerOption = Option.ofOptional(Optional.empty());
+        assertThat(integerOption.isPresent()).isFalse();
+        assertThat(integerOption.isEmpty()).isTrue();
+        assertThatThrownBy(integerOption::get).isExactlyInstanceOf(NoSuchElementException.class);
+    }
 
-  @Test
-  void testOptionToString() {
-    Option<Integer> integerOption = Option.of(42);
-    assertThat(integerOption.toString()).isEqualTo("Option[42]");
-  }
+    @Test
+    void testOptionToString() {
+        Option<Integer> integerOption = Option.of(42);
+        assertThat(integerOption.toString()).isEqualTo("Option[42]");
+    }
 
-  @Test
-  void testOptionOfNullToString() {
-    assertThat(Option.of(null).toString()).isEqualTo("Option.empty");
-  }
+    @Test
+    void testOptionOfNullToString() {
+        assertThat(Option.of(null).toString()).isEqualTo("Option.empty");
+    }
 
 }

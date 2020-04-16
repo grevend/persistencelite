@@ -34,69 +34,71 @@ import org.jetbrains.annotations.NotNull;
 
 public class Option<T extends Serializable> implements Serializable {
 
-  private static final long serialVersionUID = 5775395636702270419L;
-  private T value;
+    private static final long serialVersionUID = 5775395636702270419L;
+    private final T value;
 
-  private Option() {
-    this.value = null;
-  }
-
-  private Option(T value) {
-    this.value = value;
-  }
-
-  @Contract(value = " -> new", pure = true)
-  public static @NotNull <T extends Serializable> Option<T> empty() {
-    return new Option<T>();
-  }
-
-  @Contract("!null -> new")
-  public static @NotNull <T extends Serializable> Option<T> of(T value) {
-    return value == null ? empty() : new Option<>(value);
-  }
-
-  public static @NotNull <T extends Serializable> Option<T> ofOptional(@NotNull Optional<T> value) {
-    return value.isEmpty() ? empty() : new Option<>(value.get());
-  }
-
-  public @NotNull T get() {
-    if (this.value == null) {
-      throw new NoSuchElementException("No value present");
-    } else {
-      return this.value;
+    @Contract(pure = true)
+    private Option() {
+        this.value = null;
     }
-  }
 
-  public boolean isPresent() {
-    return this.value != null;
-  }
-
-  public boolean isEmpty() {
-    return this.value == null;
-  }
-
-  @Override
-  @Generated
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+    @Contract(pure = true)
+    private Option(T value) {
+        this.value = value;
     }
-    if (o == null || this.getClass() != o.getClass()) {
-      return false;
+
+    @Contract(value = " -> new", pure = true)
+    public static @NotNull <T extends Serializable> Option<T> empty() {
+        return new Option<T>();
     }
-    Option<?> option = (Option<?>) o;
-    return Objects.equals(this.value, option.value);
-  }
 
-  @Override
-  @Generated
-  public int hashCode() {
-    return Objects.hash(this.value);
-  }
+    @Contract("!null -> new")
+    public static @NotNull <T extends Serializable> Option<T> of(T value) {
+        return value == null ? empty() : new Option<>(value);
+    }
 
-  @Override
-  public String toString() {
-    return this.value != null ? String.format("Option[%s]", this.value) : "Option.empty";
-  }
+    public static @NotNull <T extends Serializable> Option<T> ofOptional(@NotNull Optional<T> value) {
+        return value.isEmpty() ? empty() : new Option<>(value.get());
+    }
+
+    public @NotNull T get() {
+        if (this.value == null) {
+            throw new NoSuchElementException("No value present");
+        } else {
+            return this.value;
+        }
+    }
+
+    public boolean isPresent() {
+        return this.value != null;
+    }
+
+    public boolean isEmpty() {
+        return this.value == null;
+    }
+
+    @Override
+    @Generated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || this.getClass() != o.getClass()) {
+            return false;
+        }
+        Option<?> option = (Option<?>) o;
+        return Objects.equals(this.value, option.value);
+    }
+
+    @Override
+    @Generated
+    public int hashCode() {
+        return Objects.hash(this.value);
+    }
+
+    @Override
+    public String toString() {
+        return this.value != null ? String.format("Option[%s]", this.value) : "Option.empty";
+    }
 
 }

@@ -27,6 +27,6 @@ package grevend.persistencelite.util.function;
 @FunctionalInterface
 public interface ThrowingRunnable {
 
-  void run() throws Exception;
+    void run() throws Exception;
 
 }

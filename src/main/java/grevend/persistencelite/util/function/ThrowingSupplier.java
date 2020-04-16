@@ -24,9 +24,12 @@
 
 package grevend.persistencelite.util.function;
 
+import org.jetbrains.annotations.Nullable;
+
 @FunctionalInterface
 public interface ThrowingSupplier<T> {
 
-  T get() throws Exception;
+    @Nullable
+    T get() throws Exception;
 
 }

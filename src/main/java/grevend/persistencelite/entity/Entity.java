@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.entity;
 
+import grevend.persistencelite.dao.Strategy;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -34,6 +35,19 @@ import org.jetbrains.annotations.NotNull;
 @Target(ElementType.TYPE)
 public @interface Entity {
 
-  @NotNull String name();
+    @NotNull
+    String name();
+
+    @NotNull
+    Strategy creationStrategy() default Strategy.CASCADE;
+
+    @NotNull
+    Strategy retrievingStrategy() default Strategy.EAGER;
+
+    @NotNull
+    Strategy updatingStrategy() default Strategy.CASCADE;
+
+    @NotNull
+    Strategy deletionStrategy() default Strategy.CASCADE;
 
 }

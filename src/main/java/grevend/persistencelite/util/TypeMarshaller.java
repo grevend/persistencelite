@@ -25,10 +25,11 @@
 package grevend.persistencelite.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @FunctionalInterface
 public interface TypeMarshaller<A, B> {
 
-  @NotNull B marshall(A value);
+    @NotNull B marshall(@Nullable A value);
 
 }

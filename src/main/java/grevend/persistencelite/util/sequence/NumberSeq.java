@@ -30,13 +30,13 @@ import org.jetbrains.annotations.NotNull;
 
 public class NumberSeq<T extends Number> extends Seq<T, NumberSeq<T>> {
 
-  NumberSeq(@NotNull Iterator<T> iterator) {
-    super(iterator);
-  }
+    NumberSeq(@NotNull Iterator<T> iterator) {
+        super(iterator);
+    }
 
-  @SuppressWarnings("unchecked")
-  public @NotNull T sum() {
-    return this.reduce((T) (Number) 0, Utils::add);
-  }
+    @SuppressWarnings("unchecked")
+    public @NotNull T sum() {
+        return this.reduce((T) (Number) 0, Utils::add);
+    }
 
 }

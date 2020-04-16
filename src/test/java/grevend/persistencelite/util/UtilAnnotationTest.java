@@ -26,19 +26,21 @@ package grevend.persistencelite.util;
 
 import static grevend.persistencelite.util.TestUtil.assertAnnotationRetentionAndTarget;
 
+import grevend.persistencelite.entity.Id;
+import grevend.persistencelite.entity.Ignore;
 import java.lang.annotation.ElementType;
 import org.junit.jupiter.api.Test;
 
 class UtilAnnotationTest {
 
-  @Test
-  void testIgnore() {
-    TestUtil.assertAnnotationRetentionAndTarget(Ignore.class, ElementType.FIELD);
-  }
+    @Test
+    void testIgnore() {
+        TestUtil.assertAnnotationRetentionAndTarget(Ignore.class, ElementType.FIELD);
+    }
 
-  @Test
-  void testPrimaryKey() {
-    assertAnnotationRetentionAndTarget(PrimaryKey.class, ElementType.FIELD);
-  }
+    @Test
+    void testPrimaryKey() {
+        assertAnnotationRetentionAndTarget(Id.class, ElementType.FIELD);
+    }
 
 }

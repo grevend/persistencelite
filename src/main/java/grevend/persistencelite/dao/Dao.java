@@ -24,64 +24,41 @@
 
 package grevend.persistencelite.dao;
 
-import grevend.persistencelite.database.Database;
-import grevend.persistencelite.util.Tuple;
 import grevend.persistencelite.util.sequence.Seq;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
 public interface Dao<E> {
 
-  Dao<E> create(@NotNull E entity);
+    @NotNull
+    E create(@NotNull E entity) throws Exception;
 
-  default Dao<E> createAll(@NotNull Collection<E> entities) {
-    entities.forEach(this::create);
-    return this;
-  }
+    @NotNull
+    Collection<E> create(@NotNull Iterable<E> entities) throws Exception;
 
-  @NotNull Optional<E> retrieveByKey(@NotNull Tuple key);
+    @NotNull
+    Collection<E> retrieve(@NotNull Map<String, Object> properties);
 
-  @NotNull Collection<E> retrieveByAttributes(@NotNull Map<String, ?> attributes);
+    @NotNull
+    Collection<E> retrieve();
 
-  @NotNull Collection<E> retrieveAll();
+    @NotNull
+    E update(@NotNull E entity, @NotNull Map<String, Object> properties);
 
-  default @NotNull Stream<E> stream() {
-    return this.retrieveAll().stream();
-  }
+    @NotNull
+    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties);
 
-  default @NotNull Stream<E> parallelStream() {
-    return this.retrieveAll().parallelStream();
-  }
+    void delete(@NotNull E entity);
 
-  default @NotNull <S extends Seq<E, S>> Seq<E, S> sequence() {
-    return Seq.of(this.retrieveAll());
-  }
+    void delete(@NotNull Map<String, Object> properties);
 
-  default Dao<E> update(@NotNull E entity) {
-    this.delete(entity);
-    this.create(entity);
-    return this;
-  }
+    void delete(@NotNull Iterable<E> entities);
 
-  default Dao<E> updateAll(@NotNull Collection<E> entities) {
-    entities.forEach(this::update);
-    return this;
-  }
-
-  Dao<E> delete(@NotNull E entity);
-
-  Dao<E> deleteByKey(@NotNull Tuple key);
-
-  Dao<E> deleteByAttributes(@NotNull Map<String, ?> attributes);
-
-  default Dao<E> deleteAll(@NotNull Collection<E> entities) {
-    entities.forEach(this::delete);
-    return this;
-  }
-
-  @NotNull Database getDatabase();
+    @NotNull
+    default <S extends Seq<E, S>> Seq<E, S> sequence() {
+        return Seq.of(this.retrieve());
+    }
 
 }
+
