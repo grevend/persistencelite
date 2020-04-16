@@ -101,14 +101,16 @@ public class Main {
 
     @Entity(name = "account2")
     public interface Account {
-
+        @Id
         int id();
-
+        @Id
         String username();
-
         String password();
-
     }
+
+    @Entity(name = "customer")
+    public record Customer(@Id int id, @Id String username, String password, String email, @Property(name = "company_name")String companyName,
+                           @Property(name = "account_id")int accountId) implements Account {}
 
     @Entity(name = "employee")
     public interface Employee extends Account {
@@ -158,10 +160,6 @@ public class Main {
 
     @Entity(name = "pet")
     public record Pet(String owner, String name) {}
-
-    @Entity(name = "customer")
-    public record Customer(@Id int id, String username, /*@Property(name = "password", copy = true)*/ String password, String email, @Property(name = "company_name")String companyName,
-                           @Property(name = "account_id")int accountId/*, @Relation(selfProperties = {"username", "password"}, targetProperties = {"owner", "name"}) List<Pet> pets*/) implements Account {}
 
     // select * from pet where owner = :username
 

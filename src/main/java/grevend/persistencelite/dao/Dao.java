@@ -29,34 +29,148 @@ import java.util.Collection;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A generic implementation of the DAO pattern that provides an abstract interface to some type of
+ * data source.
+ *
+ * @param <E> The type of the entity to which the DAO should apply.
+ *
+ * @author David Greven
+ * @version 0.2.0
+ */
 public interface Dao<E> {
 
+    /**
+     * An implementation of the <b>create</b> CRUD operation that persists an entity.
+     *
+     * @param entity The entity to be persisted.
+     *
+     * @return Either returns the entity from the first parameter or creates a new instance based on
+     * the persistent version.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
     E create(@NotNull E entity) throws Exception;
 
+    /**
+     * An implementation of the <b>create</b> CRUD operation that persists none, one or many
+     * entities.
+     *
+     * @param entities An {@link Iterable} that provides the entities that should be persisted.
+     *
+     * @return Either returns the iterated entities from the first parameter or creates a new
+     * collection based on the persistent versions. The returned collection should be immutable to
+     * avoid confusion about the synchronization behavior of the contained entities with the data
+     * source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
     Collection<E> create(@NotNull Iterable<E> entities) throws Exception;
 
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the key-value pairs passed as parameters in the form of a {@link Map}.
+     *
+     * @param properties The key-value pairs in the form of a {@link Map}.
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
-    Collection<E> retrieve(@NotNull Map<String, Object> properties);
+    Collection<E> retrieve(@NotNull Map<String, Object> properties) throws Exception;
 
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
+     * current entity type.
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
-    Collection<E> retrieve();
+    Collection<E> retrieve() throws Exception;
 
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
+     * provided entity. The properties that should be updated are passed in as the second parameter
+     * in the form of a {@link Map}.
+     *
+     * @param entity     The immutable entity that should be updated.
+     * @param properties The {@link Map} of key-value pairs that represents the properties and their
+     *                   updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
-    E update(@NotNull E entity, @NotNull Map<String, Object> properties);
+    E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Exception;
 
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
+     * the provided entities. An {@link Iterable} of properties that should be updated are passed in
+     * as the second parameter in the form of a {@link Map}.
+     *
+     * @param entities   The immutable entities that should be updated.
+     * @param properties The {@link Iterable} of key-value pair {@link Map} objects that represents
+     *                   the properties and their updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
-    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties);
+    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Exception;
 
-    void delete(@NotNull E entity);
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the
+     * current data source.
+     *
+     * @param entity The entity that should be deleted.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    void delete(@NotNull E entity) throws Exception;
 
-    void delete(@NotNull Map<String, Object> properties);
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes the given entities from
+     * the current data source.
+     *
+     * @param entities The {@link Iterable} of entities that should be deleted.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    void delete(@NotNull Iterable<E> entities) throws Exception;
 
-    void delete(@NotNull Iterable<E> entities);
-
+    /**
+     * Returns a lazy sequence based on the collection provided by the {@link #retrieve()} method.
+     *
+     * @param <S> The {@link Seq} type used for providing the return types of the chained method
+     *            calls.
+     *
+     * @return Returns a new {@link Seq} based on the provided {@link Iterable}.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @see Seq
+     * @since 0.2.0
+     */
     @NotNull
-    default <S extends Seq<E, S>> Seq<E, S> sequence() {
+    default <S extends Seq<E, S>> Seq<E, S> sequence() throws Exception {
         return Seq.of(this.retrieve());
     }
 

@@ -24,6 +24,10 @@
 
 package grevend.jacoco;
 
-public @interface Generated {
-
-}
+/**
+ * An annotation to enable jacoco's filtering options for marked auto-generated code.
+ *
+ * @author David Greven
+ * @version 0.2.0
+ */
+public @interface Generated {}

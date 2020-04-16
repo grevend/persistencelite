@@ -37,6 +37,18 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * An abstract Dao class that offers standard implementations for some CRUD operations which can be
+ * used to simplify creating a custom Dao implementation. It also enables simplified access to the
+ * entity metadata and current transaction.
+ *
+ * @param <E> The type of the entity to which the DAO should apply.
+ * @param <T> The type of transaction that can be used in combination with the implementation based
+ *            on this base class.
+ *
+ * @author David Greven
+ * @since 0.2.0
+ */
 public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
 
     private final EntityMetadata<E> entityMetadata;
@@ -58,12 +70,37 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
         return this.entityMetadata;
     }
 
+    /**
+     * An implementation of the <b>create</b> CRUD operation that persists an entity.
+     *
+     * @param entity The entity to be persisted.
+     *
+     * @return Either returns the entity from the first parameter or creates a new instance based on
+     * the persistent version.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     public E create(@NotNull E entity) throws Exception {
         return this.create(entity, EntityFactory.deconstruct(this.entityMetadata, entity));
     }
 
+    /**
+     * An implementation of the <b>create</b> CRUD operation that persists none, one or many
+     * entities.
+     *
+     * @param entities An {@link Iterable} that provides the entities that should be persisted.
+     *
+     * @return Either returns the iterated entities from the first parameter or creates a new
+     * collection based on the persistent versions. The returned collection should be immutable to
+     * avoid confusion about the synchronization behavior of the contained entities with the data
+     * source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     public Collection<E> create(@NotNull Iterable<E> entities) throws Exception {
@@ -78,42 +115,107 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
     @NotNull
     protected abstract E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws Exception;
 
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the key-value pairs passed as parameters in the form of a {@link Map}.
+     *
+     * @param properties The key-value pairs in the form of a {@link Map}.
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
     @Override
-    public Collection<E> retrieve(@NotNull Map<String, Object> properties) {
+    public Collection<E> retrieve(@NotNull Map<String, Object> properties) throws Exception {
         return List.of();
     }
 
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
+     * current entity type.
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @NotNull
     @Override
-    public Collection<E> retrieve() {
-        return null;
-    }
-
-    @NotNull
-    @Override
-    public E update(@NotNull E entity, @NotNull Map<String, Object> properties) {
-        return null;
-    }
-
-    @NotNull
-    @Override
-    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) {
+    public Collection<E> retrieve() throws Exception {
         return List.of();
     }
 
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
+     * provided entity. The properties that should be updated are passed in as the second parameter
+     * in the form of a {@link Map}.
+     *
+     * @param entity     The immutable entity that should be updated.
+     * @param properties The {@link Map} of key-value pairs that represents the properties and their
+     *                   updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    @NotNull
     @Override
-    public void delete(@NotNull E entity) {
+    public E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Exception {
+        return null;
+    }
+
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
+     * the provided entities. An {@link Iterable} of properties that should be updated are passed in
+     * as the second parameter in the form of a {@link Map}.
+     *
+     * @param entities   The immutable entities that should be updated.
+     * @param properties The {@link Iterable} of key-value pair {@link Map} objects that represents
+     *                   the properties and their updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Exception {
+        return List.of();
+    }
+
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the
+     * current data source.
+     *
+     * @param entity The entity that should be deleted.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    @Override
+    public void delete(@NotNull E entity) throws Exception {
 
     }
 
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes the given entities from
+     * the current data source.
+     *
+     * @param entities The {@link Iterable} of entities that should be deleted.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
     @Override
-    public void delete(@NotNull Map<String, Object> properties) {
-
-    }
-
-    @Override
-    public void delete(@NotNull Iterable<E> entities) {
+    public void delete(@NotNull Iterable<E> entities) throws Exception {
 
     }
 
