@@ -31,11 +31,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * An abstract {@code BaseDao} class that offers standard implementations for some CRUD operations
@@ -138,44 +140,6 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
     protected abstract E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws Exception;
 
     /**
-     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
-     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
-     *
-     * @param properties The key-value pairs in the form of a {@code Map}.
-     *
-     * @return Returns the entities found in the form of a collection. The returned collection
-     * should be immutable to avoid confusion about the synchronization behavior of the contained
-     * entities with the data source.
-     *
-     * @throws Exception If an error occurs during the persistence process.
-     * @see Collection
-     * @see Map
-     * @since 0.2.0
-     */
-    @NotNull
-    @Override
-    public Collection<E> retrieve(@NotNull Map<String, Object> properties) throws Exception {
-        return List.of();
-    }
-
-    /**
-     * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
-     * current entity type.
-     *
-     * @return Returns the entities found in the form of a collection. The returned collection
-     * should be immutable to avoid confusion about the synchronization behavior of the contained
-     * entities with the data source.
-     *
-     * @throws Exception If an error occurs during the persistence process.
-     * @since 0.2.0
-     */
-    @NotNull
-    @Override
-    public Collection<E> retrieve() throws Exception {
-        return List.of();
-    }
-
-    /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
      * provided entity. The properties that should be updated are passed in as the second parameter
      * in the form of a {@code Map}.
@@ -215,6 +179,7 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      */
     @NotNull
     @Override
+    @Unmodifiable
     public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Exception {
         return List.of();
     }

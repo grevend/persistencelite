@@ -32,6 +32,7 @@ import grevend.persistencelite.entity.Relation;
 import grevend.persistencelite.service.PostgresService;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.Contract;
 
 public class Main {
@@ -63,6 +64,11 @@ public class Main {
         PostgresService service = new PostgresService();
         var dao = service.createDao(Customer.class);
         dao.create(new Customer(12, "Bob", "123456789", "bob@van.com", "Van...", 12));
+        dao.create(new Customer(21, "Justin", "987654321", "justin@van.com", "Van...", 21));
+        System.out.println(dao.retrieve());
+        System.out.println(dao.retrieve(Map.of("id", 12, "username", "Bob")));
+        System.out.println(dao.retrieve(Map.of("id", 13, "username", "Bob")));
+        //System.out.println(EntityMetadata.of(Customer.class).toStructuredString());
     }
 
     /*
@@ -99,18 +105,27 @@ public class Main {
 
     }
 
-    @Entity(name = "account2")
-    public interface Account {
+    @Entity(name = "account_base")
+    public interface AccountBase {
+
         @Id
         int id();
+
         @Id
         String username();
-        String password();
     }
 
-    @Entity(name = "customer")
-    public record Customer(@Id int id, @Id String username, String password, String email, @Property(name = "company_name")String companyName,
-                           @Property(name = "account_id")int accountId) implements Account {}
+    @Entity(name = "account2")
+    public interface Account extends AccountBase {
+
+        @Id
+        int id();
+
+        @Id
+        String username();
+
+        String password();
+    }
 
     @Entity(name = "employee")
     public interface Employee extends Account {
@@ -137,6 +152,10 @@ public class Main {
         @Property(name = "address_id")
         int addressId();
     }
+
+    @Entity(name = "customer")
+    public record Customer(@Id int id, @Id String username, String password, String email, @Property(name = "company_name")String companyName,
+                           @Property(name = "account_id")int accountId) implements Account {}
 
     @Entity(name = "test")
     public record Test(int a, @Property(name = "abcde")int b, String c, Date d, String helloWorld) {}

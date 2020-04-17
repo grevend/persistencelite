@@ -24,10 +24,13 @@
 
 package grevend.persistencelite.entity;
 
+import grevend.persistencelite.util.function.ThrowingFunction;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -39,17 +42,30 @@ public final class EntityFactory {
     public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull Map<String, Object> properties) throws Throwable {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
-            case RECORD -> constructRecord(entityMetadata, properties);
+            //case RECORD -> constructRecord(entityMetadata, properties);
+            case RECORD -> constructRecord(entityMetadata, properties.keySet(), false,
+                properties::get);
         };
     }
 
     @NotNull
+    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull ResultSet values) throws Throwable {
+        return switch (entityMetadata.getEntityType()) {
+            case CLASS, INTERFACE -> throw new UnsupportedOperationException();
+            //case RECORD -> constructRecord(entityMetadata, properties);
+            case RECORD -> constructRecord(entityMetadata,
+                entityMetadata.getDeclaredProperties().stream().map(EntityProperty::propertyName)
+                    .collect(Collectors.toList()), true, values::getObject);
+        };
+    }
+
+    /*@NotNull
     @SuppressWarnings("unchecked")
     private static <E> E constructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull Map<String, Object> properties) throws Throwable {
         if (entityMetadata.getConstructor() == null) {
             throw new IllegalArgumentException();
         }
-        final var propertyNames = entityMetadata.getProperties().stream()
+        final var propertyNames = entityMetadata.getDeclaredProperties().stream()
             .map(EntityProperty::fieldName).collect(Collectors.toUnmodifiableList());
         if (!properties.keySet().containsAll(propertyNames)) {
             final var missingProperties = new ArrayList<>(propertyNames);
@@ -59,6 +75,28 @@ public final class EntityFactory {
         }
         final var propertyValues = new ArrayList<>();
         propertyNames.forEach(name -> propertyValues.add(properties.get(name)));
+        return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
+    }*/
+
+    @NotNull
+    @SuppressWarnings("unchecked")
+    private static <E> E constructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull Collection<String> properties, boolean props, @NotNull ThrowingFunction<String, Object> values) throws Throwable {
+        if (entityMetadata.getConstructor() == null) {
+            throw new IllegalArgumentException();
+        }
+        final var propertyNames = entityMetadata.getDeclaredProperties().stream()
+            .map(prop -> props ? prop.propertyName() : prop.fieldName())
+            .collect(Collectors.toUnmodifiableList());
+        if (!properties.containsAll(propertyNames)) {
+            final var missingProperties = new ArrayList<>(propertyNames);
+            missingProperties.removeAll(properties);
+            throw new IllegalArgumentException(
+                "Missing properties: " + missingProperties.toString());
+        }
+        final List<Object> propertyValues = new ArrayList<>();
+        for (var name : propertyNames) {
+            propertyValues.add(values.apply(name));
+        }
         return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
     }
 
@@ -80,16 +118,19 @@ public final class EntityFactory {
 
     @NotNull
     private static <E> Collection<Map<String, Object>> deconstructRecordSuperTypes(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity) {
-        Collection<Map<String, Object>> components = new ArrayList<>();
-        entityMetadata.getSuperTypes()
+        /*Collection<Map<String, Object>> components = new ArrayList<>();
+        entityMetadata.getAllSuperTypes()
             .forEach(superType -> components.add(deconstructRecordSuperType(superType, entity)));
-        return components;
+        return components;*/
+        return entityMetadata.getSuperTypes().stream()
+            .map(superType -> deconstructRecordSuperType(superType, entity))
+            .collect(Collectors.toUnmodifiableList());
     }
 
     @NotNull
     private static <E> Map<String, Object> deconstructRecordSuperType(@NotNull EntityMetadata<?> superTypeMetadata, @NotNull E entity) {
         Map<String, Object> properties = new HashMap<>();
-        superTypeMetadata.getProperties().forEach(property -> {
+        superTypeMetadata.getDeclaredProperties().forEach(property -> {
             try {
                 properties.put(property.propertyName(),
                     Objects.requireNonNull(property.getter()).invoke(entity));
@@ -104,9 +145,9 @@ public final class EntityFactory {
     private static <E> Map<String, Object> deconstructRecordComponents(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity) {
         Map<String, Object> properties = new HashMap<>();
         var superPropNames = new HashSet<String>();
-        entityMetadata.getSuperTypes().forEach(metadata -> metadata.getProperties()
+        entityMetadata.getSuperTypes().forEach(metadata -> metadata.getDeclaredProperties()
             .forEach(prop -> superPropNames.add(prop.fieldName())));
-        var props = entityMetadata.getProperties().stream()
+        var props = entityMetadata.getDeclaredProperties().stream()
             .filter(prop -> !superPropNames.contains(prop.fieldName()) || prop.id() || prop.copy())
             .collect(Collectors.toCollection(ArrayList::new));
         props.forEach(property -> {

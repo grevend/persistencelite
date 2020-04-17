@@ -81,13 +81,13 @@ public final class EntityMetadata<E> {
 
     @NotNull
     @Contract(pure = true)
-    public Class<E> getEntityClass() {
+    Class<E> getEntityClass() {
         return this.entityClass;
     }
 
     @NotNull
     @Contract(pure = true)
-    public Collection<EntityMetadata<?>> getSuperTypes() {
+    public Collection<EntityMetadata<?>> getDeclaredSuperTypes() {
         if (this.superTypes.isEmpty()) {
             this.superTypes.addAll(EntityLookup.lookupSuperTypes(this));
         }
@@ -95,7 +95,16 @@ public final class EntityMetadata<E> {
     }
 
     @NotNull
-    public Collection<EntityProperty> getProperties() {
+    public Collection<EntityMetadata<?>> getSuperTypes() {
+        Collection<EntityMetadata<?>> list = this.getDeclaredSuperTypes().stream()
+            .flatMap(superType -> superType.getSuperTypes().stream())
+            .collect(Collectors.toList());
+        list.addAll(this.getDeclaredSuperTypes());
+        return list;
+    }
+
+    @NotNull
+    Collection<EntityProperty> getDeclaredProperties() {
         if (this.properties.isEmpty()) {
             this.properties.addAll(EntityLookup.lookupProperties(this));
         }
@@ -103,16 +112,26 @@ public final class EntityMetadata<E> {
     }
 
     @NotNull
+    public Collection<EntityProperty> getUniqueProperties() {
+        var allProps = this.getSuperTypes().stream()
+            .flatMap(superType -> superType.getDeclaredProperties().stream())
+            .map(EntityProperty::propertyName).collect(Collectors.toUnmodifiableSet());
+        return this.getDeclaredProperties().stream()
+            .filter(prop -> !allProps.contains(prop.propertyName()) || prop.id() || prop.copy())
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @NotNull
     public Collection<EntityProperty> getIdentifiers() {
         if (this.identifiers.isEmpty()) {
-            this.identifiers.addAll(this.getProperties().stream().filter(EntityProperty::id)
+            this.identifiers.addAll(this.getDeclaredProperties().stream().filter(EntityProperty::id)
                 .collect(Collectors.toList()));
         }
         return this.identifiers;
     }
 
     @Nullable
-    public MethodHandle getConstructor() {
+    MethodHandle getConstructor() {
         if (this.constructor == null) {
             this.constructor = EntityLookup.lookupConstructor(this);
         }
@@ -121,7 +140,7 @@ public final class EntityMetadata<E> {
 
     @NotNull
     @Contract(pure = true)
-    public EntityType getEntityType() {
+    EntityType getEntityType() {
         return this.entityType;
     }
 
@@ -133,6 +152,7 @@ public final class EntityMetadata<E> {
      * @see Serializable
      * @since 0.2.0
      */
+    @SuppressWarnings("unused")
     public boolean isSerializable() {
         return Serializable.class.isAssignableFrom(this.getEntityClass());
     }
@@ -154,8 +174,9 @@ public final class EntityMetadata<E> {
      */
     boolean isValid() {
         return !this.getIdentifiers().isEmpty() && this.getIdentifiers().containsAll(
-            this.getSuperTypes().stream().flatMap(superType -> superType.getIdentifiers().stream())
-                .collect(Collectors.toUnmodifiableSet())) && this.getSuperTypes().stream()
+            this.getDeclaredSuperTypes().stream()
+                .flatMap(superType -> superType.getIdentifiers().stream())
+                .collect(Collectors.toUnmodifiableSet())) && this.getDeclaredSuperTypes().stream()
             .allMatch(EntityMetadata::isValid) && (
             (this.getEntityType() == EntityType.RECORD && this.getConstructor() != null) || (
                 this.getEntityType() == EntityType.INTERFACE && this.getConstructor() == null));
@@ -186,14 +207,14 @@ public final class EntityMetadata<E> {
         return "EntityMetadata{" +
             "entityType=" + this.getEntityType() +
             ", entityClass=" + this.getEntityClass() +
-            ", superTypes=" + this.getSuperTypes() +
-            ", properties=" + this.getProperties() +
+            ", superTypes=" + this.getDeclaredSuperTypes() +
+            ", properties=" + this.getDeclaredProperties() +
             ", constructor=" + this.getConstructor() +
             '}';
     }
 
     @NotNull
-    String toStructuredString() {
+    public String toStructuredString() {
         return """
             EntityMetadata {
                  entityType=%s
@@ -201,8 +222,9 @@ public final class EntityMetadata<E> {
                  superTypes=%s
                  properties=%s
                  constructor=%s
-            }""".formatted(this.getEntityType(), this.getEntityClass(), this.getSuperTypes(),
-            this.getProperties(), this.getConstructor());
+            }"""
+            .formatted(this.getEntityType(), this.getEntityClass(), this.getDeclaredSuperTypes(),
+                this.getDeclaredProperties(), this.getConstructor());
     }
 
     static final class EntityMetadataCache {

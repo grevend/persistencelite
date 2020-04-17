@@ -28,6 +28,7 @@ import grevend.persistencelite.dao.BaseDao;
 import grevend.persistencelite.entity.EntityMetadata;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +41,41 @@ public class InMemoryDao<E> extends BaseDao<E, InMemoryTransaction> {
     @NotNull
     @Override
     protected E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws Exception {
+        return null;
+    }
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param identifiers The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entity found in the form of an {@code Optional}.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @see Optional
+     * @see Map
+     * @since 0.2.0
+     */
+    @Override
+    public @NotNull Optional<E> retrieve(@NotNull Map<String, Object> identifiers) throws Exception {
+        return Optional.empty();
+    }
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
+     * current entity type.
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @since 0.2.0
+     */
+    @Override
+    public @NotNull Collection<E> retrieve() throws Exception {
         return null;
     }
 

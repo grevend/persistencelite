@@ -27,6 +27,7 @@ package grevend.persistencelite.dao;
 import grevend.persistencelite.util.sequence.Seq;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -77,19 +78,16 @@ public interface Dao<E> {
      * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
      * based on the key-value pairs passed as parameters in the form of a {@code Map}.
      *
-     * @param properties The key-value pairs in the form of a {@code Map}.
+     * @param identifiers The key-value pairs in the form of a {@code Map}.
      *
-     * @return Returns the entities found in the form of a {@code Collection}. The returned
-     * collection should be immutable to avoid confusion about the synchronization behavior of the
-     * contained entities with the data source.
+     * @return Returns the entity found in the form of an {@code Optional}.
      *
-     * @throws Exception If an error occurs during the persistence process.
-     * @see Collection
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Optional
      * @see Map
      * @since 0.2.0
      */
-    @NotNull
-    Collection<E> retrieve(@NotNull Map<String, Object> properties) throws Exception;
+    @NotNull Optional<E> retrieve(@NotNull Map<String, Object> identifiers) throws Throwable;
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
@@ -99,12 +97,12 @@ public interface Dao<E> {
      * should be immutable to avoid confusion about the synchronization behavior of the contained
      * entities with the data source.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @since 0.2.0
      */
     @NotNull
-    Collection<E> retrieve() throws Exception;
+    Collection<E> retrieve() throws Throwable;
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
@@ -175,14 +173,14 @@ public interface Dao<E> {
      *
      * @return Returns a new {@code Seq} based on the provided {@code Iterable}.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @see Seq
      * @see #retrieve()
      * @see Iterable
      * @since 0.2.0
      */
     @NotNull
-    default <S extends Seq<E, S>> Seq<E, S> sequence() throws Exception {
+    default <S extends Seq<E, S>> Seq<E, S> sequence() throws Throwable {
         return Seq.of(this.retrieve());
     }
 

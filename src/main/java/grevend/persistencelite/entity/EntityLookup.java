@@ -124,7 +124,7 @@ final class EntityLookup {
         try {
             var lookup = MethodHandles.lookup();
             MethodType methodType = MethodType.methodType(void.class,
-                entityMetadata.getProperties().stream().map(EntityProperty::type)
+                entityMetadata.getDeclaredProperties().stream().map(EntityProperty::type)
                     .collect(Collectors.toUnmodifiableList()));
             return lookup.findConstructor(entityMetadata.getEntityClass(), methodType);
         } catch (NoSuchMethodException | IllegalAccessException e) {
@@ -136,8 +136,8 @@ final class EntityLookup {
     @NotNull
     static <E> Collection<EntityMetadata<?>> lookupSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
         return switch (entityMetadata.getEntityType()) {
-            case CLASS, INTERFACE -> List.of();
-            case RECORD -> lookupRecordSuperTypes(entityMetadata);
+            case CLASS  -> List.of();
+            case RECORD, INTERFACE -> lookupRecordSuperTypes(entityMetadata);
         };
     }
 
@@ -146,7 +146,6 @@ final class EntityLookup {
         return Stream.of(entityMetadata.getEntityClass().getInterfaces())
             .filter(superType -> superType.isAnnotationPresent(Entity.class))
             .map(EntityMetadata::of).peek(metadata -> {
-                System.out.println(metadata.toStructuredString());
                 LOGGER.log(Level.DEBUG,
                     metadata.getName() + " is " + (metadata.isValid() ? "a valid" : "an invalid")
                         + " entity");

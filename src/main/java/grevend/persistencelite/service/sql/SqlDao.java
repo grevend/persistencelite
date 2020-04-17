@@ -25,24 +25,29 @@
 package grevend.persistencelite.service.sql;
 
 import grevend.persistencelite.dao.BaseDao;
+import grevend.persistencelite.entity.EntityFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.entity.EntityProperty;
 import grevend.persistencelite.service.sql.PreparedStatementFactory.StatementType;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
 
     private final PreparedStatementFactory preparedStatementFactory;
 
-    public SqlDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable SqlTransaction transaction) {
+    SqlDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable SqlTransaction transaction) {
         super(entityMetadata, transaction);
         this.preparedStatementFactory = new PreparedStatementFactory();
     }
@@ -52,7 +57,6 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @Contract("_, _ -> param1")
     protected E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws SQLException {
         var iterator = this.getEntityMetadata().getSuperTypes().iterator();
-        //System.out.println(this.getEntityMetadata().getSuperTypes().size() + " :: " + properties.size());
         for (Map<String, Object> props : properties) {
             this.create(iterator.hasNext() ? iterator.next() : this.getEntityMetadata(), props);
         }
@@ -61,24 +65,85 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
 
     private void create(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) throws SQLException {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.INSERT,
-            Objects.requireNonNull(this.getTransaction()).connection(), entityMetadata,
-            properties);
-        this.setStatementValues(entityMetadata, preparedStatement, properties);
-        //System.out.println(entityMetadata.getName() + " ;; " + properties);
+            Objects.requireNonNull(this.getTransaction()).connection(), entityMetadata);
+        this.setCreateStatementValues(entityMetadata, preparedStatement, properties);
         preparedStatement.executeUpdate();
     }
 
-    private void setStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+    private void setCreateStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        //System.out.println("Values to set: " + entityMetadata.getName() + " ;; " + properties);
-        for (Entry<String, Object> attribute : properties.entrySet()) {
-            if (attribute.getValue() == null || attribute.getValue().equals("null")) {
+        for (EntityProperty property : entityMetadata.getUniqueProperties()) {
+            var value = properties.get(property.propertyName());
+            if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);
             } else {
-                statement.setObject(i + 1, attribute.getValue());
+                statement.setObject(i + 1, value);
             }
             i++;
         }
+    }
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param identifiers The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entity found in the form of an {@code Optional}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Optional
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    public Optional<E> retrieve(@NotNull Map<String, Object> identifiers) throws Throwable {
+        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT,
+            Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
+        this.setRetrieveStatementValues(this.getEntityMetadata(), preparedStatement, identifiers);
+        var res = preparedStatement.executeQuery();
+        return res.next() ? Optional.of(EntityFactory.construct(this.getEntityMetadata(), res))
+            : Optional.empty();
+    }
+
+    private void setRetrieveStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+        var i = 0;
+        for (EntityProperty property : entityMetadata.getIdentifiers()) {
+            var value = properties.get(property.propertyName());
+            if (value == null || value.equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+            } else {
+                statement.setObject(i + 1, value);
+            }
+            i++;
+        }
+    }
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
+     * current entity type.
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Collection
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    @UnmodifiableView
+    public Collection<E> retrieve() throws Throwable {
+        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
+            Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
+        var res = preparedStatement.executeQuery();
+        Collection<E> entities = new ArrayList<E>();
+        while (res.next()) {
+            entities.add(EntityFactory.construct(this.getEntityMetadata(), res));
+        }
+        return Collections.unmodifiableCollection(entities);
     }
 
 }

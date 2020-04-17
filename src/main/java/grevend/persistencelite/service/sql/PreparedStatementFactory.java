@@ -25,6 +25,7 @@
 package grevend.persistencelite.service.sql;
 
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.entity.EntityProperty;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -38,18 +39,18 @@ import org.jetbrains.annotations.NotNull;
 final class PreparedStatementFactory {
 
     @NotNull
-    PreparedStatement prepare(@NotNull StatementType statementType, @NotNull Connection connection, @NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) throws SQLException {
+    PreparedStatement prepare(@NotNull StatementType statementType, @NotNull Connection connection, @NotNull EntityMetadata<?> entityMetadata) throws SQLException {
         var cache = StatementCache.getInstance().getStatementMap();
         if (!cache.containsKey(entityMetadata)) {
             cache.put(entityMetadata, new HashMap<>());
         }
         if (!cache.get(entityMetadata).containsKey(statementType)) {
             cache.get(entityMetadata).put(statementType, switch (statementType) {
-                case INSERT -> this.prepareInsert(entityMetadata, properties);
-                case SELECT -> this.prepareSelect(entityMetadata, properties);
+                case INSERT -> this.prepareInsert(entityMetadata);
+                case SELECT -> this.prepareSelect(entityMetadata);
                 case SELECT_ALL -> this.prepareSelectAll(entityMetadata);
                 case UPDATE -> null;
-                case DELETE -> this.prepareDelete(entityMetadata, properties);
+                case DELETE -> this.prepareDelete(entityMetadata);
             });
         }
         return connection.prepareStatement(
@@ -57,27 +58,49 @@ final class PreparedStatementFactory {
     }
 
     @NotNull
-    private String prepareInsert(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) {
-        return "insert into " + entityMetadata.getName() + " (" + String
-            .join(", ", properties.keySet()) + ") values (" + String
-            .join(", ", Collections.nCopies(properties.keySet().size(), "?")) + ")";
+    private String prepareInsert(@NotNull EntityMetadata<?> entityMetadata) {
+        return "insert into " + entityMetadata.getName() + " ("
+            + entityMetadata.getUniqueProperties().stream().map(EntityProperty::propertyName)
+            .distinct().collect(Collectors.joining(", "))
+            + ") values ("
+            + String
+            .join(", ", Collections.nCopies(entityMetadata.getUniqueProperties().size(), "?"))
+            + ")";
     }
 
     @NotNull
-    private String prepareSelect(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) {
-        return "select * from " + entityMetadata.getName() + " where " + properties.keySet()
-            .stream().map(property -> property + "=?").collect(Collectors.joining(", "));
+    private String prepareSelect(@NotNull EntityMetadata<?> entityMetadata) {
+        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getIdentifiers()
+            .stream().map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
+            .collect(Collectors.joining(" and ")) + " limit 1";
     }
 
     @NotNull
     private String prepareSelectAll(@NotNull EntityMetadata<?> entityMetadata) {
-        return "select * from " + entityMetadata.getName();
+        var builder = new StringBuilder();
+        builder.append("select distinct * from ").append(entityMetadata.getName());
+        entityMetadata.getDeclaredSuperTypes()
+            .forEach(superType -> this.prepareSelectAll(builder, entityMetadata, superType));
+        return builder.toString();
+    }
+
+    private void prepareSelectAll(@NotNull StringBuilder builder, @NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
+        builder.append(this.prepareInnerJoin(parent, child));
+        child.getDeclaredSuperTypes()
+            .forEach(superType -> this.prepareSelectAll(builder, child, superType));
     }
 
     @NotNull
-    private String prepareDelete(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) {
-        return "delete from " + entityMetadata.getName() + " where " + properties.keySet().stream()
-            .map(attribute -> attribute + "=?").collect(Collectors.joining(", "));
+    private String prepareInnerJoin(@NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
+        return " inner join " + child.getName() + " on " + child.getIdentifiers().stream().map(
+            prop -> parent.getName() + "." + prop.propertyName() + " = " + child.getName() + "."
+                + prop.propertyName()).collect(Collectors.joining(" and "));
+    }
+
+    @NotNull
+    private String prepareDelete(@NotNull EntityMetadata<?> entityMetadata) {
+        return "delete from " /*+ entityMetadata.getName() + " where " + properties.keySet().stream()
+            .map(attribute -> attribute + "=?").collect(Collectors.joining(", "))*/;
     }
 
     enum StatementType {
