@@ -125,10 +125,44 @@ public final class EntityMetadata<E> {
         return this.entityType;
     }
 
+    /**
+     * Checks if the entity is serializable.
+     *
+     * @return True if the entity class is serializable.
+     *
+     * @see Serializable
+     * @since 0.2.0
+     */
     public boolean isSerializable() {
         return Serializable.class.isAssignableFrom(this.getEntityClass());
     }
 
+    /**
+     * Checks whether:
+     * <ul>
+     *     <li>at least one identifier has been set</li>
+     *     <li>all super types are valid</li>
+     *     <li>the record has a constructor</li>
+     *     <li>the interfaces have no constructor</li>
+     * </ul>
+     *
+     * @return True if the entity and all its super types are valid.
+     *
+     * @see EntityType
+     * @since 0.2.0
+     */
+    private boolean isValid() {
+        return !this.getIdentifiers().isEmpty() && this.getSuperTypes().stream()
+            .allMatch(EntityMetadata::isValid) && (
+            (this.getEntityType() == EntityType.RECORD && this.getConstructor() != null) || (
+                this.getEntityType() == EntityType.INTERFACE && this.getConstructor() == null));
+    }
+
+    /**
+     *
+     * @param o
+     * @return
+     */
     @Override
     @Generated
     @Contract(value = "null -> false", pure = true)

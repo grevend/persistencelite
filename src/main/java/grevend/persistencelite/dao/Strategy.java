@@ -24,6 +24,17 @@
 
 package grevend.persistencelite.dao;
 
+import grevend.persistencelite.entity.Entity;
+
+/**
+ * The different strategies that can be applied to the CRUD operations. Not all constants can be
+ * used in every context. With regard to this, further information can be found in the respective
+ * JavaDoc of the places of use.
+ *
+ * @author David Greven
+ * @see Entity
+ * @since 0.2.0
+ */
 public enum Strategy {
     CASCADE, SELF, EAGER, LAZY;
 }

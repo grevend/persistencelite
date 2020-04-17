@@ -58,7 +58,7 @@ public interface Dao<E> {
      * An implementation of the <b>create</b> CRUD operation that persists none, one or many
      * entities.
      *
-     * @param entities An {@link Iterable} that provides the entities that should be persisted.
+     * @param entities An {@code Iterable} that provides the entities that should be persisted.
      *
      * @return Either returns the iterated entities from the first parameter or creates a new
      * collection based on the persistent versions. The returned collection should be immutable to
@@ -66,6 +66,8 @@ public interface Dao<E> {
      * source.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @see Iterable
      * @since 0.2.0
      */
     @NotNull
@@ -73,15 +75,17 @@ public interface Dao<E> {
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
-     * based on the key-value pairs passed as parameters in the form of a {@link Map}.
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
      *
-     * @param properties The key-value pairs in the form of a {@link Map}.
+     * @param properties The key-value pairs in the form of a {@code Map}.
      *
-     * @return Returns the entities found in the form of a collection. The returned collection
-     * should be immutable to avoid confusion about the synchronization behavior of the contained
-     * entities with the data source.
+     * @return Returns the entities found in the form of a {@code Collection}. The returned
+     * collection should be immutable to avoid confusion about the synchronization behavior of the
+     * contained entities with the data source.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @see Map
      * @since 0.2.0
      */
     @NotNull
@@ -96,6 +100,7 @@ public interface Dao<E> {
      * entities with the data source.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
      * @since 0.2.0
      */
     @NotNull
@@ -104,15 +109,16 @@ public interface Dao<E> {
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
      * provided entity. The properties that should be updated are passed in as the second parameter
-     * in the form of a {@link Map}.
+     * in the form of a {@code Map}.
      *
      * @param entity     The immutable entity that should be updated.
-     * @param properties The {@link Map} of key-value pairs that represents the properties and their
+     * @param properties The {@code Map} of key-value pairs that represents the properties and their
      *                   updated values.
      *
      * @return Returns the updated entity.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Map
      * @since 0.2.0
      */
     @NotNull
@@ -120,16 +126,19 @@ public interface Dao<E> {
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
-     * the provided entities. An {@link Iterable} of properties that should be updated are passed in
-     * as the second parameter in the form of a {@link Map}.
+     * the provided entities. An {@code Iterable} of properties that should be updated are passed in
+     * as the second parameter in the form of a {@code Map}.
      *
      * @param entities   The immutable entities that should be updated.
-     * @param properties The {@link Iterable} of key-value pair {@link Map} objects that represents
+     * @param properties The {@code Iterable} of key-value pair {@code Map} objects that represents
      *                   the properties and their updated values.
      *
      * @return Returns the updated entity.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @see Iterable
+     * @see Map
      * @since 0.2.0
      */
     @NotNull
@@ -150,23 +159,26 @@ public interface Dao<E> {
      * An implementation of the <b>delete</b> CRUD operation which deletes the given entities from
      * the current data source.
      *
-     * @param entities The {@link Iterable} of entities that should be deleted.
+     * @param entities The {@code Iterable} of entities that should be deleted.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Iterable
      * @since 0.2.0
      */
     void delete(@NotNull Iterable<E> entities) throws Exception;
 
     /**
-     * Returns a lazy sequence based on the collection provided by the {@link #retrieve()} method.
+     * Returns a lazy sequence based on the collection provided by the {@code retrieve()} method.
      *
-     * @param <S> The {@link Seq} type used for providing the return types of the chained method
+     * @param <S> The {@code Seq} type used for providing the return types of the chained method
      *            calls.
      *
-     * @return Returns a new {@link Seq} based on the provided {@link Iterable}.
+     * @return Returns a new {@code Seq} based on the provided {@code Iterable}.
      *
      * @throws Exception If an error occurs during the persistence process.
      * @see Seq
+     * @see #retrieve()
+     * @see Iterable
      * @since 0.2.0
      */
     @NotNull

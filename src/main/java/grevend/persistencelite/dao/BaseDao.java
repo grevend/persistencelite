@@ -38,15 +38,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An abstract Dao class that offers standard implementations for some CRUD operations which can be
- * used to simplify creating a custom Dao implementation. It also enables simplified access to the
- * entity metadata and current transaction.
+ * An abstract {@code BaseDao} class that offers standard implementations for some CRUD operations
+ * which can be used to simplify creating a custom {@code Dao} implementation. It also enables
+ * simplified access to the entity metadata and current transaction.
  *
- * @param <E> The type of the entity to which the DAO should apply.
- * @param <T> The type of transaction that can be used in combination with the implementation based
- *            on this base class.
+ * @param <E> The type of the entity to which the {@code Dao} should apply.
+ * @param <T> The type of {@code Transaction} that can be used in combination with the
+ *            implementation based on this base class.
  *
  * @author David Greven
+ * @see Dao
+ * @see Transaction
  * @since 0.2.0
  */
 public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
@@ -60,11 +62,29 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
         this.transaction = transaction;
     }
 
+    /**
+     * Returns the current {@code Transaction} that will be used by all operations performed on this
+     * {@code Dao} instance.
+     *
+     * @return Returns either the current transaction or null if unavailable.
+     *
+     * @see Dao
+     * @see Transaction
+     * @since 0.2.0
+     */
     @Nullable
     protected T getTransaction() {
         return this.transaction;
     }
 
+    /**
+     * Returns the metadata of the entity that this {@code Dao} applies to.
+     *
+     * @return The metadata of the entity.
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     protected EntityMetadata<E> getEntityMetadata() {
         return this.entityMetadata;
@@ -91,7 +111,7 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      * An implementation of the <b>create</b> CRUD operation that persists none, one or many
      * entities.
      *
-     * @param entities An {@link Iterable} that provides the entities that should be persisted.
+     * @param entities An {@code Iterable} that provides the entities that should be persisted.
      *
      * @return Either returns the iterated entities from the first parameter or creates a new
      * collection based on the persistent versions. The returned collection should be immutable to
@@ -99,6 +119,8 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      * source.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @see Iterable
      * @since 0.2.0
      */
     @NotNull
@@ -117,15 +139,17 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
-     * based on the key-value pairs passed as parameters in the form of a {@link Map}.
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
      *
-     * @param properties The key-value pairs in the form of a {@link Map}.
+     * @param properties The key-value pairs in the form of a {@code Map}.
      *
      * @return Returns the entities found in the form of a collection. The returned collection
      * should be immutable to avoid confusion about the synchronization behavior of the contained
      * entities with the data source.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @see Map
      * @since 0.2.0
      */
     @NotNull
@@ -154,15 +178,16 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
      * provided entity. The properties that should be updated are passed in as the second parameter
-     * in the form of a {@link Map}.
+     * in the form of a {@code Map}.
      *
      * @param entity     The immutable entity that should be updated.
-     * @param properties The {@link Map} of key-value pairs that represents the properties and their
+     * @param properties The {@code Map} of key-value pairs that represents the properties and their
      *                   updated values.
      *
      * @return Returns the updated entity.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Map
      * @since 0.2.0
      */
     @NotNull
@@ -173,16 +198,19 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
-     * the provided entities. An {@link Iterable} of properties that should be updated are passed in
-     * as the second parameter in the form of a {@link Map}.
+     * the provided entities. An {@code Iterable} of properties that should be updated are passed in
+     * as the second parameter in the form of a {@code Map}.
      *
      * @param entities   The immutable entities that should be updated.
-     * @param properties The {@link Iterable} of key-value pair {@link Map} objects that represents
+     * @param properties The {@code Iterable} of key-value pair {@code Map} objects that represents
      *                   the properties and their updated values.
      *
      * @return Returns the updated entity.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @see Iterable
+     * @see Map
      * @since 0.2.0
      */
     @NotNull
@@ -209,9 +237,10 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      * An implementation of the <b>delete</b> CRUD operation which deletes the given entities from
      * the current data source.
      *
-     * @param entities The {@link Iterable} of entities that should be deleted.
+     * @param entities The {@code Iterable} of entities that should be deleted.
      *
      * @throws Exception If an error occurs during the persistence process.
+     * @see Iterable
      * @since 0.2.0
      */
     @Override

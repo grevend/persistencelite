@@ -24,6 +24,22 @@
 
 package grevend.persistencelite.dao;
 
+/**
+ * An interface that provides the necessary operations to manage a group of logically related
+ * operations that are to be applied to the data source.<br><br>
+ * <p>
+ * The execution of a transaction is subject to the four basic properties:
+ * <ul>
+ *     <li>Atomicity</li>
+ *     <li>Consistency</li>
+ *     <li>Isolation</li>
+ *     <li>Durability</li>
+ * </ul>
+ *
+ * @author David Greven
+ * @see AutoCloseable
+ * @since 0.2.0
+ */
 public interface Transaction extends AutoCloseable {
 
     void commit() throws Exception;
