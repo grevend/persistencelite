@@ -157,7 +157,23 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     @Override
     public void delete(@NotNull Map<String, Object> identifiers) throws Exception {
+        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.DELETE,
+            Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
+        this.setDeleteStatementValues(this.getEntityMetadata(), preparedStatement, identifiers);
+        preparedStatement.executeUpdate();
+    }
 
+    private void setDeleteStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+        var i = 0;
+        for (EntityProperty property : entityMetadata.getIdentifiers()) {
+            var value = properties.get(property.propertyName());
+            if (value == null || value.equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+            } else {
+                statement.setObject(i + 1, value);
+            }
+            i++;
+        }
     }
 
 }
