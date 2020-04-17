@@ -2,6 +2,10 @@
 
 The PersistenceLite library provides an easy to use abstraction over database access.
 
+## Usage
+
+With the upcoming release of the new architecture, documentation will be available here again.
+
 ## License
 
 MIT License
