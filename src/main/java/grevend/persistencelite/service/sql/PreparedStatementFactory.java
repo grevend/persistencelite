@@ -99,8 +99,10 @@ final class PreparedStatementFactory {
 
     @NotNull
     private String prepareDelete(@NotNull EntityMetadata<?> entityMetadata) {
-        return "delete from " /*+ entityMetadata.getName() + " where " + properties.keySet().stream()
-            .map(attribute -> attribute + "=?").collect(Collectors.joining(", "))*/;
+        return "delete from " + entityMetadata.getName() + " where " + entityMetadata
+            .getIdentifiers().stream()
+            .map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
+            .collect(Collectors.joining(" and "));
     }
 
     enum StatementType {

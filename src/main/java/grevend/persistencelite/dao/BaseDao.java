@@ -27,11 +27,12 @@ package grevend.persistencelite.dao;
 import grevend.persistencelite.entity.EntityFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.util.ExceptionEscapeHatch;
+import grevend.persistencelite.util.function.ThrowingConsumer;
+import grevend.persistencelite.util.function.ThrowingFunction;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
@@ -129,9 +130,9 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
     @Override
     public Collection<E> create(@NotNull Iterable<E> entities) throws Exception {
         final var escapeHatch = new ExceptionEscapeHatch();
-        var res = StreamSupport.stream(entities.spliterator(), false)
-            .map(ExceptionEscapeHatch.escape(this::create, escapeHatch)).filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());
+        var res = StreamSupport.stream(entities.spliterator(), false).map(ExceptionEscapeHatch
+            .escape((@NotNull ThrowingFunction<E, E>) this::create, escapeHatch))
+            .filter(Objects::nonNull).collect(Collectors.toUnmodifiableList());
         escapeHatch.rethrow();
         return res;
     }
@@ -210,7 +211,13 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      */
     @Override
     public void delete(@NotNull Iterable<E> entities) throws Exception {
-
+        final var escapeHatch = new ExceptionEscapeHatch();
+        entities.forEach(
+            ExceptionEscapeHatch.escape((@NotNull ThrowingConsumer<E>) this::delete, escapeHatch));
+        /*StreamSupport.stream(entities.spliterator(), false)
+            .map(ExceptionEscapeHatch.escape(this::delete, escapeHatch)).filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableList());*/
+        escapeHatch.rethrow();
     }
 
 }

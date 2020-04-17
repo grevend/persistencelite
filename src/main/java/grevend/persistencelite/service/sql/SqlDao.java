@@ -146,4 +146,18 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         return Collections.unmodifiableCollection(entities);
     }
 
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
+     * identifiers from the current data source.
+     *
+     * @param identifiers The identifiers that should be used to delete the entity.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    @Override
+    public void delete(@NotNull Map<String, Object> identifiers) throws Exception {
+
+    }
+
 }

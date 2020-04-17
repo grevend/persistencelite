@@ -63,18 +63,16 @@ public class Main {
 
         PostgresService service = new PostgresService();
         var dao = service.createDao(Customer.class);
+        var customer = new Customer(21, "Justin", "987654321", "justin@van.com", "Van...", 21);
         dao.create(new Customer(12, "Bob", "123456789", "bob@van.com", "Van...", 12));
-        dao.create(new Customer(21, "Justin", "987654321", "justin@van.com", "Van...", 21));
+        dao.create(customer);
         System.out.println(dao.retrieve());
         System.out.println(dao.retrieve(Map.of("id", 12, "username", "Bob")));
         System.out.println(dao.retrieve(Map.of("id", 13, "username", "Bob")));
+        dao.delete(customer);
+        System.out.println(dao.retrieve());
         //System.out.println(EntityMetadata.of(Customer.class).toStructuredString());
     }
-
-    /*
-    int id, String username, String password, String email, @Property(name = "company_name")String companyName,
-                            @Property(name = "account_id")int accountId
-     */
 
     @Entity(name = "test2")
     private interface Test2 {
@@ -177,22 +175,8 @@ public class Main {
 
     }
 
-    @Entity(name = "pet")
-    public record Pet(String owner, String name) {}
-
-    // select * from pet where owner = :username
-
     record Owner(int id, String username, String password, @Property(name = "first_name")String firstName, @Property(name = "middle_name")String middleName,
                  @Property(name = "last_name")String lastName, @Property(name = "date_of_birth")Date dateOfBirth, String bsn, @Property(name = "account_id")int accountId,
                  @Property(name = "address_id")int addressId, @Property(name = "employee_id")int employeeId) implements Employee {}
-
-    record Test4(
-        @Id int id,
-        // selfProperty - targetProperty
-        // one - many
-        @Relation(selfProperties = "id", targetEntity = Test3.class, targetProperties = "a")List<Test3>elements
-    ) {}
-
-    // select * from test3 where a = :id
 
 }

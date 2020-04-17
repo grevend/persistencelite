@@ -42,7 +42,6 @@ public final class EntityFactory {
     public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull Map<String, Object> properties) throws Throwable {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
-            //case RECORD -> constructRecord(entityMetadata, properties);
             case RECORD -> constructRecord(entityMetadata, properties.keySet(), false,
                 properties::get);
         };
@@ -52,31 +51,11 @@ public final class EntityFactory {
     public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull ResultSet values) throws Throwable {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
-            //case RECORD -> constructRecord(entityMetadata, properties);
             case RECORD -> constructRecord(entityMetadata,
                 entityMetadata.getDeclaredProperties().stream().map(EntityProperty::propertyName)
                     .collect(Collectors.toList()), true, values::getObject);
         };
     }
-
-    /*@NotNull
-    @SuppressWarnings("unchecked")
-    private static <E> E constructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull Map<String, Object> properties) throws Throwable {
-        if (entityMetadata.getConstructor() == null) {
-            throw new IllegalArgumentException();
-        }
-        final var propertyNames = entityMetadata.getDeclaredProperties().stream()
-            .map(EntityProperty::fieldName).collect(Collectors.toUnmodifiableList());
-        if (!properties.keySet().containsAll(propertyNames)) {
-            final var missingProperties = new ArrayList<>(propertyNames);
-            missingProperties.removeAll(properties.keySet());
-            throw new IllegalArgumentException(
-                "Missing properties: " + missingProperties.toString());
-        }
-        final var propertyValues = new ArrayList<>();
-        propertyNames.forEach(name -> propertyValues.add(properties.get(name)));
-        return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
-    }*/
 
     @NotNull
     @SuppressWarnings("unchecked")

@@ -24,7 +24,9 @@
 
 package grevend.persistencelite.util;
 
+import grevend.persistencelite.util.function.ThrowingConsumer;
 import grevend.persistencelite.util.function.ThrowingFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +44,18 @@ public class ExceptionEscapeHatch {
             } catch (Exception exception) {
                 exceptionEscapeHatch.escape(exception);
                 return null;
+            }
+        };
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public static <T> Consumer<T> escape(@NotNull ThrowingConsumer<T> consumer, @NotNull ExceptionEscapeHatch exceptionEscapeHatch) {
+        return arg -> {
+            try {
+                consumer.accept(arg);
+            } catch (Exception exception) {
+                exceptionEscapeHatch.escape(exception);
             }
         };
     }
