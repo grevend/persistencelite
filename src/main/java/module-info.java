@@ -1,3 +1,5 @@
+import grevend.persistencelite.util.logging.PersistenceLiteLoggerFinder;
+
 module PersistenceLite {
     requires org.jetbrains.annotations;
     requires java.sql;
@@ -25,4 +27,6 @@ module PersistenceLite {
     opens grevend.persistencelite.util.function;
     opens grevend.persistencelite.util.iterators;
     opens grevend.persistencelite.util.sequence;
+
+    provides System.LoggerFinder with PersistenceLiteLoggerFinder;
 }

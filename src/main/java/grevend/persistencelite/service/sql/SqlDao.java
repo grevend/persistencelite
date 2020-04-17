@@ -52,7 +52,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @Contract("_, _ -> param1")
     protected E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws SQLException {
         var iterator = this.getEntityMetadata().getSuperTypes().iterator();
-        System.out.println(this.getEntityMetadata().getSuperTypes().size() + " :: " + properties.size());
+        //System.out.println(this.getEntityMetadata().getSuperTypes().size() + " :: " + properties.size());
         for (Map<String, Object> props : properties) {
             this.create(iterator.hasNext() ? iterator.next() : this.getEntityMetadata(), props);
         }
@@ -64,13 +64,13 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             Objects.requireNonNull(this.getTransaction()).connection(), entityMetadata,
             properties);
         this.setStatementValues(entityMetadata, preparedStatement, properties);
-        System.out.println(entityMetadata.getName() + " ;; " + properties);
+        //System.out.println(entityMetadata.getName() + " ;; " + properties);
         preparedStatement.executeUpdate();
     }
 
     private void setStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        System.out.println("Values to set: " + entityMetadata.getName() + " ;; " + properties);
+        //System.out.println("Values to set: " + entityMetadata.getName() + " ;; " + properties);
         for (Entry<String, Object> attribute : properties.entrySet()) {
             if (attribute.getValue() == null || attribute.getValue().equals("null")) {
                 statement.setNull(i + 1, Types.NULL);

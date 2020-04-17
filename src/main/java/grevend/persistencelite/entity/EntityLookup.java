@@ -24,6 +24,9 @@
 
 package grevend.persistencelite.entity;
 
+import static grevend.persistencelite.PersistenceLite.LOGGER;
+
+import java.lang.System.Logger.Level;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -142,7 +145,13 @@ final class EntityLookup {
     private static <E> Collection<EntityMetadata<?>> lookupRecordSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
         return Stream.of(entityMetadata.getEntityClass().getInterfaces())
             .filter(superType -> superType.isAnnotationPresent(Entity.class))
-            .map(EntityMetadata::of).collect(Collectors.toList());
+            .map(EntityMetadata::of).peek(metadata -> {
+                System.out.println(metadata.toStructuredString());
+                LOGGER.log(Level.DEBUG,
+                    metadata.getName() + " is " + (metadata.isValid() ? "a valid" : "an invalid")
+                        + " entity");
+            })
+            .collect(Collectors.toList());
     }
 
 }

@@ -141,6 +141,7 @@ public final class EntityMetadata<E> {
      * Checks whether:
      * <ul>
      *     <li>at least one identifier has been set</li>
+     *     <li>all identifiers of the super types are also present</li>
      *     <li>all super types are valid</li>
      *     <li>the record has a constructor</li>
      *     <li>the interfaces have no constructor</li>
@@ -151,18 +152,15 @@ public final class EntityMetadata<E> {
      * @see EntityType
      * @since 0.2.0
      */
-    private boolean isValid() {
-        return !this.getIdentifiers().isEmpty() && this.getSuperTypes().stream()
+    boolean isValid() {
+        return !this.getIdentifiers().isEmpty() && this.getIdentifiers().containsAll(
+            this.getSuperTypes().stream().flatMap(superType -> superType.getIdentifiers().stream())
+                .collect(Collectors.toUnmodifiableSet())) && this.getSuperTypes().stream()
             .allMatch(EntityMetadata::isValid) && (
             (this.getEntityType() == EntityType.RECORD && this.getConstructor() != null) || (
                 this.getEntityType() == EntityType.INTERFACE && this.getConstructor() == null));
     }
 
-    /**
-     *
-     * @param o
-     * @return
-     */
     @Override
     @Generated
     @Contract(value = "null -> false", pure = true)
@@ -192,6 +190,19 @@ public final class EntityMetadata<E> {
             ", properties=" + this.getProperties() +
             ", constructor=" + this.getConstructor() +
             '}';
+    }
+
+    @NotNull
+    String toStructuredString() {
+        return """
+            EntityMetadata {
+                 entityType=%s
+                 entityClass=%s
+                 superTypes=%s
+                 properties=%s
+                 constructor=%s
+            }""".formatted(this.getEntityType(), this.getEntityClass(), this.getSuperTypes(),
+            this.getProperties(), this.getConstructor());
     }
 
     static final class EntityMetadataCache {
