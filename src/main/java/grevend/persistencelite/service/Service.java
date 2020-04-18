@@ -28,11 +28,27 @@ import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.TransactionFactory;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see DaoFactory
+ * @see TransactionFactory
+ * @since 0.2.0
+ */
 public interface Service {
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     DaoFactory getDaoFactory();
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     TransactionFactory getTransactionFactory();
 

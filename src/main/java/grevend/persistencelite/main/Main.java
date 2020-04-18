@@ -28,10 +28,8 @@ import grevend.persistencelite.entity.Entity;
 import grevend.persistencelite.entity.Id;
 import grevend.persistencelite.entity.Ignore;
 import grevend.persistencelite.entity.Property;
-import grevend.persistencelite.entity.Relation;
-import grevend.persistencelite.service.PostgresService;
+import grevend.persistencelite.service.sql.PostgresService;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.Contract;
 

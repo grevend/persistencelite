@@ -22,13 +22,14 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service;
+package grevend.persistencelite.service.sql;
 
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.service.Service;
 import grevend.persistencelite.service.sql.SqlDaoFactory;
 import grevend.persistencelite.service.sql.SqlTransactionFactory;
 import java.net.URISyntaxException;

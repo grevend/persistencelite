@@ -26,14 +26,33 @@ package grevend.persistencelite.entity;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @since 0.2.0
+ */
 public @interface Relation {
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     String[] selfProperties();
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     Class<?> targetEntity();
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     String[] targetProperties();
 

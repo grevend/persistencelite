@@ -24,5 +24,8 @@
 
 package grevend.persistencelite.service;
 
-public interface Configurator {
-}
+/**
+ * @author David Greven
+ * @since 0.2.0
+ */
+interface Configurator {}

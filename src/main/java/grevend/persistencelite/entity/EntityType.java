@@ -24,6 +24,10 @@
 
 package grevend.persistencelite.entity;
 
+/**
+ * @author David Greven
+ * @since 0.2.0
+ */
 public enum EntityType {
     CLASS, INTERFACE, RECORD;
 }
