@@ -28,8 +28,24 @@ import grevend.persistencelite.entity.EntityMetadata;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @author David Greven
+ * @see Dao
+ * @see EntityMetadata
+ * @see Transaction
+ * @since 0.2.0
+ */
 public interface DaoFactory {
 
+    /**
+     * @param entityMetadata
+     * @param transaction
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction);
 
 }

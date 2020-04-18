@@ -43,15 +43,38 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
+/**
+ * @param <E> The type of the entity to which this DAO implementation should apply.
+ *
+ * @author David Greven
+ * @version 0.2.0
+ * @see BaseDao
+ * @see SqlTransaction
+ */
 public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
 
     private final PreparedStatementFactory preparedStatementFactory;
 
+    /**
+     * @param entityMetadata
+     * @param transaction
+     *
+     * @since 0.2.0
+     */
     SqlDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable SqlTransaction transaction) {
         super(entityMetadata, transaction);
         this.preparedStatementFactory = new PreparedStatementFactory();
     }
 
+    /**
+     * @param entity
+     * @param properties
+     *
+     * @return
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     @Contract("_, _ -> param1")
@@ -63,6 +86,13 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         return entity;
     }
 
+    /**
+     * @param entityMetadata
+     * @param properties
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
     private void create(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) throws SQLException {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.INSERT,
             Objects.requireNonNull(this.getTransaction()).connection(), entityMetadata);
@@ -70,6 +100,14 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         preparedStatement.executeUpdate();
     }
 
+    /**
+     * @param entityMetadata
+     * @param statement
+     * @param properties
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
     private void setCreateStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
         for (EntityProperty property : entityMetadata.getUniqueProperties()) {
@@ -107,6 +145,14 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             : Optional.empty();
     }
 
+    /**
+     * @param entityMetadata
+     * @param statement
+     * @param properties
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
     private void setRetrieveStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
         for (EntityProperty property : entityMetadata.getIdentifiers()) {
@@ -163,6 +209,14 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         preparedStatement.executeUpdate();
     }
 
+    /**
+     * @param entityMetadata
+     * @param statement
+     * @param properties
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
     private void setDeleteStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
         for (EntityProperty property : entityMetadata.getIdentifiers()) {

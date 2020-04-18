@@ -59,6 +59,12 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
     private final EntityMetadata<E> entityMetadata;
     private final T transaction;
 
+    /**
+     * @param entityMetadata
+     * @param transaction
+     *
+     * @since 0.2.0
+     */
     @Contract(pure = true)
     public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable T transaction) {
         this.entityMetadata = entityMetadata;
@@ -217,9 +223,6 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
         final var escapeHatch = new ExceptionEscapeHatch();
         entities.forEach(
             ExceptionEscapeHatch.escape((@NotNull ThrowingConsumer<E>) this::delete, escapeHatch));
-        /*StreamSupport.stream(entities.spliterator(), false)
-            .map(ExceptionEscapeHatch.escape(this::delete, escapeHatch)).filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());*/
         escapeHatch.rethrow();
     }
 

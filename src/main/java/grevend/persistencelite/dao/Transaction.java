@@ -42,8 +42,16 @@ package grevend.persistencelite.dao;
  */
 public interface Transaction extends AutoCloseable {
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     void commit() throws Exception;
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     void rollback() throws Exception;
 
 }

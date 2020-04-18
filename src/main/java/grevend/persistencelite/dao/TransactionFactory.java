@@ -26,8 +26,19 @@ package grevend.persistencelite.dao;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see Transaction
+ * @since 0.2.0
+ */
 public interface TransactionFactory {
 
+    /**
+     * @return
+     *
+     * @throws Exception
+     * @since 0.2.0
+     */
     @NotNull
     Transaction createTransaction() throws Exception;
 

@@ -31,22 +31,52 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see Strategy
+ * @since 0.2.0
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Entity {
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     String name();
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     Strategy creationStrategy() default Strategy.CASCADE;
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     Strategy retrievingStrategy() default Strategy.EAGER;
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     Strategy updatingStrategy() default Strategy.CASCADE;
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     Strategy deletionStrategy() default Strategy.CASCADE;
 

@@ -36,8 +36,27 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see EntityMetadata
+ * @see EntityProperty
+ * @see EntityType
+ * @since 0.2.0
+ */
 public final class EntityFactory {
 
+    /**
+     * @param entityMetadata
+     * @param properties
+     * @param <E>
+     *
+     * @return
+     *
+     * @throws Throwable
+     * @see EntityMetadata
+     * @see Map
+     * @since 0.2.0
+     */
     @NotNull
     public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull Map<String, Object> properties) throws Throwable {
         return switch (entityMetadata.getEntityType()) {
@@ -47,6 +66,18 @@ public final class EntityFactory {
         };
     }
 
+    /**
+     * @param entityMetadata
+     * @param values
+     * @param <E>
+     *
+     * @return
+     *
+     * @throws Throwable
+     * @see EntityMetadata
+     * @see ResultSet
+     * @since 0.2.0
+     */
     @NotNull
     public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull ResultSet values) throws Throwable {
         return switch (entityMetadata.getEntityType()) {
@@ -57,6 +88,21 @@ public final class EntityFactory {
         };
     }
 
+    /**
+     * @param entityMetadata
+     * @param properties
+     * @param props
+     * @param values
+     * @param <E>
+     *
+     * @return
+     *
+     * @throws Throwable
+     * @see EntityMetadata
+     * @see Collection
+     * @see ThrowingFunction
+     * @since 0.2.0
+     */
     @NotNull
     @SuppressWarnings("unchecked")
     private static <E> E constructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull Collection<String> properties, boolean props, @NotNull ThrowingFunction<String, Object> values) throws Throwable {
@@ -79,6 +125,16 @@ public final class EntityFactory {
         return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
     }
 
+    /**
+     * @param entityMetadata
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     public static <E> Collection<Map<String, Object>> deconstruct(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity) {
         return switch (entityMetadata.getEntityType()) {
@@ -87,6 +143,16 @@ public final class EntityFactory {
         };
     }
 
+    /**
+     * @param entityMetadata
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private static <E> Collection<Map<String, Object>> deconstructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity) {
         Collection<Map<String, Object>> components = new ArrayList<>(
@@ -95,17 +161,33 @@ public final class EntityFactory {
         return components;
     }
 
+    /**
+     * @param entityMetadata
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private static <E> Collection<Map<String, Object>> deconstructRecordSuperTypes(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity) {
-        /*Collection<Map<String, Object>> components = new ArrayList<>();
-        entityMetadata.getAllSuperTypes()
-            .forEach(superType -> components.add(deconstructRecordSuperType(superType, entity)));
-        return components;*/
         return entityMetadata.getSuperTypes().stream()
             .map(superType -> deconstructRecordSuperType(superType, entity))
             .collect(Collectors.toUnmodifiableList());
     }
 
+    /**
+     * @param superTypeMetadata
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private static <E> Map<String, Object> deconstructRecordSuperType(@NotNull EntityMetadata<?> superTypeMetadata, @NotNull E entity) {
         Map<String, Object> properties = new HashMap<>();
@@ -120,6 +202,16 @@ public final class EntityFactory {
         return properties;
     }
 
+    /**
+     * @param entityMetadata
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private static <E> Map<String, Object> deconstructRecordComponents(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity) {
         Map<String, Object> properties = new HashMap<>();
