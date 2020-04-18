@@ -115,12 +115,12 @@ public interface Dao<E> {
      *
      * @return Returns the updated entity.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @see Map
      * @since 0.2.0
      */
     @NotNull
-    E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Exception;
+    E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable;
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
@@ -133,14 +133,14 @@ public interface Dao<E> {
      *
      * @return Returns the updated entity.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
      * @see Map
      * @since 0.2.0
      */
     @NotNull
-    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Exception;
+    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable;
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the

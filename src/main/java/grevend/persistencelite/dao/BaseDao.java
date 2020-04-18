@@ -29,8 +29,9 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.util.ExceptionEscapeHatch;
 import grevend.persistencelite.util.function.ThrowingConsumer;
 import grevend.persistencelite.util.function.ThrowingFunction;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -38,7 +39,7 @@ import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * An abstract {@code BaseDao} class that offers standard implementations for some CRUD operations
@@ -147,27 +148,6 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
     protected abstract E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws Exception;
 
     /**
-     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
-     * provided entity. The properties that should be updated are passed in as the second parameter
-     * in the form of a {@code Map}.
-     *
-     * @param entity     The immutable entity that should be updated.
-     * @param properties The {@code Map} of key-value pairs that represents the properties and their
-     *                   updated values.
-     *
-     * @return Returns the updated entity.
-     *
-     * @throws Exception If an error occurs during the persistence process.
-     * @see Map
-     * @since 0.2.0
-     */
-    @NotNull
-    @Override
-    public E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Exception {
-        return null;
-    }
-
-    /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
      * the provided entities. An {@code Iterable} of properties that should be updated are passed in
      * as the second parameter in the form of a {@code Map}.
@@ -178,7 +158,7 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      *
      * @return Returns the updated entity.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
      * @see Map
@@ -186,9 +166,15 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      */
     @NotNull
     @Override
-    @Unmodifiable
-    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Exception {
-        return List.of();
+    @UnmodifiableView
+    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable {
+        var entityIterator = entities.iterator();
+        var propertiesIterator = properties.iterator();
+        Collection<E> list = new ArrayList<E>();
+        while (entityIterator.hasNext() && propertiesIterator.hasNext()) {
+            list.add(this.update(entityIterator.next(), propertiesIterator.next()));
+        }
+        return Collections.unmodifiableCollection(list);
     }
 
     /**

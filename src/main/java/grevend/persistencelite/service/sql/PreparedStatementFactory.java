@@ -68,7 +68,7 @@ final class PreparedStatementFactory {
                 case INSERT -> this.prepareInsert(entityMetadata);
                 case SELECT -> this.prepareSelect(entityMetadata);
                 case SELECT_ALL -> this.prepareSelectAll(entityMetadata);
-                case UPDATE -> null;
+                case UPDATE -> this.prepareUpdate(entityMetadata);
                 case DELETE -> this.prepareDelete(entityMetadata);
             });
         }
@@ -156,6 +156,22 @@ final class PreparedStatementFactory {
         return " inner join " + child.getName() + " on " + child.getIdentifiers().stream().map(
             prop -> parent.getName() + "." + prop.propertyName() + " = " + child.getName() + "."
                 + prop.propertyName()).collect(Collectors.joining(" and "));
+    }
+
+    /**
+     * @param entityMetadata
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
+    @NotNull
+    private String prepareUpdate(@NotNull EntityMetadata<?> entityMetadata) {
+        return "update " + entityMetadata.getName() + " set " + entityMetadata.getUniqueProperties()
+            .stream().map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(", "))
+            + " where " + entityMetadata.getIdentifiers().stream()
+            .map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(" and "));
     }
 
     /**

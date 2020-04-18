@@ -69,6 +69,11 @@ public class Main {
         System.out.println(dao.retrieve(Map.of("id", 13, "username", "Bob")));
         dao.delete(customer);
         System.out.println(dao.retrieve());
+        var bob = dao.retrieve(Map.of("id", 12, "username", "Bob"));
+        if(bob.isPresent()) {
+            dao.update(bob.get(), Map.of("password", "Hello World!"));
+        }
+        System.out.println(dao.retrieve());
         //System.out.println(EntityMetadata.of(Customer.class).toStructuredString());
     }
 

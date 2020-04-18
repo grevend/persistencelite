@@ -36,8 +36,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -185,11 +188,89 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         var res = preparedStatement.executeQuery();
-        Collection<E> entities = new ArrayList<E>();
+        Collection<E> entities = new ArrayList<>();
         while (res.next()) {
             entities.add(EntityFactory.construct(this.getEntityMetadata(), res));
         }
         return Collections.unmodifiableCollection(entities);
+    }
+
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
+     * provided entity. The properties that should be updated are passed in as the second parameter
+     * in the form of a {@code Map}.
+     *
+     * @param entity     The immutable entity that should be updated.
+     * @param properties The {@code Map} of key-value pairs that represents the properties and their
+     *                   updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    public E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable {
+        var iterator = this.getEntityMetadata().getSuperTypes().iterator();
+        var deconstructed = EntityFactory.deconstruct(this.getEntityMetadata(), entity);
+
+        var props = Stream.concat(
+            Stream.of(deconstructed)
+                .flatMap(Collection::stream).flatMap(map -> map.entrySet().stream()).collect(
+                Collectors.toMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2))
+                .entrySet().stream(), properties.entrySet().stream()).collect(Collectors
+            .toUnmodifiableMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2));
+
+        for (Map<String, Object> stringObjectMap : deconstructed) {
+            if (stringObjectMap.keySet().stream().anyMatch(properties::containsKey)) {
+                this.update(iterator.next(), props);
+            } else {
+                if (iterator.hasNext()) {
+                    iterator.next();
+                }
+            }
+        }
+
+        return Objects.requireNonNull(this.retrieve(props).orElse(null));
+    }
+
+    private void update(@NotNull EntityMetadata<?> child, @NotNull Map<String, Object> properties) throws Throwable {
+        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.UPDATE,
+            Objects.requireNonNull(this.getTransaction()).connection(), child);
+        this.setUpdateStatementValues(child, preparedStatement, properties);
+        preparedStatement.executeUpdate();
+    }
+
+    /**
+     * @param entityMetadata
+     * @param statement
+     * @param properties
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
+    private void setUpdateStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+        var i = 0;
+        for (EntityProperty property : entityMetadata.getUniqueProperties()) {
+            var value = properties.get(property.propertyName());
+            if (value == null || value.equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+            } else {
+                statement.setObject(i + 1, value);
+            }
+            i++;
+        }
+        for (EntityProperty property : entityMetadata.getIdentifiers()) {
+            var value = properties.get(property.propertyName());
+            if (value == null || value.equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+            } else {
+                statement.setObject(i + 1, value);
+            }
+            i++;
+        }
     }
 
     /**

@@ -107,6 +107,27 @@ public class InMemoryDao<E> extends BaseDao<E, InMemoryTransaction> {
     }
 
     /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
+     * provided entity. The properties that should be updated are passed in as the second parameter
+     * in the form of a {@code Map}.
+     *
+     * @param entity     The immutable entity that should be updated.
+     * @param properties The {@code Map} of key-value pairs that represents the properties and their
+     *                   updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    public E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable {
+        return null;
+    }
+
+    /**
      * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
      * identifiers from the current data source.
      *
