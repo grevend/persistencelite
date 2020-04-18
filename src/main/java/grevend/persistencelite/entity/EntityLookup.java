@@ -41,8 +41,23 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @author David Greven
+ * @see EntityMetadata
+ * @see MethodHandles
+ * @since 0.2.0
+ */
 final class EntityLookup {
 
+    /**
+     * @param entityMetadata
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     static <E> Collection<EntityProperty> lookupProperties(@NotNull EntityMetadata<E> entityMetadata) {
         return switch (entityMetadata.getEntityType()) {
@@ -52,6 +67,15 @@ final class EntityLookup {
         };
     }
 
+    /**
+     * @param entityMetadata
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private static <E> Collection<EntityProperty> lookupRecordProperties(@NotNull EntityMetadata<E> entityMetadata) {
         var lookup = MethodHandles.lookup();
@@ -69,6 +93,19 @@ final class EntityLookup {
             .collect(Collectors.toUnmodifiableList());
     }
 
+    /**
+     * @param lookup
+     * @param entityMetadata
+     * @param component
+     * @param <E>
+     *
+     * @return
+     *
+     * @see MethodHandles
+     * @see EntityMetadata
+     * @see RecordComponent
+     * @since 0.2.0
+     */
     @Nullable
     private static <E> MethodHandle lookupRecordGetter(@NotNull MethodHandles.Lookup lookup, @NotNull EntityMetadata<E> entityMetadata, @NotNull RecordComponent component) {
         try {
@@ -81,6 +118,15 @@ final class EntityLookup {
         }
     }
 
+    /**
+     * @param entityMetadata
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private static <E> Collection<EntityProperty> lookupInterfaceProperties(@NotNull EntityMetadata<E> entityMetadata) {
         var lookup = MethodHandles.lookup();
@@ -99,6 +145,19 @@ final class EntityLookup {
             .collect(Collectors.toUnmodifiableList());
     }
 
+    /**
+     * @param lookup
+     * @param entityMetadata
+     * @param method
+     * @param <E>
+     *
+     * @return
+     *
+     * @see MethodHandles
+     * @see EntityMetadata
+     * @see Method
+     * @since 0.2.0
+     */
     @Nullable
     private static <E> MethodHandle lookupInterfaceGetter(@NotNull MethodHandles.Lookup lookup, @NotNull EntityMetadata<E> entityMetadata, @NotNull Method method) {
         try {
@@ -109,6 +168,15 @@ final class EntityLookup {
         }
     }
 
+    /**
+     * @param entityMetadata
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @Nullable
     @Contract(pure = true)
     static <E> MethodHandle lookupConstructor(@NotNull EntityMetadata<E> entityMetadata) {
@@ -118,6 +186,15 @@ final class EntityLookup {
         };
     }
 
+    /**
+     * @param entityMetadata
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @Nullable
     @Contract(pure = true)
     private static <E> MethodHandle lookupRecordConstructor(@NotNull EntityMetadata<E> entityMetadata) {
@@ -133,14 +210,32 @@ final class EntityLookup {
         }
     }
 
+    /**
+     * @param entityMetadata
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     static <E> Collection<EntityMetadata<?>> lookupSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
         return switch (entityMetadata.getEntityType()) {
-            case CLASS  -> List.of();
+            case CLASS -> List.of();
             case RECORD, INTERFACE -> lookupRecordSuperTypes(entityMetadata);
         };
     }
 
+    /**
+     * @param entityMetadata
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private static <E> Collection<EntityMetadata<?>> lookupRecordSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
         return Stream.of(entityMetadata.getEntityClass().getInterfaces())

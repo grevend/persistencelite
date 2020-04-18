@@ -38,6 +38,15 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @param <E>
+ *
+ * @author David Greven
+ * @see EntityProperty
+ * @see EntityType
+ * @see MethodHandle
+ * @since 0.2.0
+ */
 public final class EntityMetadata<E> {
 
     private final Class<E> entityClass;
@@ -47,6 +56,14 @@ public final class EntityMetadata<E> {
     private final EntityType entityType;
     private MethodHandle constructor;
 
+    /**
+     * @param entityClass
+     * @param entityType
+     *
+     * @see Class
+     * @see EntityType
+     * @since 0.2.0
+     */
     private EntityMetadata(@NotNull Class<E> entityClass, @NotNull EntityType entityType) {
         this.entityClass = entityClass;
         this.superTypes = new ArrayList<>();
@@ -56,6 +73,16 @@ public final class EntityMetadata<E> {
         this.entityType = entityType;
     }
 
+    /**
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @see Class
+     * @since 0.2.0
+     */
     @NotNull
     @Contract(pure = true)
     @SuppressWarnings("unchecked")
@@ -74,17 +101,37 @@ public final class EntityMetadata<E> {
         }
     }
 
+    /**
+     * @return
+     *
+     * @see Entity
+     * @since 0.2.0
+     */
     @NotNull
     public String getName() {
         return this.getEntityClass().getAnnotation(Entity.class).name();
     }
 
+    /**
+     * @return
+     *
+     * @see Class
+     * @since 0.2.0
+     */
     @NotNull
     @Contract(pure = true)
     Class<E> getEntityClass() {
         return this.entityClass;
     }
 
+    /**
+     * @return
+     *
+     * @see Collection
+     * @see EntityMetadata
+     * @see EntityLookup#lookupSuperTypes(EntityMetadata)
+     * @since 0.2.0
+     */
     @NotNull
     @Contract(pure = true)
     public Collection<EntityMetadata<?>> getDeclaredSuperTypes() {
@@ -94,6 +141,14 @@ public final class EntityMetadata<E> {
         return this.superTypes;
     }
 
+    /**
+     * @return
+     *
+     * @see Collection
+     * @see EntityMetadata
+     * @see #getDeclaredSuperTypes()
+     * @since 0.2.0
+     */
     @NotNull
     public Collection<EntityMetadata<?>> getSuperTypes() {
         Collection<EntityMetadata<?>> list = this.getDeclaredSuperTypes().stream()
@@ -103,6 +158,14 @@ public final class EntityMetadata<E> {
         return list;
     }
 
+    /**
+     * @return
+     *
+     * @see Collection
+     * @see EntityProperty
+     * @see EntityLookup#lookupProperties(EntityMetadata)
+     * @since 0.2.0
+     */
     @NotNull
     Collection<EntityProperty> getDeclaredProperties() {
         if (this.properties.isEmpty()) {
@@ -111,6 +174,14 @@ public final class EntityMetadata<E> {
         return this.properties;
     }
 
+    /**
+     * @return
+     *
+     * @see Collection
+     * @see EntityProperty
+     * @see #getDeclaredProperties()
+     * @since 0.2.0
+     */
     @NotNull
     public Collection<EntityProperty> getUniqueProperties() {
         var allProps = this.getSuperTypes().stream()
@@ -121,6 +192,14 @@ public final class EntityMetadata<E> {
             .collect(Collectors.toUnmodifiableSet());
     }
 
+    /**
+     * @return
+     *
+     * @see Collection
+     * @see EntityProperty
+     * @see #getDeclaredProperties()
+     * @since 0.2.0
+     */
     @NotNull
     public Collection<EntityProperty> getIdentifiers() {
         if (this.identifiers.isEmpty()) {
@@ -130,6 +209,13 @@ public final class EntityMetadata<E> {
         return this.identifiers;
     }
 
+    /**
+     * @return
+     *
+     * @see MethodHandle
+     * @see EntityLookup#lookupConstructor(EntityMetadata)
+     * @since 0.2.0
+     */
     @Nullable
     MethodHandle getConstructor() {
         if (this.constructor == null) {
@@ -138,6 +224,12 @@ public final class EntityMetadata<E> {
         return this.constructor;
     }
 
+    /**
+     * @return
+     *
+     * @see EntityType
+     * @since 0.2.0
+     */
     @NotNull
     @Contract(pure = true)
     EntityType getEntityType() {
@@ -213,6 +305,16 @@ public final class EntityMetadata<E> {
             '}';
     }
 
+    /**
+     * @return
+     *
+     * @see #getEntityType()
+     * @see #getEntityClass()
+     * @see #getDeclaredSuperTypes()
+     * @see #getDeclaredProperties()
+     * @see #getConstructor()
+     * @since 0.2.0
+     */
     @NotNull
     public String toStructuredString() {
         return """
@@ -227,17 +329,30 @@ public final class EntityMetadata<E> {
                 this.getDeclaredProperties(), this.getConstructor());
     }
 
+    /**
+     * @author David Greven
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     static final class EntityMetadataCache {
 
         private static final Object MUTEX = new Object();
         private static volatile EntityMetadataCache INSTANCE;
         private final Map<Class<?>, EntityMetadata<?>> entityMetadataMap;
 
+        /**
+         * @since 0.2.0
+         */
         @Contract(pure = true)
         private EntityMetadataCache() {
             this.entityMetadataMap = new HashMap<>();
         }
 
+        /**
+         * @return
+         *
+         * @since 0.2.0
+         */
         @NotNull
         private static EntityMetadataCache getInstance() {
             var result = INSTANCE;
@@ -252,12 +367,22 @@ public final class EntityMetadata<E> {
             return result;
         }
 
+        /**
+         * @return
+         *
+         * @see Map
+         * @see EntityMetadata
+         * @since 0.2.0
+         */
         @NotNull
         @Contract(pure = true)
         private Map<Class<?>, EntityMetadata<?>> getEntityMetadataMap() {
             return this.entityMetadataMap;
         }
 
+        /**
+         * @since 0.2.0
+         */
         @SuppressWarnings("unused")
         void clearCache() {
             this.entityMetadataMap.clear();
