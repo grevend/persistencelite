@@ -31,6 +31,14 @@ import grevend.persistencelite.entity.EntityMetadata;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @author David Greven
+ * @see DaoFactory
+ * @see Dao
+ * @see EntityMetadata
+ * @see Transaction
+ * @since 0.2.0
+ */
 public final class GsonFactory implements DaoFactory {
 
     @NotNull

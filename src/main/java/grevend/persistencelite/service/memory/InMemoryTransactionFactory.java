@@ -28,8 +28,20 @@ import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see TransactionFactory
+ * @since 0.2.0
+ */
 public class InMemoryTransactionFactory implements TransactionFactory {
 
+    /**
+     * @return
+     *
+     * @throws Exception
+     * @see Transaction
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     public Transaction createTransaction() throws Exception {

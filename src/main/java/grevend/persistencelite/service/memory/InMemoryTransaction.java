@@ -26,14 +26,31 @@ package grevend.persistencelite.service.memory;
 
 import grevend.persistencelite.dao.Transaction;
 
+/**
+ * @author David Greven
+ * @see Transaction
+ * @since 0.2.0
+ */
 public class InMemoryTransaction implements Transaction {
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     @Override
     public void commit() throws Exception {}
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     @Override
     public void rollback() throws Exception {}
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     @Override
     public void close() throws Exception {}
 

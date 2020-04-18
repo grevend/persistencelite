@@ -32,12 +32,39 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @param <E> The type of the entity to which this DAO implementation should apply.
+ *
+ * @author David Greven
+ * @version 0.2.0
+ * @see BaseDao
+ * @see InMemoryTransaction
+ */
 public class InMemoryDao<E> extends BaseDao<E, InMemoryTransaction> {
 
+    /**
+     * @param entityMetadata
+     * @param transaction
+     *
+     * @see EntityMetadata
+     * @see InMemoryTransaction
+     * @since 0.2.0
+     */
     public InMemoryDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable InMemoryTransaction transaction) {
         super(entityMetadata, transaction);
     }
 
+    /**
+     * @param entity
+     * @param properties
+     *
+     * @return
+     *
+     * @throws Exception
+     * @see Collection
+     * @see Map
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     protected E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws Exception {
