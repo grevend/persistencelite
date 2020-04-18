@@ -28,18 +28,35 @@ import grevend.persistencelite.dao.Transaction;
 import java.sql.Connection;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see Connection
+ * @since 0.2.0
+ */
 public final record SqlTransaction(@NotNull Connection connection) implements Transaction {
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     @Override
     public void commit() throws Exception {
         this.connection.commit();
     }
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     @Override
     public void rollback() throws Exception {
         this.connection.rollback();
     }
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     @Override
     public void close() throws Exception {
         if (!this.connection.isClosed()) {

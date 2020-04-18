@@ -30,8 +30,6 @@ import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.service.Service;
-import grevend.persistencelite.service.sql.SqlDaoFactory;
-import grevend.persistencelite.service.sql.SqlTransactionFactory;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -41,18 +39,53 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @author David Greven
+ * @see Service
+ * @since 0.2.0
+ */
 public final class PostgresService implements Service {
 
+    /**
+     * @param entity
+     * @param transaction
+     * @param <E>
+     *
+     * @return
+     *
+     * @see Dao
+     * @see Class
+     * @see Transaction
+     * @since 0.2.0
+     */
     @NotNull
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
         return this.getDaoFactory().createDao(EntityMetadata.of(entity), transaction);
     }
 
+    /**
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @throws Exception
+     * @see Dao
+     * @see Class
+     * @since 0.2.0
+     */
     @NotNull
     public <E> Dao<E> createDao(@NotNull Class<E> entity) throws Exception {
         return this.createDao(entity, this.getTransactionFactory().createTransaction());
     }
 
+    /**
+     * @return
+     *
+     * @see DaoFactory
+     * @see SqlDaoFactory
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
@@ -60,6 +93,13 @@ public final class PostgresService implements Service {
         return new SqlDaoFactory();
     }
 
+    /**
+     * @return
+     *
+     * @see TransactionFactory
+     * @see SqlTransactionFactory
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
@@ -67,8 +107,15 @@ public final class PostgresService implements Service {
         return new SqlTransactionFactory(this::createConnection);
     }
 
+    /**
+     * @return
+     *
+     * @throws SQLException
+     * @see Connection
+     * @since 0.2.0
+     */
     @NotNull
-    private Connection createConnection() throws SQLException, URISyntaxException {
+    private Connection createConnection() throws SQLException {
         Properties props = new Properties();
         props.setProperty("user", "postgres");
         props.setProperty("password", "password");

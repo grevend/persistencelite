@@ -36,8 +36,27 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see PreparedStatement
+ * @since 0.2.0
+ */
 final class PreparedStatementFactory {
 
+    /**
+     * @param statementType
+     * @param connection
+     * @param entityMetadata
+     *
+     * @return
+     *
+     * @throws SQLException
+     * @see PreparedStatement
+     * @see StatementType
+     * @see Connection
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     PreparedStatement prepare(@NotNull StatementType statementType, @NotNull Connection connection, @NotNull EntityMetadata<?> entityMetadata) throws SQLException {
         var cache = StatementCache.getInstance().getStatementMap();
@@ -57,6 +76,14 @@ final class PreparedStatementFactory {
             StatementCache.getInstance().getStatementMap().get(entityMetadata).get(statementType));
     }
 
+    /**
+     * @param entityMetadata
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private String prepareInsert(@NotNull EntityMetadata<?> entityMetadata) {
         return "insert into " + entityMetadata.getName() + " ("
@@ -68,6 +95,14 @@ final class PreparedStatementFactory {
             + ")";
     }
 
+    /**
+     * @param entityMetadata
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private String prepareSelect(@NotNull EntityMetadata<?> entityMetadata) {
         return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getIdentifiers()
@@ -75,6 +110,14 @@ final class PreparedStatementFactory {
             .collect(Collectors.joining(" and ")) + " limit 1";
     }
 
+    /**
+     * @param entityMetadata
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private String prepareSelectAll(@NotNull EntityMetadata<?> entityMetadata) {
         var builder = new StringBuilder();
@@ -84,12 +127,30 @@ final class PreparedStatementFactory {
         return builder.toString();
     }
 
+    /**
+     * @param builder
+     * @param parent
+     * @param child
+     *
+     * @see StringBuilder
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     private void prepareSelectAll(@NotNull StringBuilder builder, @NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
         builder.append(this.prepareInnerJoin(parent, child));
         child.getDeclaredSuperTypes()
             .forEach(superType -> this.prepareSelectAll(builder, child, superType));
     }
 
+    /**
+     * @param parent
+     * @param child
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private String prepareInnerJoin(@NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
         return " inner join " + child.getName() + " on " + child.getIdentifiers().stream().map(
@@ -97,6 +158,14 @@ final class PreparedStatementFactory {
                 + prop.propertyName()).collect(Collectors.joining(" and "));
     }
 
+    /**
+     * @param entityMetadata
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.0
+     */
     @NotNull
     private String prepareDelete(@NotNull EntityMetadata<?> entityMetadata) {
         return "delete from " + entityMetadata.getName() + " where " + entityMetadata
@@ -105,21 +174,39 @@ final class PreparedStatementFactory {
             .collect(Collectors.joining(" and "));
     }
 
+    /**
+     * @author David Greven
+     * @since 0.2.0
+     */
     enum StatementType {
         INSERT, SELECT, SELECT_ALL, UPDATE, DELETE
     }
 
+    /**
+     * @author David Greven
+     * @see EntityMetadata
+     * @see StatementType
+     * @since 0.2.0
+     */
     static final class StatementCache {
 
         private static final Object MUTEX = new Object();
         private static volatile StatementCache INSTANCE;
         private final Map<EntityMetadata<?>, Map<StatementType, String>> preparedStatementMap;
 
+        /**
+         * @since 0.2.0
+         */
         @Contract(pure = true)
         private StatementCache() {
             this.preparedStatementMap = new HashMap<>();
         }
 
+        /**
+         * @return
+         *
+         * @since 0.2.0
+         */
         @NotNull
         private static StatementCache getInstance() {
             var result = INSTANCE;
@@ -134,12 +221,23 @@ final class PreparedStatementFactory {
             return result;
         }
 
+        /**
+         * @return
+         *
+         * @see Map
+         * @see EntityMetadata
+         * @see StatementType
+         * @since 0.2.0
+         */
         @NotNull
         @Contract(pure = true)
         private Map<EntityMetadata<?>, Map<StatementType, String>> getStatementMap() {
             return this.preparedStatementMap;
         }
 
+        /**
+         * @since 0.2.0
+         */
         @SuppressWarnings("unused")
         void clearCache() {
             this.preparedStatementMap.clear();

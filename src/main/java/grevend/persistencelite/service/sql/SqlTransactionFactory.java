@@ -31,15 +31,33 @@ import java.sql.Connection;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see TransactionFactory
+ * @since 0.2.0
+ */
 public final class SqlTransactionFactory implements TransactionFactory {
 
     private final ThrowingSupplier<Connection> connectionSupplier;
 
+    /**
+     * @param connectionSupplier
+     *
+     * @see ThrowingSupplier
+     * @since 0.2.0
+     */
     @Contract(pure = true)
     public SqlTransactionFactory(@NotNull ThrowingSupplier<Connection> connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
     }
 
+    /**
+     * @return
+     *
+     * @throws Exception
+     * @see SqlTransaction
+     * @since 0.2.0
+     */
     @NotNull
     @Override
     @Contract(" -> new")

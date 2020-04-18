@@ -31,10 +31,27 @@ import java.util.function.Function;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @see ThrowingFunction
+ * @see ThrowingConsumer
+ * @since 0.2.0
+ */
 public class ExceptionEscapeHatch {
 
     private Exception exception;
 
+    /**
+     * @param function
+     * @param exceptionEscapeHatch
+     * @param <T>
+     * @param <R>
+     *
+     * @return
+     *
+     * @see ThrowingFunction
+     * @since 0.2.0
+     */
     @NotNull
     @Contract(pure = true)
     public static <T, R> Function<T, R> escape(@NotNull ThrowingFunction<T, R> function, @NotNull ExceptionEscapeHatch exceptionEscapeHatch) {
@@ -48,6 +65,16 @@ public class ExceptionEscapeHatch {
         };
     }
 
+    /**
+     * @param consumer
+     * @param exceptionEscapeHatch
+     * @param <T>
+     *
+     * @return
+     *
+     * @see ThrowingConsumer
+     * @since 0.2.0
+     */
     @NotNull
     @Contract(pure = true)
     public static <T> Consumer<T> escape(@NotNull ThrowingConsumer<T> consumer, @NotNull ExceptionEscapeHatch exceptionEscapeHatch) {
@@ -60,12 +87,21 @@ public class ExceptionEscapeHatch {
         };
     }
 
+    /**
+     * @param exception
+     *
+     * @since 0.2.0
+     */
     private void escape(@NotNull Exception exception) {
         if (this.exception == null) {
             this.exception = exception;
         }
     }
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
     public void rethrow() throws Exception {
         if (this.exception != null) {
             throw this.exception;

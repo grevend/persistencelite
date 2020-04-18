@@ -22,47 +22,10 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service.sql;
-
-import grevend.persistencelite.dao.Dao;
-import grevend.persistencelite.dao.DaoFactory;
-import grevend.persistencelite.dao.Transaction;
-import grevend.persistencelite.entity.EntityMetadata;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+package grevend.persistencelite.service;
 
 /**
  * @author David Greven
- * @see DaoFactory
- * @see Dao
- * @see EntityMetadata
- * @see Transaction
  * @since 0.2.0
  */
-public final class SqlDaoFactory implements DaoFactory {
-
-    /**
-     * @param entityMetadata
-     * @param transaction
-     * @param <E>
-     *
-     * @return
-     *
-     * @see Dao
-     * @see EntityMetadata
-     * @see Transaction
-     * @since 0.2.0
-     */
-    @NotNull
-    @Override
-    @Contract("_, null -> fail")
-    public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
-        if (transaction instanceof SqlTransaction sqlTransaction) {
-            return new SqlDao<>(entityMetadata, sqlTransaction);
-        } else {
-            throw new IllegalArgumentException("Transaction must be of type SqlTransaction");
-        }
-    }
-
-}
+interface Configuration {}
