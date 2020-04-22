@@ -25,6 +25,9 @@
 package grevend.persistencelite.entity;
 
 import grevend.jacoco.Generated;
+import grevend.persistencelite.entity.lookup.ComponentLookup;
+import grevend.persistencelite.entity.lookup.InterfaceLookup;
+import grevend.persistencelite.entity.lookup.RecordLookup;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -49,6 +52,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class EntityMetadata<E> {
 
+    private final ComponentLookup<E, ?> lookup;
+
     private final Class<E> entityClass;
     private final List<EntityMetadata<?>> superTypes;
     private final Collection<EntityProperty> properties;
@@ -71,6 +76,12 @@ public final class EntityMetadata<E> {
         this.identifiers = new ArrayList<>();
         this.constructor = null;
         this.entityType = entityType;
+
+        this.lookup = switch (this.entityType) {
+            case CLASS -> null;
+            case INTERFACE -> new InterfaceLookup<>();
+            case RECORD -> new RecordLookup<>();
+        };
     }
 
     /**
@@ -120,7 +131,7 @@ public final class EntityMetadata<E> {
      */
     @NotNull
     @Contract(pure = true)
-    Class<E> getEntityClass() {
+    public Class<E> getEntityClass() {
         return this.entityClass;
     }
 
@@ -129,14 +140,14 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityMetadata
-     * @see EntityLookup#lookupSuperTypes(EntityMetadata)
+     * @see ComponentLookup#lookupSuperTypes(EntityMetadata)
      * @since 0.2.0
      */
     @NotNull
     @Contract(pure = true)
     public Collection<EntityMetadata<?>> getDeclaredSuperTypes() {
         if (this.superTypes.isEmpty()) {
-            this.superTypes.addAll(EntityLookup.lookupSuperTypes(this));
+            this.superTypes.addAll(this.lookup.lookupSuperTypes(this));
         }
         return this.superTypes;
     }
@@ -163,13 +174,13 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityProperty
-     * @see EntityLookup#lookupProperties(EntityMetadata)
+     * @see ComponentLookup#lookupProperties(EntityMetadata)
      * @since 0.2.0
      */
     @NotNull
-    Collection<EntityProperty> getDeclaredProperties() {
+    public Collection<EntityProperty> getDeclaredProperties() {
         if (this.properties.isEmpty()) {
-            this.properties.addAll(EntityLookup.lookupProperties(this));
+            this.properties.addAll(this.lookup.lookupProperties(this));
         }
         return this.properties;
     }
@@ -201,7 +212,7 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityProperty> getIdentifiers() {
+    public Collection<EntityProperty> getDeclaredIdentifiers() {
         if (this.identifiers.isEmpty()) {
             this.identifiers.addAll(this.getDeclaredProperties().stream().filter(EntityProperty::id)
                 .collect(Collectors.toList()));
@@ -212,14 +223,28 @@ public final class EntityMetadata<E> {
     /**
      * @return
      *
+     * @see Collection
+     * @see EntityProperty
+     * @see #getDeclaredProperties()
+     * @since 0.2.0
+     */
+    @NotNull
+    public Collection<EntityProperty> getDeclaredRelations() {
+        return this.getDeclaredProperties().stream().filter(EntityProperty::relation)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * @return
+     *
      * @see MethodHandle
-     * @see EntityLookup#lookupConstructor(EntityMetadata)
+     * @see ComponentLookup#lookupConstructor(EntityMetadata)
      * @since 0.2.0
      */
     @Nullable
     MethodHandle getConstructor() {
         if (this.constructor == null) {
-            this.constructor = EntityLookup.lookupConstructor(this);
+            this.constructor = this.lookup.lookupConstructor(this);
         }
         return this.constructor;
     }
@@ -264,11 +289,13 @@ public final class EntityMetadata<E> {
      * @see EntityType
      * @since 0.2.0
      */
-    boolean isValid() {
-        return !this.getIdentifiers().isEmpty() && this.getIdentifiers().containsAll(
-            this.getDeclaredSuperTypes().stream()
-                .flatMap(superType -> superType.getIdentifiers().stream())
-                .collect(Collectors.toUnmodifiableSet())) && this.getDeclaredSuperTypes().stream()
+    public boolean isValid() {
+        return !this.getDeclaredIdentifiers().isEmpty() && this.getDeclaredIdentifiers()
+            .containsAll(
+                this.getDeclaredSuperTypes().stream()
+                    .flatMap(superType -> superType.getDeclaredIdentifiers().stream())
+                    .collect(Collectors.toUnmodifiableSet())) && this.getDeclaredSuperTypes()
+            .stream()
             .allMatch(EntityMetadata::isValid) && (
             (this.getEntityType() == EntityType.RECORD && this.getConstructor() != null) || (
                 this.getEntityType() == EntityType.INTERFACE && this.getConstructor() == null));

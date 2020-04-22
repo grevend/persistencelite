@@ -105,7 +105,7 @@ final class PreparedStatementFactory {
      */
     @NotNull
     private String prepareSelect(@NotNull EntityMetadata<?> entityMetadata) {
-        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getIdentifiers()
+        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getDeclaredIdentifiers()
             .stream().map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
             .collect(Collectors.joining(" and ")) + " limit 1";
     }
@@ -153,7 +153,7 @@ final class PreparedStatementFactory {
      */
     @NotNull
     private String prepareInnerJoin(@NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
-        return " inner join " + child.getName() + " on " + child.getIdentifiers().stream().map(
+        return " inner join " + child.getName() + " on " + child.getDeclaredIdentifiers().stream().map(
             prop -> parent.getName() + "." + prop.propertyName() + " = " + child.getName() + "."
                 + prop.propertyName()).collect(Collectors.joining(" and "));
     }
@@ -170,7 +170,7 @@ final class PreparedStatementFactory {
     private String prepareUpdate(@NotNull EntityMetadata<?> entityMetadata) {
         return "update " + entityMetadata.getName() + " set " + entityMetadata.getUniqueProperties()
             .stream().map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(", "))
-            + " where " + entityMetadata.getIdentifiers().stream()
+            + " where " + entityMetadata.getDeclaredIdentifiers().stream()
             .map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(" and "));
     }
 
@@ -185,7 +185,7 @@ final class PreparedStatementFactory {
     @NotNull
     private String prepareDelete(@NotNull EntityMetadata<?> entityMetadata) {
         return "delete from " + entityMetadata.getName() + " where " + entityMetadata
-            .getIdentifiers().stream()
+            .getDeclaredIdentifiers().stream()
             .map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
             .collect(Collectors.joining(" and "));
     }
