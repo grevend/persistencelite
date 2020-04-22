@@ -22,15 +22,26 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service;
+package grevend.persistencelite.service.sql;
 
+import grevend.persistencelite.service.Configurator;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author David Greven
- * @since 0.2.0
- */
-public interface Configurator<S extends Service<? extends Configurator<S>>> {
+public class PostgresConfigurator implements Configurator<PostgresService> {
+
+    private final PostgresService service;
+
+    @Contract(pure = true)
+    PostgresConfigurator(@NotNull PostgresService service) {
+        this.service = service;
+    }
+
+    @NotNull
+    public PostgresConfigurator loadCredentials(@NotNull String propertiesFile) {
+        //TODO implement loading
+        return this;
+    }
 
     /**
      * @return
@@ -38,6 +49,9 @@ public interface Configurator<S extends Service<? extends Configurator<S>>> {
      * @since 0.2.0
      */
     @NotNull
-    S service();
+    @Override
+    public PostgresService service() {
+        return this.service;
+    }
 
 }

@@ -26,6 +26,7 @@ package grevend.persistencelite.service.memory;
 
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.TransactionFactory;
+import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,8 +44,20 @@ public class InMemoryService implements Service {
      *
      * @since 0.2.0
      */
+    @NotNull
     @Override
-    public @NotNull DaoFactory getDaoFactory() {
+    public Configurator getConfigurator() {
+        return null;
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    public DaoFactory getDaoFactory() {
         return new InMemoryDaoFactory();
     }
 
@@ -53,8 +66,9 @@ public class InMemoryService implements Service {
      *
      * @since 0.2.0
      */
+    @NotNull
     @Override
-    public @NotNull TransactionFactory getTransactionFactory() {
+    public TransactionFactory getTransactionFactory() {
         return new InMemoryTransactionFactory();
     }
 

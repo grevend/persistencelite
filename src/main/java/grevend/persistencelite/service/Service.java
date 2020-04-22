@@ -34,7 +34,15 @@ import org.jetbrains.annotations.NotNull;
  * @see TransactionFactory
  * @since 0.2.0
  */
-public interface Service {
+public interface Service<C extends Configurator> {
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    C getConfigurator();
 
     /**
      * @return

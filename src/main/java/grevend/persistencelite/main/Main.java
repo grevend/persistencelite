@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.main;
 
+import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.entity.Entity;
 import grevend.persistencelite.entity.Id;
 import grevend.persistencelite.entity.Property;
@@ -48,6 +49,9 @@ public class Main {
             dao.update(bob.get(), Map.of("password", "Hello World!"));
         }
         System.out.println(dao.retrieve());
+
+        /*var service = PersistenceLite.configureService(PostgresService.class)
+            .loadCredentials("credentials.properties").service();*/
     }
 
     @Entity(name = "account_base")

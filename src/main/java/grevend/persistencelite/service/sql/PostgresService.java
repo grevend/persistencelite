@@ -29,8 +29,8 @@ import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -44,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
  * @see Service
  * @since 0.2.0
  */
-public final class PostgresService implements Service {
+public final class PostgresService implements Service<PostgresConfigurator> {
 
     /**
      * @param entity
@@ -77,6 +77,18 @@ public final class PostgresService implements Service {
     @NotNull
     public <E> Dao<E> createDao(@NotNull Class<E> entity) throws Exception {
         return this.createDao(entity, this.getTransactionFactory().createTransaction());
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    @Contract(value = " -> new", pure = true)
+    public PostgresConfigurator getConfigurator() {
+        return new PostgresConfigurator();
     }
 
     /**
