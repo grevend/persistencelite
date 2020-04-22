@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
  * @see BaseDao
  * @see InMemoryTransaction
  */
-public class InMemoryDao<E> extends BaseDao<E, InMemoryTransaction> {
+public final class InMemoryDao<E> extends BaseDao<E, InMemoryTransaction> {
 
     /**
      * @param entityMetadata

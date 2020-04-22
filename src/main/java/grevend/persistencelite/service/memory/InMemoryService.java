@@ -37,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
  * @see TransactionFactory
  * @since 0.2.0
  */
-public class InMemoryService implements Service {
+public final class InMemoryService implements Service<InMemoryConfigurator> {
 
     /**
      * @return
@@ -46,8 +46,8 @@ public class InMemoryService implements Service {
      */
     @NotNull
     @Override
-    public Configurator getConfigurator() {
-        return null;
+    public InMemoryConfigurator getConfigurator() {
+        return new InMemoryConfigurator(this);
     }
 
     /**

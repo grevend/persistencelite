@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service.sql;
+package grevend.persistencelite.service.memory;
 
 import grevend.persistencelite.service.Configurator;
 import org.jetbrains.annotations.Contract;
@@ -31,12 +31,12 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author David Greven
  * @see Configurator
- * @see PostgresService
+ * @see InMemoryService
  * @since 0.2.0
  */
-public class PostgresConfigurator implements Configurator<PostgresService> {
+public final class InMemoryConfigurator implements Configurator<InMemoryService> {
 
-    private final PostgresService service;
+    private final InMemoryService service;
 
     /**
      * @param service
@@ -44,21 +44,8 @@ public class PostgresConfigurator implements Configurator<PostgresService> {
      * @since 0.2.0
      */
     @Contract(pure = true)
-    PostgresConfigurator(@NotNull PostgresService service) {
+    InMemoryConfigurator(InMemoryService service) {
         this.service = service;
-    }
-
-    /**
-     * @param propertiesFile
-     *
-     * @return
-     *
-     * @since 0.2.0
-     */
-    @NotNull
-    public PostgresConfigurator loadCredentials(@NotNull String propertiesFile) {
-        //TODO implement loading
-        return this;
     }
 
     /**
@@ -68,7 +55,8 @@ public class PostgresConfigurator implements Configurator<PostgresService> {
      */
     @NotNull
     @Override
-    public PostgresService service() {
+    @Contract(pure = true)
+    public InMemoryService service() {
         return this.service;
     }
 

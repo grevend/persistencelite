@@ -29,7 +29,6 @@ import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -88,7 +87,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Override
     @Contract(value = " -> new", pure = true)
     public PostgresConfigurator getConfigurator() {
-        return new PostgresConfigurator();
+        return new PostgresConfigurator(this);
     }
 
     /**
