@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.entity;
 
+import grevend.persistencelite.util.TypeMarshaller;
 import grevend.persistencelite.util.function.ThrowingFunction;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -34,7 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
@@ -120,9 +123,29 @@ public final class EntityFactory {
         }
         final List<Object> propertyValues = new ArrayList<>();
         for (var name : propertyNames) {
-            propertyValues.add(values.apply(name));
+            propertyValues.add(marshall(values.apply(name), Map.of()));
         }
         return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
+    }
+
+    /**
+     * @param value
+     * @param marshallerMap
+     *
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @Nullable
+    @Contract("null, _ -> null")
+    private static Object marshall(@Nullable Object value, @NotNull Map<Class<?>, TypeMarshaller<Object, Object>> marshallerMap) {
+        //TODO add enum support
+        if (value == null) {
+            return null;
+        } else if (marshallerMap.containsKey(value.getClass())) {
+            return marshallerMap.get(value.getClass()).marshall(value);
+        }
+        return value;
     }
 
     /**

@@ -50,11 +50,19 @@ public final class PostgresService implements Service<PostgresConfigurator> {
 
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
 
+    /**
+     * @since 0.2.0
+     */
     @Contract(pure = true)
     public PostgresService() {
         this.marshallerMap = new HashMap<>();
     }
 
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
     @NotNull
     @Contract(pure = true)
     public Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> getMarshallerMap() {
