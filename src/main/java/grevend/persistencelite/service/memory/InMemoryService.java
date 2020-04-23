@@ -26,15 +26,18 @@ package grevend.persistencelite.service.memory;
 
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.TransactionFactory;
-import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
+import grevend.persistencelite.util.TypeMarshaller;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
  * @see Service
  * @see DaoFactory
  * @see TransactionFactory
+ * @see TypeMarshaller
  * @since 0.2.0
  */
 public final class InMemoryService implements Service<InMemoryConfigurator> {
@@ -46,6 +49,7 @@ public final class InMemoryService implements Service<InMemoryConfigurator> {
      */
     @NotNull
     @Override
+    @Contract(value = " -> new", pure = true)
     public InMemoryConfigurator getConfigurator() {
         return new InMemoryConfigurator(this);
     }
@@ -57,6 +61,7 @@ public final class InMemoryService implements Service<InMemoryConfigurator> {
      */
     @NotNull
     @Override
+    @Contract(value = " -> new", pure = true)
     public DaoFactory getDaoFactory() {
         return new InMemoryDaoFactory();
     }
@@ -68,8 +73,21 @@ public final class InMemoryService implements Service<InMemoryConfigurator> {
      */
     @NotNull
     @Override
+    @Contract(value = " -> new", pure = true)
     public TransactionFactory getTransactionFactory() {
         return new InMemoryTransactionFactory();
     }
+
+    /**
+     * @param entity
+     * @param from
+     * @param to
+     * @param marshaller
+     *
+     * @since 0.2.0
+     */
+    @Override
+    @Contract(pure = true)
+    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {}
 
 }

@@ -26,15 +26,18 @@ package grevend.persistencelite.service;
 
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.TransactionFactory;
+import grevend.persistencelite.util.TypeMarshaller;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
  * @see DaoFactory
  * @see TransactionFactory
+ * @see TypeMarshaller
  * @since 0.2.0
  */
-public interface Service<C extends Configurator> {
+public interface Service<C extends Configurator<? extends Service<C>>> {
 
     /**
      * @return
@@ -59,5 +62,31 @@ public interface Service<C extends Configurator> {
      */
     @NotNull
     TransactionFactory getTransactionFactory();
+
+    /**
+     * @param from
+     * @param to
+     * @param marshaller
+     * @param <A>
+     * @param <B>
+     *
+     * @since 0.2.0
+     */
+    default <A, B> void registerTypeMarshaller(Class<A> from, Class<B> to, TypeMarshaller<A, B> marshaller) {
+        this.registerTypeMarshaller(null, from, to, marshaller);
+    }
+
+    /**
+     * @param entity
+     * @param from
+     * @param to
+     * @param marshaller
+     * @param <A>
+     * @param <B>
+     * @param <E>
+     *
+     * @since 0.2.0
+     */
+    <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller);
 
 }

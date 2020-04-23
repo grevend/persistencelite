@@ -30,6 +30,7 @@ import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.service.Service;
+import grevend.persistencelite.util.TypeMarshaller;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -116,6 +117,20 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Contract(value = " -> new", pure = true)
     public TransactionFactory getTransactionFactory() {
         return new SqlTransactionFactory(this::createConnection);
+    }
+
+    /**
+     * @param entity
+     * @param from
+     * @param to
+     * @param marshaller
+     *
+     * @since 0.2.0
+     */
+    @Override
+    @Contract(pure = true)
+    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
+
     }
 
     /**

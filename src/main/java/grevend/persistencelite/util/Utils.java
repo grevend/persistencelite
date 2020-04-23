@@ -29,19 +29,23 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class Utils {
 
+    private static final Set<String> arrayPrimitives =
+        Set.of("void[]", "byte[]", "short[]", "int[]", "long[]", "float[]", "double[]", "boolean[]",
+            "char[]");
     public static Set<Class<?>> primitives = Set.of(
         Void.TYPE, Byte.TYPE, Short.TYPE, Integer.TYPE, Long.TYPE,
         Float.TYPE, Double.TYPE, Boolean.TYPE, Character.TYPE);
-    public static Set<String> arrayPrimitives =
-        Set.of("void[]", "byte[]", "short[]", "int[]", "long[]", "float[]", "double[]", "boolean[]",
-            "char[]");
     public static Predicate<Field> isFieldViable = field -> !field.isSynthetic()
         && !field.isAnnotationPresent(Ignore.class)
         && !Modifier.isAbstract(field.getModifiers())
@@ -52,7 +56,7 @@ public class Utils {
 
     @Contract("null -> !null")
     @SuppressWarnings("unchecked")
-    public static <A> String stringify(A a) {
+    static <A> String stringify(A a) {
         if (a == null) {
             return "null";
         } else {
@@ -95,7 +99,7 @@ public class Utils {
     }
 
     @Contract(pure = true)
-    public static @NotNull <T extends Number> boolean greaterThan(@NotNull T a, @NotNull T b) {
+    public static <T extends Number> boolean greaterThan(@NotNull T a, @NotNull T b) {
         if (a instanceof Integer && b instanceof Integer) {
             return (((Integer) a) > ((Integer) b));
         } else if (a instanceof Double) {
@@ -110,7 +114,7 @@ public class Utils {
     }
 
     @Contract(pure = true)
-    public static @NotNull <T extends Number> boolean lessThan(@NotNull T a, @NotNull T b) {
+    public static <T extends Number> boolean lessThan(@NotNull T a, @NotNull T b) {
         if (a instanceof Integer && b instanceof Integer) {
             return (((Integer) a) < ((Integer) b));
         } else if (a instanceof Double) {
@@ -122,6 +126,47 @@ public class Utils {
         } else {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Nullable
+    public static <T, R> R extract(@NotNull T key, @NotNull Map<T, R> map, @NotNull Iterable<? extends Map<T, R>> maps) {
+        R value = null;
+
+        if (map.containsKey(key)) {
+            value = map.get(key);
+        } else {
+            for (Map<T, R> next : maps) {
+                if (next.containsKey(key)) {
+                    map.put(key, (value = next.get(key)));
+                    break;
+                }
+            }
+        }
+
+        return value;
+    }
+
+    public static void test(final Map<String, String> map) {
+        var copy = new HashMap<>(map);
+        System.out.println(extract("abcde", copy, List.of()));
+        System.out.println(extract("bcde", copy, List.of()));
+        System.out.println(extract("bcde", copy, List.of(Map.of("bcde", "12"))));
+        System.out.println(extract("bcdecc", copy, List.of(Map.of("bcdef", "12"), Map.of("bcdecc", "21"))));
+
+        System.out.println("Copy: " + copy);
+        System.out.println(map);
+    }
+
+    public static void main(String[] args) {
+        Map<String, String> test = new HashMap<>();
+        test.put("abcde", "Hello!");
+        System.out.println(test.get("abcde"));
+        System.out.println("---------------");
+
+        test(test);
+
+        System.out.println("---------------");
+        System.out.println(test);
     }
 
 }

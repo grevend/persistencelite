@@ -58,7 +58,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull Map<String, Object> properties) throws Throwable {
+    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final Map<String, Object> properties) throws Throwable {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata, properties.keySet(), false,
@@ -79,7 +79,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull ResultSet values) throws Throwable {
+    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final ResultSet values) throws Throwable {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata,
