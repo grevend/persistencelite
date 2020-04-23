@@ -34,6 +34,8 @@ import grevend.persistencelite.util.TypeMarshaller;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +47,19 @@ import org.jetbrains.annotations.Nullable;
  * @since 0.2.0
  */
 public final class PostgresService implements Service<PostgresConfigurator> {
+
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
+
+    @Contract(pure = true)
+    public PostgresService() {
+        this.marshallerMap = new HashMap<>();
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> getMarshallerMap() {
+        return this.marshallerMap;
+    }
 
     /**
      * @param entity
@@ -130,7 +145,10 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Override
     @Contract(pure = true)
     public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
-
+        if (!this.marshallerMap.containsKey(entity)) {
+            this.marshallerMap.put(entity, new HashMap<>());
+        }
+        this.marshallerMap.get(entity).put(from, marshaller);
     }
 
     /**
