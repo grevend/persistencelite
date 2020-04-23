@@ -128,6 +128,15 @@ public class Utils {
         }
     }
 
+    /**
+     * @since 0.2.0
+     * @param key
+     * @param map
+     * @param maps
+     * @param <T>
+     * @param <R>
+     * @return
+     */
     @Nullable
     public static <T, R> R extract(@NotNull T key, @NotNull Map<T, R> map, @NotNull Iterable<? extends Map<T, R>> maps) {
         R value = null;
