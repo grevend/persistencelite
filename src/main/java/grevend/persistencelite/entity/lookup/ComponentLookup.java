@@ -128,7 +128,7 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
 
         var relation = component.isAnnotationPresent(Relation.class) ?
             this.createRelation(component) : null;
-        
+
         var copy = component.isAnnotationPresent(Id.class) ||
             (component.isAnnotationPresent(Property.class) &&
                 component.getAnnotation(Property.class).copy());

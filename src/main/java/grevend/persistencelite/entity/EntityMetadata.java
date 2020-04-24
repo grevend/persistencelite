@@ -112,6 +112,55 @@ public final class EntityMetadata<E> {
         }
     }
 
+    @Contract("_ -> param1")
+    public static <E> @NotNull EntityMetadata<E> inferRelationTypes(@NotNull EntityMetadata<E> metadata) {
+        metadata.getDeclaredRelations().stream().map(EntityProperty::relation).filter(
+            relation -> Objects.requireNonNull(relation).getType() == EntityRelationType.UNKNOWN)
+            .forEach(relation -> {
+                EntityMetadata.of(relation.getTargetEntity()).getDeclaredRelations().stream()
+                    .map(EntityProperty::relation).filter(Objects::nonNull)
+                    .filter(
+                        relation2 -> relation2.getTargetEntity().equals(metadata.getEntityClass()))
+                    .forEach(relation2 -> {
+                        relation.setCircularDependency(true);
+                        relation2.setCircularDependency(true);
+                    });
+            });
+
+        metadata.getDeclaredRelations().forEach(prop -> {
+            EntityMetadata.of(Objects.requireNonNull(prop.relation()).getTargetEntity())
+                .getDeclaredRelations().forEach(prop2 -> {
+                if (prop.type().isAssignableFrom(Collection.class)) {
+                    if (prop2.type().isAssignableFrom(Collection.class)) {
+                        Objects.requireNonNull(prop.relation())
+                            .setType(EntityRelationType.MANY_TO_MANY);
+                        Objects.requireNonNull(prop2.relation())
+                            .setType(EntityRelationType.MANY_TO_MANY);
+                    } else {
+                        Objects.requireNonNull(prop.relation())
+                            .setType(EntityRelationType.ONE_TO_MANY);
+                        Objects.requireNonNull(prop2.relation())
+                            .setType(EntityRelationType.ONE_TO_ONE);
+                    }
+                } else {
+                    if (prop2.type().isAssignableFrom(Collection.class)) {
+                        Objects.requireNonNull(prop.relation())
+                            .setType(EntityRelationType.ONE_TO_ONE);
+                        Objects.requireNonNull(prop2.relation())
+                            .setType(EntityRelationType.ONE_TO_MANY);
+                    } else {
+                        Objects.requireNonNull(prop.relation())
+                            .setType(EntityRelationType.ONE_TO_ONE);
+                        Objects.requireNonNull(prop2.relation())
+                            .setType(EntityRelationType.ONE_TO_ONE);
+                    }
+                }
+            });
+        });
+
+        return metadata;
+    }
+
     /**
      * @return
      *
