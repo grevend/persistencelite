@@ -76,3 +76,4 @@ checkstyle.xml
 .project
 .classpath
 postgres.ser
+src/main/resources/credentials.properties

@@ -25,6 +25,8 @@
 package grevend.persistencelite.service.sql;
 
 import grevend.persistencelite.service.Configurator;
+import java.io.FileNotFoundException;
+import java.util.Properties;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -57,7 +59,20 @@ public class PostgresConfigurator implements Configurator<PostgresService> {
      */
     @NotNull
     public PostgresConfigurator loadCredentials(@NotNull String propertiesFile) {
-        //TODO implement loading
+        Properties props = new Properties();
+
+        try (var stream = this.getClass().getClassLoader().getResourceAsStream(propertiesFile)) {
+            if (stream != null) {
+                props.load(stream);
+            } else {
+                throw new FileNotFoundException(
+                    "Credentials property file '" + propertiesFile + "' not found.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        this.service.setProperties(props);
         return this;
     }
 

@@ -49,6 +49,7 @@ import org.jetbrains.annotations.Nullable;
 public final class PostgresService implements Service<PostgresConfigurator> {
 
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
+    private Properties properties;
 
     /**
      * @since 0.2.0
@@ -56,6 +57,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Contract(pure = true)
     public PostgresService() {
         this.marshallerMap = new HashMap<>();
+        this.properties = new Properties();
     }
 
     /**
@@ -67,6 +69,26 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Contract(pure = true)
     public Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> getMarshallerMap() {
         return this.marshallerMap;
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    @Contract(pure = true)
+    public Properties getProperties() {
+        return this.properties;
+    }
+
+    /**
+     * @param properties
+     *
+     * @since 0.2.0
+     */
+    public void setProperties(@NotNull Properties properties) {
+        this.properties = properties;
     }
 
     /**
@@ -168,10 +190,13 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      */
     @NotNull
     private Connection createConnection() throws SQLException {
-        Properties props = new Properties();
-        props.setProperty("user", "postgres");
-        props.setProperty("password", "password");
-        return DriverManager.getConnection("jdbc:postgresql://localhost/" + "postgres", props);
+        if (this.properties.getProperty("user") == null
+            || this.properties.getProperty("password") == null) {
+            throw new IllegalStateException("No credentials provided.");
+        }
+
+        return DriverManager
+            .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
     }
 
 }
