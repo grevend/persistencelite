@@ -128,7 +128,7 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
 
         var relation = component.isAnnotationPresent(Relation.class) ?
             this.createRelation(component) : null;
-
+        
         var copy = component.isAnnotationPresent(Id.class) ||
             (component.isAnnotationPresent(Property.class) &&
                 component.getAnnotation(Property.class).copy());
@@ -150,7 +150,7 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
         var annotation = component.getAnnotation(Relation.class);
 
         return new EntityRelation(annotation.selfProperties(), annotation.targetEntity(),
-            annotation.targetProperties(), EntityRelationType.ONE_TO_ONE, false);
+            annotation.targetProperties(), EntityRelationType.UNKNOWN, false);
     }
 
     /**

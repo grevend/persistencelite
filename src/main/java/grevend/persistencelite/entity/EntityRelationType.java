@@ -31,5 +31,5 @@ package grevend.persistencelite.entity;
  * @since 0.2.0
  */
 public enum EntityRelationType {
-    ONE_TO_ONE, ONE_TO_MANY, MANY_TO_MANY;
+    UNKNOWN, ONE_TO_ONE, ONE_TO_MANY, MANY_TO_MANY;
 }
