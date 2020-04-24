@@ -242,8 +242,8 @@ public final class EntityFactory {
         entityMetadata.getSuperTypes().forEach(metadata -> metadata.getDeclaredProperties()
             .forEach(prop -> superPropNames.add(prop.fieldName())));
         var props = entityMetadata.getDeclaredProperties().stream()
-            .filter(prop -> !superPropNames.contains(prop.fieldName()) || prop.id() || prop.copy())
-            .collect(Collectors.toCollection(ArrayList::new));
+            .filter(prop -> !superPropNames.contains(prop.fieldName()) || prop.identifier() != null
+                || prop.copy()).collect(Collectors.toCollection(ArrayList::new));
         props.forEach(property -> {
             try {
                 properties.put(property.propertyName(),

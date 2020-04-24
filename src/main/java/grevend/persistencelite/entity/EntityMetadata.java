@@ -198,9 +198,9 @@ public final class EntityMetadata<E> {
         var allProps = this.getSuperTypes().stream()
             .flatMap(superType -> superType.getDeclaredProperties().stream())
             .map(EntityProperty::propertyName).collect(Collectors.toUnmodifiableSet());
-        return this.getDeclaredProperties().stream()
-            .filter(prop -> !allProps.contains(prop.propertyName()) || prop.id() || prop.copy())
-            .collect(Collectors.toUnmodifiableSet());
+        return this.getDeclaredProperties().stream().filter(
+            prop -> !allProps.contains(prop.propertyName()) || prop.identifier() != null ||
+                prop.copy()).collect(Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -214,8 +214,9 @@ public final class EntityMetadata<E> {
     @NotNull
     public Collection<EntityProperty> getDeclaredIdentifiers() {
         if (this.identifiers.isEmpty()) {
-            this.identifiers.addAll(this.getDeclaredProperties().stream().filter(EntityProperty::id)
-                .collect(Collectors.toList()));
+            this.identifiers.addAll(
+                this.getDeclaredProperties().stream().filter(prop -> prop.identifier() != null)
+                    .collect(Collectors.toList()));
         }
         return this.identifiers;
     }
@@ -230,7 +231,7 @@ public final class EntityMetadata<E> {
      */
     @NotNull
     public Collection<EntityProperty> getDeclaredRelations() {
-        return this.getDeclaredProperties().stream().filter(EntityProperty::relation)
+        return this.getDeclaredProperties().stream().filter(prop -> prop.relation() != null)
             .collect(Collectors.toList());
     }
 

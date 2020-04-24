@@ -155,4 +155,29 @@ public class Utils {
         return value;
     }
 
+
+    public static void test(final Map<String, String> map) {
+        var copy = new HashMap<>(map);
+        System.out.println(extract("abcde", copy, List.of()));
+        System.out.println(extract("bcde", copy, List.of()));
+        System.out.println(extract("bcde", copy, List.of(Map.of("bcde", "12"))));
+        System.out.println(
+            extract("bcdecc", copy, List.of(Map.of("bcdef", "12"), Map.of("bcdecc", "21"))));
+
+        System.out.println("Copy: " + copy);
+        System.out.println(map);
+    }
+
+    public static void main(String[] args) {
+        Map<String, String> test = new HashMap<>();
+        test.put("abcde", "Hello!");
+        System.out.println(test.get("abcde"));
+        System.out.println("---------------");
+
+        test(test);
+
+        System.out.println("---------------");
+        System.out.println(test);
+    }
+    
 }

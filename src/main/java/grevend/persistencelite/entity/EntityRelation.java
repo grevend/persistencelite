@@ -24,14 +24,13 @@
 
 package grevend.persistencelite.entity;
 
-import java.lang.invoke.MethodHandle;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
- * @see Class
- * @see MethodHandle
+ * @see Relation
+ * @see EntityRelationType
+ * @see EntityProperty
  * @since 0.2.0
  */
-public final record EntityProperty(@NotNull Class<?>type, @Nullable MethodHandle getter, @NotNull String fieldName, @NotNull String propertyName, @Nullable EntityIdentifier identifier, @Nullable EntityRelation relation, boolean copy) {}
+public record EntityRelation(@NotNull String[]selfProperties, @NotNull Class<?>targetEntity, @NotNull String[]targetProperties, @NotNull EntityRelationType type, boolean circularDependency) {}

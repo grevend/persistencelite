@@ -24,14 +24,12 @@
 
 package grevend.persistencelite.entity;
 
-import java.lang.invoke.MethodHandle;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 /**
  * @author David Greven
- * @see Class
- * @see MethodHandle
+ * @see Relation
+ * @see EntityRelation
  * @since 0.2.0
  */
-public final record EntityProperty(@NotNull Class<?>type, @Nullable MethodHandle getter, @NotNull String fieldName, @NotNull String propertyName, @Nullable EntityIdentifier identifier, @Nullable EntityRelation relation, boolean copy) {}
+public enum EntityRelationType {
+    ONE_TO_ONE, ONE_TO_MANY, MANY_TO_MANY;
+}
