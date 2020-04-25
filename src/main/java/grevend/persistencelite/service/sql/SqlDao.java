@@ -25,7 +25,7 @@
 package grevend.persistencelite.service.sql;
 
 import grevend.persistencelite.dao.BaseDao;
-import grevend.persistencelite.entity.EntityFactory;
+import grevend.persistencelite.entity.factory.EntityFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.entity.EntityProperty;
 import grevend.persistencelite.service.sql.PreparedStatementFactory.StatementType;

@@ -24,7 +24,7 @@
 
 package grevend.persistencelite.dao;
 
-import grevend.persistencelite.entity.EntityFactory;
+import grevend.persistencelite.entity.factory.EntityFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.util.ExceptionEscapeHatch;
 import grevend.sequence.function.ThrowingConsumer;

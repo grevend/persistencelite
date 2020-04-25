@@ -22,8 +22,11 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.entity;
+package grevend.persistencelite.entity.factory;
 
+import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.entity.EntityProperty;
+import grevend.persistencelite.entity.EntityType;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
 import java.sql.ResultSet;
@@ -217,7 +220,7 @@ public final class EntityFactory {
         superTypeMetadata.getDeclaredProperties().forEach(property -> {
             try {
                 properties.put(property.propertyName(),
-                    Objects.requireNonNull(property.getter()).invoke(entity));
+                    unmarshall(Objects.requireNonNull(property.getter()).invoke(entity)));
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }
@@ -247,12 +250,28 @@ public final class EntityFactory {
         props.forEach(property -> {
             try {
                 properties.put(property.propertyName(),
-                    Objects.requireNonNull(property.getter()).invoke(entity));
+                    unmarshall(Objects.requireNonNull(property.getter()).invoke(entity)));
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }
         });
         return properties;
+    }
+
+    /**
+     * @param value
+     *
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @Nullable
+    @Contract("null -> null")
+    private static Object unmarshall(@Nullable Object value) {
+        if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
+            return value.toString().toLowerCase();
+        }
+        return value;
     }
 
 }

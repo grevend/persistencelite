@@ -292,7 +292,7 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @Nullable
-    MethodHandle getConstructor() {
+    public MethodHandle getConstructor() {
         if (this.constructor == null) {
             this.constructor = this.lookup.lookupConstructor(this);
         }
@@ -307,7 +307,7 @@ public final class EntityMetadata<E> {
      */
     @NotNull
     @Contract(pure = true)
-    EntityType getEntityType() {
+    public EntityType getEntityType() {
         return this.entityType;
     }
 
