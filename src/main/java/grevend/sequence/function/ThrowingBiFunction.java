@@ -22,13 +22,14 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.function;
+package grevend.sequence.function;
 
 import org.jetbrains.annotations.Nullable;
 
 @FunctionalInterface
-public interface ThrowingBiConsumer<T, U> {
+public interface ThrowingBiFunction<T, U, R> {
 
-    void accept(@Nullable T t, @Nullable U u) throws Exception;
+    @Nullable
+    R apply(@Nullable T t, @Nullable U u) throws Exception;
 
 }

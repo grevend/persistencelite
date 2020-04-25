@@ -24,8 +24,8 @@
 
 package grevend.persistencelite.util;
 
-import grevend.persistencelite.util.function.ThrowingConsumer;
-import grevend.persistencelite.util.function.ThrowingFunction;
+import grevend.sequence.function.ThrowingConsumer;
+import grevend.sequence.function.ThrowingFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.jetbrains.annotations.Contract;

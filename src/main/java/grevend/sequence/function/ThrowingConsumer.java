@@ -22,41 +22,13 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.function;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class DistinctIterator<T> extends ChainIterator<T> {
+@FunctionalInterface
+public interface ThrowingConsumer<T> {
 
-    private final Set<T> observed;
-    private T next;
-
-    public DistinctIterator(@NotNull Iterator<T> iterator) {
-        super(iterator);
-        this.observed = new HashSet<>();
-    }
-
-    @Override
-    public boolean hasNext() {
-        if (this.iterator.hasNext()) {
-            var element = this.iterator.next();
-            if (!this.observed.contains(element)) {
-                this.observed.add(element);
-                this.next = element;
-                return true;
-            } else {
-                return this.hasNext();
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public T next() {
-        return this.next;
-    }
+    void accept(@Nullable T t) throws Exception;
 
 }

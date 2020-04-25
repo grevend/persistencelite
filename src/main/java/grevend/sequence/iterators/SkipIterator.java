@@ -22,13 +22,30 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.function;
+package grevend.sequence.iterators;
 
-import org.jetbrains.annotations.Nullable;
+import java.util.Iterator;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionalInterface
-public interface TriFunction<T, U, S, R> {
+public class SkipIterator<T> extends ChainIterator<T> {
 
-    @Nullable R apply(@Nullable T t, @Nullable U u, @Nullable S s);
+    public SkipIterator(@NotNull Iterator<T> iterator, int maxSize) {
+        super(iterator);
+        var i = 0;
+        while (iterator.hasNext() && i < maxSize) {
+            iterator.next();
+            i++;
+        }
+    }
+
+    @Override
+    public boolean hasNext() {
+        return this.iterator.hasNext();
+    }
+
+    @Override
+    public T next() {
+        return this.iterator.next();
+    }
 
 }

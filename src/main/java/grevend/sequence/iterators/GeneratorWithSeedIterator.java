@@ -22,48 +22,37 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
-import grevend.persistencelite.util.sequence.Seq;
-import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.Queue;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class FlatMapIterator<T, R, U extends Seq<R, ?>> implements Iterator<R> {
+public class GeneratorWithSeedIterator<T> implements Iterator<T> {
 
-    private final Iterator<T> iterator;
-    private final Function<? super T, ? extends Seq<? extends R, ?>> function;
-    private final Queue<Iterator<? extends R>> queue;
+    private final UnaryOperator<T> function;
+    private final T seed;
+    private T previous;
 
-    public FlatMapIterator(@NotNull Iterator<T> iterator, @NotNull Function<? super T, ? extends Seq<? extends R, ?>> function) {
-        this.iterator = iterator;
+    @Contract(pure = true)
+    public GeneratorWithSeedIterator(@NotNull T seed, @NotNull UnaryOperator<T> function) {
+        this.seed = seed;
         this.function = function;
-        this.queue = new ArrayDeque<>();
-        if (iterator.hasNext()) {
-            this.queue.offer(function.apply(iterator.next()).iterator());
-        }
     }
 
     @Override
     public boolean hasNext() {
-        while (!this.queue.isEmpty()) {
-            if (this.queue.peek().hasNext()) {
-                return true;
-            } else {
-                if (this.iterator.hasNext()) {
-                    this.queue.offer(this.function.apply(this.iterator.next()).iterator());
-                }
-                this.queue.poll();
-            }
-        }
-        return false;
+        return true;
     }
 
     @Override
-    public R next() {
-        return this.queue.element().next();
+    public T next() {
+        if (this.previous == null) {
+            return (this.previous = this.seed);
+        }
+        return (this.previous = this.function.apply(this.previous));
     }
+
 
 }

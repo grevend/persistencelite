@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
 import java.util.Iterator;
 import java.util.function.Supplier;

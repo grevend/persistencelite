@@ -22,32 +22,41 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.function.Function;
-import org.jetbrains.annotations.Contract;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public class MapIterator<T, R> implements Iterator<R> {
+public class DistinctIterator<T> extends ChainIterator<T> {
 
-    private final Iterator<T> iterator;
-    private final Function<? super T, ? extends R> function;
+    private final Set<T> observed;
+    private T next;
 
-    @Contract(pure = true)
-    public MapIterator(@NotNull Iterator<T> iterator, @NotNull Function<? super T, ? extends R> function) {
-        this.iterator = iterator;
-        this.function = function;
+    public DistinctIterator(@NotNull Iterator<T> iterator) {
+        super(iterator);
+        this.observed = new HashSet<>();
     }
 
     @Override
     public boolean hasNext() {
-        return this.iterator.hasNext();
+        if (this.iterator.hasNext()) {
+            var element = this.iterator.next();
+            if (!this.observed.contains(element)) {
+                this.observed.add(element);
+                this.next = element;
+                return true;
+            } else {
+                return this.hasNext();
+            }
+        }
+        return false;
     }
 
     @Override
-    public R next() {
-        return this.function.apply(this.iterator.next());
+    public T next() {
+        return this.next;
     }
 
 }

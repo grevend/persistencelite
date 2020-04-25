@@ -22,11 +22,32 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.function;
+package grevend.sequence.iterators;
 
-@FunctionalInterface
-public interface ThrowingRunnable {
+import java.util.Iterator;
+import java.util.function.Function;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-    void run() throws Exception;
+public class MapIterator<T, R> implements Iterator<R> {
+
+    private final Iterator<T> iterator;
+    private final Function<? super T, ? extends R> function;
+
+    @Contract(pure = true)
+    public MapIterator(@NotNull Iterator<T> iterator, @NotNull Function<? super T, ? extends R> function) {
+        this.iterator = iterator;
+        this.function = function;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return this.iterator.hasNext();
+    }
+
+    @Override
+    public R next() {
+        return this.function.apply(this.iterator.next());
+    }
 
 }

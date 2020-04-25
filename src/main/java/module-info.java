@@ -12,9 +12,9 @@ module PersistenceLite {
     exports grevend.persistencelite.service.memory;
     exports grevend.persistencelite.service.sql;
     exports grevend.persistencelite.util;
-    exports grevend.persistencelite.util.function;
-    exports grevend.persistencelite.util.iterators;
-    exports grevend.persistencelite.util.sequence;
+    exports grevend.sequence.function;
+    exports grevend.sequence.iterators;
+    exports grevend.sequence;
 
     opens grevend.jacoco;
     //opens grevend.persistencelite;
@@ -24,9 +24,9 @@ module PersistenceLite {
     opens grevend.persistencelite.service.memory;
     opens grevend.persistencelite.service.sql;
     opens grevend.persistencelite.util;
-    opens grevend.persistencelite.util.function;
-    opens grevend.persistencelite.util.iterators;
-    opens grevend.persistencelite.util.sequence;
+    opens grevend.sequence.function;
+    opens grevend.sequence.iterators;
+    opens grevend.sequence;
 
     provides System.LoggerFinder with PersistenceLiteLoggerFinder;
 }

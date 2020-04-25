@@ -22,22 +22,22 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.sequence;
+package grevend.sequence;
 
-import grevend.persistencelite.util.function.TriFunction;
+import grevend.sequence.function.TriFunction;
 import grevend.persistencelite.util.Utils;
-import grevend.persistencelite.util.iterators.ConcatIterator;
-import grevend.persistencelite.util.iterators.DistinctIterator;
-import grevend.persistencelite.util.iterators.FilterIterator;
-import grevend.persistencelite.util.iterators.FlatMapIterator;
-import grevend.persistencelite.util.iterators.GeneratorIterator;
-import grevend.persistencelite.util.iterators.GeneratorWithSeedIterator;
-import grevend.persistencelite.util.iterators.LimitIterator;
-import grevend.persistencelite.util.iterators.MapIterator;
-import grevend.persistencelite.util.iterators.MergeIterator;
-import grevend.persistencelite.util.iterators.PeekIterator;
-import grevend.persistencelite.util.iterators.RangeIterator;
-import grevend.persistencelite.util.iterators.SkipIterator;
+import grevend.sequence.iterators.ConcatIterator;
+import grevend.sequence.iterators.DistinctIterator;
+import grevend.sequence.iterators.FilterIterator;
+import grevend.sequence.iterators.FlatMapIterator;
+import grevend.sequence.iterators.GeneratorIterator;
+import grevend.sequence.iterators.GeneratorWithSeedIterator;
+import grevend.sequence.iterators.LimitIterator;
+import grevend.sequence.iterators.MapIterator;
+import grevend.sequence.iterators.MergeIterator;
+import grevend.sequence.iterators.PeekIterator;
+import grevend.sequence.iterators.RangeIterator;
+import grevend.sequence.iterators.SkipIterator;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;

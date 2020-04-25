@@ -22,14 +22,41 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.function;
+package grevend.sequence.iterators;
 
-import org.jetbrains.annotations.Nullable;
+import grevend.sequence.function.TriFunction;
+import java.util.Iterator;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionalInterface
-public interface ThrowingBiFunction<T, U, R> {
+public class RangeIterator<T, S> implements Iterator<T> {
 
-    @Nullable
-    R apply(@Nullable T t, @Nullable U u) throws Exception;
+    private final T start, end;
+    private final TriFunction<T, T, S, T> stepper;
+    private final S step;
+
+    private T current;
+
+    public RangeIterator(@NotNull T start, @NotNull T end, @NotNull TriFunction<T, T, S, T> stepper, @NotNull S step) {
+        this.start = start;
+        this.end = end;
+        this.stepper = stepper;
+        this.step = step;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return !this.end.equals(this.current);
+    }
+
+    @Override
+    public T next() {
+        if (this.current == null) {
+            return (this.current = this.start);
+        }
+        if (this.hasNext()) {
+            this.current = this.stepper.apply(this.current, this.end, this.step);
+        }
+        return this.current;
+    }
 
 }

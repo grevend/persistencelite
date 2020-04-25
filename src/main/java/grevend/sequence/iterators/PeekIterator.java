@@ -22,14 +22,31 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.function;
+package grevend.sequence.iterators;
 
-import org.jetbrains.annotations.Nullable;
+import java.util.Iterator;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
 
-@FunctionalInterface
-public interface ThrowingSupplier<T> {
+public class PeekIterator<T> extends ChainIterator<T> {
 
-    @Nullable
-    T get() throws Exception;
+    private final Consumer<T> consumer;
+
+    public PeekIterator(@NotNull Iterator<T> iterator, @NotNull Consumer<T> consumer) {
+        super(iterator);
+        this.consumer = consumer;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return this.iterator.hasNext();
+    }
+
+    @Override
+    public T next() {
+        var next = this.iterator.next();
+        this.consumer.accept(next);
+        return next;
+    }
 
 }

@@ -22,41 +22,19 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
-import grevend.persistencelite.util.function.TriFunction;
 import java.util.Iterator;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class RangeIterator<T, S> implements Iterator<T> {
+public abstract class ChainIterator<T> implements Iterator<T> {
 
-    private final T start, end;
-    private final TriFunction<T, T, S, T> stepper;
-    private final S step;
+    protected final Iterator<T> iterator;
 
-    private T current;
-
-    public RangeIterator(@NotNull T start, @NotNull T end, @NotNull TriFunction<T, T, S, T> stepper, @NotNull S step) {
-        this.start = start;
-        this.end = end;
-        this.stepper = stepper;
-        this.step = step;
-    }
-
-    @Override
-    public boolean hasNext() {
-        return !this.end.equals(this.current);
-    }
-
-    @Override
-    public T next() {
-        if (this.current == null) {
-            return (this.current = this.start);
-        }
-        if (this.hasNext()) {
-            this.current = this.stepper.apply(this.current, this.end, this.step);
-        }
-        return this.current;
+    @Contract(pure = true)
+    ChainIterator(@NotNull Iterator<T> iterator) {
+        this.iterator = iterator;
     }
 
 }

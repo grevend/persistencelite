@@ -22,44 +22,48 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
+import grevend.sequence.Seq;
+import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.function.Predicate;
+import java.util.Queue;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterIterator<T> extends ChainIterator<T> {
+public class FlatMapIterator<T, R, U extends Seq<R, ?>> implements Iterator<R> {
 
-    private final Predicate<? super T> predicate;
-    private T next;
-    private boolean isNextSet = false;
+    private final Iterator<T> iterator;
+    private final Function<? super T, ? extends Seq<? extends R, ?>> function;
+    private final Queue<Iterator<? extends R>> queue;
 
-    public FilterIterator(@NotNull Iterator<T> iterator, @NotNull Predicate<? super T> predicate) {
-        super(iterator);
-        this.predicate = predicate;
+    public FlatMapIterator(@NotNull Iterator<T> iterator, @NotNull Function<? super T, ? extends Seq<? extends R, ?>> function) {
+        this.iterator = iterator;
+        this.function = function;
+        this.queue = new ArrayDeque<>();
+        if (iterator.hasNext()) {
+            this.queue.offer(function.apply(iterator.next()).iterator());
+        }
     }
 
     @Override
     public boolean hasNext() {
-        return this.isNextSet || this.setNext();
-    }
-
-    private boolean setNext() {
-        while (this.iterator.hasNext()) {
-            var element = this.iterator.next();
-            if (this.predicate.test(element)) {
-                this.next = element;
-                this.isNextSet = true;
+        while (!this.queue.isEmpty()) {
+            if (this.queue.peek().hasNext()) {
                 return true;
+            } else {
+                if (this.iterator.hasNext()) {
+                    this.queue.offer(this.function.apply(this.iterator.next()).iterator());
+                }
+                this.queue.poll();
             }
         }
         return false;
     }
 
     @Override
-    public T next() {
-        this.isNextSet = false;
-        return this.next;
+    public R next() {
+        return this.queue.element().next();
     }
 
 }

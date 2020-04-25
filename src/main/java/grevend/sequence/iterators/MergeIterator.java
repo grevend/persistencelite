@@ -22,19 +22,45 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
+import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Iterator;
-import org.jetbrains.annotations.Contract;
+import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class ChainIterator<T> implements Iterator<T> {
+public class MergeIterator<T> extends ChainIterator<T> {
 
-    protected final Iterator<T> iterator;
+    private final Queue<Iterator<? extends T>> queue;
 
-    @Contract(pure = true)
-    ChainIterator(@NotNull Iterator<T> iterator) {
-        this.iterator = iterator;
+    public MergeIterator(@NotNull Iterator<T> iterator, @NotNull Collection<Iterator<T>> iterators) {
+        super(iterator);
+        this.queue = new ArrayDeque<>();
+        this.queue.add(iterator);
+        this.queue.addAll(iterators);
+    }
+
+    @Override
+    public boolean hasNext() {
+        while (!this.queue.isEmpty()) {
+            if (this.queue.peek().hasNext()) {
+                return true;
+            }
+            this.queue.poll();
+        }
+        return false;
+    }
+
+    @Override
+    public T next() {
+        T element = null;
+        var iterator = this.queue.poll();
+        if (iterator != null) {
+            element = iterator.next();
+            this.queue.offer(iterator);
+        }
+        return element;
     }
 
 }

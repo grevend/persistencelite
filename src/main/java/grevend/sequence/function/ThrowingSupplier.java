@@ -22,21 +22,14 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.sequence;
+package grevend.sequence.function;
 
-import grevend.persistencelite.util.Utils;
-import java.util.Iterator;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class NumberSeq<T extends Number> extends Seq<T, NumberSeq<T>> {
+@FunctionalInterface
+public interface ThrowingSupplier<T> {
 
-    NumberSeq(@NotNull Iterator<T> iterator) {
-        super(iterator);
-    }
-
-    @SuppressWarnings("unchecked")
-    public @NotNull T sum() {
-        return this.reduce((T) (Number) 0, Utils::add);
-    }
+    @Nullable
+    T get() throws Exception;
 
 }

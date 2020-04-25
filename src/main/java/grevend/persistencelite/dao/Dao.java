@@ -24,7 +24,7 @@
 
 package grevend.persistencelite.dao;
 
-import grevend.persistencelite.util.sequence.Seq;
+import grevend.sequence.Seq;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;

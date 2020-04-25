@@ -26,7 +26,7 @@ package grevend.persistencelite.service.sql;
 
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
-import grevend.persistencelite.util.function.ThrowingSupplier;
+import grevend.sequence.function.ThrowingSupplier;
 import java.sql.Connection;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

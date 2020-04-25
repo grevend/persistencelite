@@ -22,40 +22,11 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.function;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Queue;
-import org.jetbrains.annotations.NotNull;
+@FunctionalInterface
+public interface ThrowingRunnable {
 
-public class ConcatIterator<T> extends ChainIterator<T> {
-
-    private final Queue<Iterator<? extends T>> queue;
-
-    public ConcatIterator(@NotNull Iterator<T> iterator, @NotNull Collection<Iterator<T>> iterators) {
-        super(iterator);
-        this.queue = new ArrayDeque<>();
-        this.queue.add(iterator);
-        this.queue.addAll(iterators);
-    }
-
-    @Override
-    public boolean hasNext() {
-        while (!this.queue.isEmpty()) {
-            if (this.queue.peek().hasNext()) {
-                return true;
-            } else {
-                this.queue.poll();
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public T next() {
-        return this.queue.element().next();
-    }
+    void run() throws Exception;
 
 }

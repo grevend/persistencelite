@@ -22,37 +22,44 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
 import java.util.Iterator;
-import java.util.function.UnaryOperator;
-import org.jetbrains.annotations.Contract;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
-public class GeneratorWithSeedIterator<T> implements Iterator<T> {
+public class FilterIterator<T> extends ChainIterator<T> {
 
-    private final UnaryOperator<T> function;
-    private final T seed;
-    private T previous;
+    private final Predicate<? super T> predicate;
+    private T next;
+    private boolean isNextSet = false;
 
-    @Contract(pure = true)
-    public GeneratorWithSeedIterator(@NotNull T seed, @NotNull UnaryOperator<T> function) {
-        this.seed = seed;
-        this.function = function;
+    public FilterIterator(@NotNull Iterator<T> iterator, @NotNull Predicate<? super T> predicate) {
+        super(iterator);
+        this.predicate = predicate;
     }
 
     @Override
     public boolean hasNext() {
-        return true;
+        return this.isNextSet || this.setNext();
+    }
+
+    private boolean setNext() {
+        while (this.iterator.hasNext()) {
+            var element = this.iterator.next();
+            if (this.predicate.test(element)) {
+                this.next = element;
+                this.isNextSet = true;
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public T next() {
-        if (this.previous == null) {
-            return (this.previous = this.seed);
-        }
-        return (this.previous = this.function.apply(this.previous));
+        this.isNextSet = false;
+        return this.next;
     }
-
 
 }

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.sequence;
+package grevend.sequence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

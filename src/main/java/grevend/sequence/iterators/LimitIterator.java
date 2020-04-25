@@ -22,29 +22,29 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
-public class SkipIterator<T> extends ChainIterator<T> {
+public class LimitIterator<T> extends ChainIterator<T> {
 
-    public SkipIterator(@NotNull Iterator<T> iterator, int maxSize) {
+    private final int maxSize;
+    private int i = 0;
+
+    public LimitIterator(@NotNull Iterator<T> iterator, int maxSize) {
         super(iterator);
-        var i = 0;
-        while (iterator.hasNext() && i < maxSize) {
-            iterator.next();
-            i++;
-        }
+        this.maxSize = maxSize;
     }
 
     @Override
     public boolean hasNext() {
-        return this.iterator.hasNext();
+        return this.i < this.maxSize && this.iterator.hasNext();
     }
 
     @Override
     public T next() {
+        this.i++;
         return this.iterator.next();
     }
 

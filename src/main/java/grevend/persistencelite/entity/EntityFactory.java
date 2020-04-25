@@ -25,7 +25,7 @@
 package grevend.persistencelite.entity;
 
 import grevend.persistencelite.util.TypeMarshaller;
-import grevend.persistencelite.util.function.ThrowingFunction;
+import grevend.sequence.function.ThrowingFunction;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;

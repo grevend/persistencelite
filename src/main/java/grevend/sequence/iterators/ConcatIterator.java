@@ -22,30 +22,40 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util.iterators;
+package grevend.sequence.iterators;
 
+import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 
-public class LimitIterator<T> extends ChainIterator<T> {
+public class ConcatIterator<T> extends ChainIterator<T> {
 
-    private final int maxSize;
-    private int i = 0;
+    private final Queue<Iterator<? extends T>> queue;
 
-    public LimitIterator(@NotNull Iterator<T> iterator, int maxSize) {
+    public ConcatIterator(@NotNull Iterator<T> iterator, @NotNull Collection<Iterator<T>> iterators) {
         super(iterator);
-        this.maxSize = maxSize;
+        this.queue = new ArrayDeque<>();
+        this.queue.add(iterator);
+        this.queue.addAll(iterators);
     }
 
     @Override
     public boolean hasNext() {
-        return this.i < this.maxSize && this.iterator.hasNext();
+        while (!this.queue.isEmpty()) {
+            if (this.queue.peek().hasNext()) {
+                return true;
+            } else {
+                this.queue.poll();
+            }
+        }
+        return false;
     }
 
     @Override
     public T next() {
-        this.i++;
-        return this.iterator.next();
+        return this.queue.element().next();
     }
 
 }
