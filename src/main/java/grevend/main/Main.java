@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.main;
+package grevend.main;
 
 import grevend.persistencelite.entity.Entity;
 import grevend.persistencelite.entity.EntityMetadata;
