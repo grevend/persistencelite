@@ -32,6 +32,7 @@ import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
 import java.sql.Date;
 import java.sql.ResultSet;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -140,7 +141,8 @@ public final class EntityFactory {
                     FreezableCollection.empty() : null);
             } else {
                 propertyValues.add(marshall(values.apply(name), prop.type(),
-                    Map.of(Date.class, date -> date == null ? null : ((Date) date).toLocalDate())));
+                    Map.of(Date.class, date -> date == null ? null : ((Date) date).toInstant()
+                        .atZone(ZoneId.systemDefault()))));
             }
         }
         return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
@@ -157,7 +159,7 @@ public final class EntityFactory {
     @Nullable
     @Contract("null, _, _ -> null")
     private static Object marshall(@Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, TypeMarshaller<Object, Object>> marshallerMap) {
-        if(type.isEnum() && value instanceof String) {
+        if (type.isEnum() && value instanceof String) {
             try {
                 var method = type.getMethod("valueOf", String.class);
                 method.setAccessible(true);
