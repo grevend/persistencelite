@@ -244,12 +244,28 @@ public final class EntityMetadata<E> {
      */
     @NotNull
     public Collection<EntityProperty> getUniqueProperties() {
-        var allProps = this.getSuperTypes().stream()
+        var allSuperProps = this.getSuperTypes().stream()
             .flatMap(superType -> superType.getDeclaredProperties().stream())
-            .map(EntityProperty::propertyName).collect(Collectors.toUnmodifiableSet());
+            .map(EntityProperty::fieldName).collect(Collectors.toUnmodifiableSet());
         return this.getDeclaredProperties().stream().filter(
-            prop -> !allProps.contains(prop.propertyName()) || prop.identifier() != null ||
-                prop.copy()).collect(Collectors.toUnmodifiableSet());
+            prop -> !allSuperProps.contains(prop.fieldName()) || prop.identifier() != null ||
+                prop.copy()).filter(prop -> prop.relation() == null)
+            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    public Collection<EntityProperty> getProperties() {
+        Collection<EntityProperty> list = this.getDeclaredSuperTypes().stream()
+            .flatMap(superType -> superType.getSuperTypes().stream())
+            .flatMap(superType -> superType.getDeclaredProperties().stream()).distinct()
+            .collect(Collectors.toList());
+        list.addAll(this.getDeclaredProperties());
+        return list;
     }
 
     /**
@@ -282,6 +298,37 @@ public final class EntityMetadata<E> {
     public Collection<EntityProperty> getDeclaredRelations() {
         return this.getDeclaredProperties().stream().filter(prop -> prop.relation() != null)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * @param property
+     *
+     * @return
+     *
+     * @since 0.2.0
+     */
+    public boolean isRelation(@NotNull String property) {
+        return this.getProperties().stream().anyMatch(prop -> prop.fieldName().equals(property) ||
+            prop.propertyName().equals(property) || prop.relation() != null);
+    }
+
+    /**
+     * @param property
+     *
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @Nullable
+    public EntityProperty getRelation(@NotNull String property) {
+        if (this.isRelation(property)) {
+            return this.getDeclaredRelations().stream()
+                .filter(prop -> prop.fieldName().equals(property) ||
+                    prop.propertyName().equals(property))
+                .filter(prop -> prop.relation() != null)
+                .findFirst().orElse(null);
+        }
+        return null;
     }
 
     /**

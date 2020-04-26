@@ -27,8 +27,10 @@ package grevend.persistencelite.entity.factory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.entity.EntityProperty;
 import grevend.persistencelite.entity.EntityType;
+import grevend.persistencelite.util.FreezableCollection;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -124,9 +126,22 @@ public final class EntityFactory {
             throw new IllegalArgumentException(
                 "Missing properties: " + missingProperties.toString());
         }
+        final var propsMeta = entityMetadata.getDeclaredProperties().stream().filter(
+            prop -> props ? propertyNames.contains(prop.propertyName())
+                : propertyNames.contains(prop.fieldName()))
+            .collect(Collectors.toUnmodifiableList());
+
         final List<Object> propertyValues = new ArrayList<>();
-        for (var name : propertyNames) {
-            propertyValues.add(marshall(values.apply(name), Map.of()));
+        for (var prop : propsMeta) {
+            var name = props ? prop.propertyName() : prop.fieldName();
+            var relation = entityMetadata.getRelation(name);
+            if (relation != null && relation.relation() != null) {
+                propertyValues.add(relation.type().isAssignableFrom(Collection.class) ?
+                    FreezableCollection.empty() : null);
+            } else {
+                propertyValues.add(marshall(values.apply(name), prop.type(),
+                    Map.of(Date.class, date -> date == null ? null : ((Date) date).toLocalDate())));
+            }
         }
         return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
     }
@@ -140,9 +155,18 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @Nullable
-    @Contract("null, _ -> null")
-    private static Object marshall(@Nullable Object value, @NotNull Map<Class<?>, TypeMarshaller<Object, Object>> marshallerMap) {
-        //TODO add enum support
+    @Contract("null, _, _ -> null")
+    private static Object marshall(@Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, TypeMarshaller<Object, Object>> marshallerMap) {
+        if(type.isEnum() && value instanceof String) {
+            try {
+                var method = type.getMethod("valueOf", String.class);
+                method.setAccessible(true);
+                return method.invoke(null, ((String) value).toUpperCase());
+            } catch (Exception e) {
+                e.printStackTrace();
+                return value;
+            }
+        }
         if (value == null) {
             return null;
         } else if (marshallerMap.containsKey(value.getClass())) {

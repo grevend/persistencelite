@@ -24,6 +24,8 @@
 
 package grevend.persistencelite.util;
 
+import grevend.jacoco.Generated;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import org.jetbrains.annotations.Contract;
@@ -79,6 +81,19 @@ public class FreezableCollection<E> implements Collection<E>, Freezable<Freezabl
     @Contract(value = "_, _ -> new", pure = true)
     public static <E> FreezableCollection<E> of(@NotNull Collection<E> collection, boolean frozen) {
         return new FreezableCollection<>(collection, frozen);
+    }
+
+    /**
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    @Contract(" -> new")
+    public static <E> FreezableCollection<E> empty() {
+        return new FreezableCollection<>(new ArrayList<>(), false);
     }
 
     /**
@@ -423,6 +438,18 @@ public class FreezableCollection<E> implements Collection<E>, Freezable<Freezabl
             throw new UnsupportedOperationException("Collection is frozen.");
         }
         this.collection.clear();
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    @Generated
+    public String toString() {
+        return "FreezableCollection" + this.collection.toString();
     }
 
 }
