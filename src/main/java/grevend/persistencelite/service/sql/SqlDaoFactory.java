@@ -59,6 +59,7 @@ public final class SqlDaoFactory implements DaoFactory {
     @Contract("_, null -> fail")
     public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
         if (transaction instanceof SqlTransaction sqlTransaction) {
+            EntityMetadata.inferRelationTypes(entityMetadata);
             return new SqlDao<>(entityMetadata, sqlTransaction);
         } else {
             throw new IllegalArgumentException("Transaction must be of type SqlTransaction");
