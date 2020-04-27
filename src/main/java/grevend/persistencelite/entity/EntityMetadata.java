@@ -36,10 +36,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.reflections.Reflections;
 
 /**
  * @param <E>
@@ -56,6 +58,7 @@ public final class EntityMetadata<E> {
 
     private final Class<E> entityClass;
     private final List<EntityMetadata<?>> superTypes;
+    private final Function<EntityMetadata<?>, Collection<EntityMetadata<?>>> subTypeLookup;
     private final Collection<EntityProperty> properties;
     private final Collection<EntityProperty> identifiers;
     private final EntityType entityType;
@@ -72,6 +75,12 @@ public final class EntityMetadata<E> {
     private EntityMetadata(@NotNull Class<E> entityClass, @NotNull EntityType entityType) {
         this.entityClass = entityClass;
         this.superTypes = new ArrayList<>();
+        this.subTypeLookup = self -> {
+            Reflections reflections = new Reflections("grevend.main");
+            return reflections.getSubTypesOf(self.getEntityClass()).stream().map(EntityMetadata::of)
+                .collect(
+                    Collectors.toUnmodifiableSet());
+        };
         this.properties = new ArrayList<>();
         this.identifiers = new ArrayList<>();
         this.constructor = null;
@@ -116,18 +125,18 @@ public final class EntityMetadata<E> {
     public static <E> @NotNull EntityMetadata<E> inferRelationTypes(@NotNull EntityMetadata<E> metadata) {
         metadata.getDeclaredRelations().stream().map(EntityProperty::relation).filter(
             relation -> Objects.requireNonNull(relation).getType() == EntityRelationType.UNKNOWN)
-            .forEach(relation -> {
-                EntityMetadata.of(relation.getTargetEntity()).getDeclaredRelations().stream()
+            .forEach(
+                relation -> EntityMetadata.of(relation.getTargetEntity()).getDeclaredRelations()
+                    .stream()
                     .map(EntityProperty::relation).filter(Objects::nonNull)
                     .filter(
                         relation2 -> relation2.getTargetEntity().equals(metadata.getEntityClass()))
                     .forEach(relation2 -> {
                         relation.setCircularDependency(true);
                         relation2.setCircularDependency(true);
-                    });
-            });
+                    }));
 
-        metadata.getDeclaredRelations().forEach(prop -> {
+        metadata.getDeclaredRelations().forEach(prop ->
             EntityMetadata.of(Objects.requireNonNull(prop.relation()).getTargetEntity())
                 .getDeclaredRelations().forEach(prop2 -> {
                 if (prop.type().isAssignableFrom(Collection.class)) {
@@ -155,8 +164,7 @@ public final class EntityMetadata<E> {
                             .setType(EntityRelationType.ONE_TO_ONE);
                     }
                 }
-            });
-        });
+            }));
 
         return metadata;
     }
@@ -216,6 +224,29 @@ public final class EntityMetadata<E> {
             .collect(Collectors.toList());
         list.addAll(this.getDeclaredSuperTypes());
         return list;
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    public Collection<EntityMetadata<?>> getSubTypes() {
+        return this.subTypeLookup.apply(this);
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    public Collection<EntityMetadata<?>> getConcreteSubTypes() {
+        return this.getSubTypes().stream().filter(subType ->
+            subType.getEntityType() == EntityType.RECORD ||
+                subType.getEntityType() == EntityType.CLASS)
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     /**

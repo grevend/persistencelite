@@ -3,6 +3,7 @@ import grevend.persistencelite.util.logging.PersistenceLiteLoggerFinder;
 module PersistenceLite {
     requires org.jetbrains.annotations;
     requires java.sql;
+    requires reflections;
 
     exports grevend.jacoco;
     exports grevend.persistencelite;
