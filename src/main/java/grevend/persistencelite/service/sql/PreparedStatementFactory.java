@@ -105,7 +105,8 @@ final class PreparedStatementFactory {
      */
     @NotNull
     private String prepareSelect(@NotNull EntityMetadata<?> entityMetadata) {
-        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getDeclaredIdentifiers()
+        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata
+            .getDeclaredIdentifiers()
             .stream().map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
             .collect(Collectors.joining(" and ")) + " limit 1";
     }
@@ -153,9 +154,10 @@ final class PreparedStatementFactory {
      */
     @NotNull
     private String prepareInnerJoin(@NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
-        return " inner join " + child.getName() + " on " + child.getDeclaredIdentifiers().stream().map(
-            prop -> parent.getName() + "." + prop.propertyName() + " = " + child.getName() + "."
-                + prop.propertyName()).collect(Collectors.joining(" and "));
+        return " inner join " + child.getName() + " on " + child.getDeclaredIdentifiers()
+            .stream().map(prop -> parent.getName() + "." + prop.propertyName() + " = " +
+                child.getName() + "." + prop.propertyName())
+            .collect(Collectors.joining(" and "));
     }
 
     /**
