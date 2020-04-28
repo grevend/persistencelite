@@ -26,8 +26,10 @@ package grevend.persistencelite.internal.util;
 
 import grevend.sequence.function.ThrowingConsumer;
 import grevend.sequence.function.ThrowingFunction;
+import grevend.sequence.function.ThrowingSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -83,6 +85,29 @@ public final class ExceptionEscapeHatch {
                 consumer.accept(arg);
             } catch (Exception exception) {
                 exceptionEscapeHatch.escape(exception);
+            }
+        };
+    }
+
+    /**
+     * @param supplier
+     * @param exceptionEscapeHatch
+     * @param <T>
+     *
+     * @return
+     *
+     * @see ThrowingSupplier
+     * @since 0.2.0
+     */
+    @NotNull
+    @Contract(pure = true)
+    public static <T> Supplier<T> escape(@NotNull ThrowingSupplier<T> supplier, @NotNull ExceptionEscapeHatch exceptionEscapeHatch) {
+        return () -> {
+            try {
+                return supplier.get();
+            } catch (Exception exception) {
+                exceptionEscapeHatch.escape(exception);
+                return null;
             }
         };
     }
