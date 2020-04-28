@@ -24,6 +24,8 @@
 
 package grevend.persistencelite.entity;
 
+import static grevend.persistencelite.util.Memoizer.memoize;
+
 import grevend.jacoco.Generated;
 import grevend.persistencelite.entity.lookup.ComponentLookup;
 import grevend.persistencelite.entity.lookup.InterfaceLookup;
@@ -75,12 +77,11 @@ public final class EntityMetadata<E> {
     private EntityMetadata(@NotNull Class<E> entityClass, @NotNull EntityType entityType) {
         this.entityClass = entityClass;
         this.superTypes = new ArrayList<>();
-        this.subTypeLookup = self -> {
+        this.subTypeLookup = memoize(self -> {
             Reflections reflections = new Reflections("grevend.main");
             return reflections.getSubTypesOf(self.getEntityClass()).stream().map(EntityMetadata::of)
-                .collect(
-                    Collectors.toUnmodifiableSet());
-        };
+                .collect(Collectors.toUnmodifiableSet());
+        });
         this.properties = new ArrayList<>();
         this.identifiers = new ArrayList<>();
         this.constructor = null;
