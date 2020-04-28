@@ -22,33 +22,32 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util;
+package grevend.common;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-import grevend.persistencelite.internal.util.Utils;
-import org.junit.jupiter.api.Test;
+public final class Memoizer {
 
-class UtilsTest {
+    @NotNull
+    @Contract(value = "_ -> new", pure = true)
+    public static <T, R> Function<T, R> memoize(@NotNull final Function<T, R> function) {
+        return new Function<>() {
 
-    @Test
-    void testStringify() {
-        assertThat(Utils.stringify(12)).isEqualTo("12");
-    }
+            private final Map<T, R> cache = new HashMap<>();
 
-    @Test
-    void testStringifyNull() {
-        assertThat(Utils.stringify(null)).isEqualTo("null");
-    }
+            @Override
+            public R apply(T t) {
+                if (!this.cache.containsKey(t)) {
+                    this.cache.put(t, function.apply(t));
+                }
+                return this.cache.get(t);
+            }
 
-   /* @Test
-    void testStringifyArray() {
-        assertThat(Utils.stringify(new Option<?>[]{Option.of(12)})).isEqualTo("[Option[12]]");
-    }*/
-
-    @Test
-    void testStringifyPrimitiveArray() {
-        assertThat(Utils.stringify(new int[]{12, 42})).startsWith("[I@");
+        };
     }
 
 }

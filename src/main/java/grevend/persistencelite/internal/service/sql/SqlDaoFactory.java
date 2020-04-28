@@ -22,36 +22,47 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite;
+package grevend.persistencelite.internal.service.sql;
 
-import grevend.persistencelite.service.Configurator;
-import grevend.persistencelite.service.Service;
-import java.lang.reflect.InvocationTargetException;
+import grevend.persistencelite.dao.Dao;
+import grevend.persistencelite.dao.DaoFactory;
+import grevend.persistencelite.dao.Transaction;
+import grevend.persistencelite.entity.EntityMetadata;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
+ * @see DaoFactory
+ * @see Dao
+ * @see EntityMetadata
+ * @see Transaction
  * @since 0.2.0
  */
-public final class PersistenceLite {
-
-    public static System.Logger LOGGER = System.getLogger("PersistenceLiteLogger");
+public final class SqlDaoFactory implements DaoFactory {
 
     /**
-     * @param service
-     * @param <C>
-     * @param <S>
+     * @param entityMetadata
+     * @param transaction
+     * @param <E>
      *
      * @return
      *
+     * @see Dao
+     * @see EntityMetadata
+     * @see Transaction
      * @since 0.2.0
      */
     @NotNull
-    public static <C extends Configurator<S>, S extends Service<C>> C configureService(@NotNull Class<S> service) {
-        try {
-            return service.getConstructor().newInstance().getConfigurator();
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            throw new IllegalStateException("Service configurator construction failed.", e);
+    @Override
+    @Contract("_, null -> fail")
+    public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
+        if (transaction instanceof SqlTransaction sqlTransaction) {
+            EntityMetadata.inferRelationTypes(entityMetadata);
+            return new SqlDao<>(entityMetadata, sqlTransaction);
+        } else {
+            throw new IllegalArgumentException("Transaction must be of type SqlTransaction");
         }
     }
 

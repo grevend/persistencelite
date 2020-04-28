@@ -24,7 +24,7 @@
 
 package grevend.sequence;
 
-import grevend.persistencelite.util.Utils;
+import grevend.persistencelite.internal.util.Utils;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 

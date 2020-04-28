@@ -29,6 +29,8 @@ import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.service.sql.SqlDaoFactory;
+import grevend.persistencelite.internal.service.sql.SqlTransactionFactory;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.sql.Connection;

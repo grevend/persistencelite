@@ -22,33 +22,46 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util;
+package grevend.persistencelite.internal.service.sql;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import grevend.persistencelite.dao.Transaction;
+import java.sql.Connection;
+import org.jetbrains.annotations.NotNull;
 
-import grevend.persistencelite.internal.util.Utils;
-import org.junit.jupiter.api.Test;
+/**
+ * @author David Greven
+ * @see Connection
+ * @since 0.2.0
+ */
+public final record SqlTransaction(@NotNull Connection connection) implements Transaction {
 
-class UtilsTest {
-
-    @Test
-    void testStringify() {
-        assertThat(Utils.stringify(12)).isEqualTo("12");
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
+    @Override
+    public void commit() throws Exception {
+        this.connection.commit();
     }
 
-    @Test
-    void testStringifyNull() {
-        assertThat(Utils.stringify(null)).isEqualTo("null");
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
+    @Override
+    public void rollback() throws Exception {
+        this.connection.rollback();
     }
 
-   /* @Test
-    void testStringifyArray() {
-        assertThat(Utils.stringify(new Option<?>[]{Option.of(12)})).isEqualTo("[Option[12]]");
-    }*/
-
-    @Test
-    void testStringifyPrimitiveArray() {
-        assertThat(Utils.stringify(new int[]{12, 42})).startsWith("[I@");
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
+    @Override
+    public void close() throws Exception {
+        if (!this.connection.isClosed()) {
+            this.connection.close();
+        }
     }
 
 }

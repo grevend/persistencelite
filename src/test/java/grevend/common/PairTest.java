@@ -22,33 +22,54 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util;
+package grevend.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import grevend.persistencelite.internal.util.Utils;
+import grevend.common.Pair;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class UtilsTest {
+class PairTest {
 
     @Test
-    void testStringify() {
-        assertThat(Utils.stringify(12)).isEqualTo("12");
+    void testPairOf() {
+        var pair = Pair.of("test", 45L);
+        assertThat(pair.getA()).isEqualTo("test");
+        assertThat(pair.getB()).isEqualTo(45L);
     }
 
     @Test
-    void testStringifyNull() {
-        assertThat(Utils.stringify(null)).isEqualTo("null");
+    void testPairToString() {
+        var pair = Pair.of("test", 45L);
+        assertThat(pair.toString()).isEqualTo("Pair{a=test, b=45}");
     }
 
-   /* @Test
-    void testStringifyArray() {
-        assertThat(Utils.stringify(new Option<?>[]{Option.of(12)})).isEqualTo("[Option[12]]");
+    @Test
+    void testPairWithNullToString() {
+        var pair = Pair.of(null, null);
+        assertThat(pair.toString()).isEqualTo("Pair{a=null, b=null}");
+    }
+
+    /*@Test
+    void testPairWithArraysToString() {
+        var pair = Pair.of(new Option<?>[]{Option.of(12)}, new Option<?>[]{Option.of(21)});
+        assertThat(pair.toString()).isEqualTo("Pair{a=[Option[12]], b=[Option[21]]}");
     }*/
 
     @Test
-    void testStringifyPrimitiveArray() {
-        assertThat(Utils.stringify(new int[]{12, 42})).startsWith("[I@");
+    void testPairWithPrimitiveArraysToString() {
+        var pair = Pair.of(new int[]{12, 42}, new long[]{21, 24});
+        assertThat(pair.toString()).contains("Pair{a=[I@");
+        assertThat(pair.toString()).contains(", b=[J@");
+    }
+
+    @Test
+    void testPairToMap() {
+        var map = List.of(Pair.of(12, 21), Pair.of(34, 43), Pair.of(56, 65)).stream()
+            .collect(Pair.toMap());
+        assertThat(map).containsKeys(12, 34, 56);
+        assertThat(map).containsValues(21, 43, 65);
     }
 
 }

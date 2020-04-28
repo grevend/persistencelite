@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
  * @see PostgresService
  * @since 0.2.0
  */
-public class PostgresConfigurator implements Configurator<PostgresService> {
+public final class PostgresConfigurator implements Configurator<PostgresService> {
 
     private final PostgresService service;
 

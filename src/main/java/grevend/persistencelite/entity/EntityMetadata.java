@@ -24,12 +24,15 @@
 
 package grevend.persistencelite.entity;
 
-import static grevend.persistencelite.util.Memoizer.memoize;
+import static grevend.common.Memoizer.memoize;
 
 import grevend.jacoco.Generated;
-import grevend.persistencelite.entity.lookup.ComponentLookup;
-import grevend.persistencelite.entity.lookup.InterfaceLookup;
-import grevend.persistencelite.entity.lookup.RecordLookup;
+import grevend.persistencelite.internal.entity.EntityProperty;
+import grevend.persistencelite.internal.entity.EntityRelationType;
+import grevend.persistencelite.internal.entity.EntityType;
+import grevend.persistencelite.internal.entity.lookup.ComponentLookup;
+import grevend.persistencelite.internal.entity.lookup.InterfaceLookup;
+import grevend.persistencelite.internal.entity.lookup.RecordLookup;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;

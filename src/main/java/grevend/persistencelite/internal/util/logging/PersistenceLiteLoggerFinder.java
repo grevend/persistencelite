@@ -22,33 +22,28 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util;
+package grevend.persistencelite.internal.util.logging;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.lang.System.Logger;
 
-import grevend.persistencelite.internal.util.Utils;
-import org.junit.jupiter.api.Test;
+public final class PersistenceLiteLoggerFinder extends System.LoggerFinder {
 
-class UtilsTest {
-
-    @Test
-    void testStringify() {
-        assertThat(Utils.stringify(12)).isEqualTo("12");
-    }
-
-    @Test
-    void testStringifyNull() {
-        assertThat(Utils.stringify(null)).isEqualTo("null");
-    }
-
-   /* @Test
-    void testStringifyArray() {
-        assertThat(Utils.stringify(new Option<?>[]{Option.of(12)})).isEqualTo("[Option[12]]");
-    }*/
-
-    @Test
-    void testStringifyPrimitiveArray() {
-        assertThat(Utils.stringify(new int[]{12, 42})).startsWith("[I@");
+    /**
+     * Returns an instance of {@link Logger Logger} for the given {@code module}.
+     *
+     * @param name   the name of the logger.
+     * @param module the module for which the logger is being requested.
+     *
+     * @return a {@link Logger logger} suitable for use within the given module.
+     *
+     * @throws NullPointerException if {@code name} is {@code null} or {@code module} is {@code
+     *                              null}.
+     * @throws SecurityException    if a security manager is present and its {@code checkPermission}
+     *                              method doesn't allow the {@code RuntimePermission("loggerFinder")}.
+     */
+    @Override
+    public Logger getLogger(String name, Module module) {
+        return new PersistenceLiteLogger();
     }
 
 }

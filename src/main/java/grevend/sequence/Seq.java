@@ -25,7 +25,7 @@
 package grevend.sequence;
 
 import grevend.sequence.function.TriFunction;
-import grevend.persistencelite.util.Utils;
+import grevend.persistencelite.internal.util.Utils;
 import grevend.sequence.iterators.ConcatIterator;
 import grevend.sequence.iterators.DistinctIterator;
 import grevend.sequence.iterators.FilterIterator;

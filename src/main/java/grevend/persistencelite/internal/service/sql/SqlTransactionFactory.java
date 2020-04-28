@@ -22,33 +22,47 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util;
+package grevend.persistencelite.internal.service.sql;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import grevend.persistencelite.dao.Transaction;
+import grevend.persistencelite.dao.TransactionFactory;
+import grevend.sequence.function.ThrowingSupplier;
+import java.sql.Connection;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-import grevend.persistencelite.internal.util.Utils;
-import org.junit.jupiter.api.Test;
+/**
+ * @author David Greven
+ * @see TransactionFactory
+ * @since 0.2.0
+ */
+public final class SqlTransactionFactory implements TransactionFactory {
 
-class UtilsTest {
+    private final ThrowingSupplier<Connection> connectionSupplier;
 
-    @Test
-    void testStringify() {
-        assertThat(Utils.stringify(12)).isEqualTo("12");
+    /**
+     * @param connectionSupplier
+     *
+     * @see ThrowingSupplier
+     * @since 0.2.0
+     */
+    @Contract(pure = true)
+    public SqlTransactionFactory(@NotNull ThrowingSupplier<Connection> connectionSupplier) {
+        this.connectionSupplier = connectionSupplier;
     }
 
-    @Test
-    void testStringifyNull() {
-        assertThat(Utils.stringify(null)).isEqualTo("null");
-    }
-
-   /* @Test
-    void testStringifyArray() {
-        assertThat(Utils.stringify(new Option<?>[]{Option.of(12)})).isEqualTo("[Option[12]]");
-    }*/
-
-    @Test
-    void testStringifyPrimitiveArray() {
-        assertThat(Utils.stringify(new int[]{12, 42})).startsWith("[I@");
+    /**
+     * @return
+     *
+     * @throws Exception
+     * @see SqlTransaction
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    @Contract(" -> new")
+    public Transaction createTransaction() throws Exception {
+        return new SqlTransaction(this.connectionSupplier.get());
     }
 
 }
