@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.sql;
 
+import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.entity.EntityProperty;
@@ -39,6 +40,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.Contract;
@@ -56,6 +58,7 @@ import org.jetbrains.annotations.UnmodifiableView;
  */
 public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
 
+    private final Supplier<Transaction> transactionSupplier;
     private final PreparedStatementFactory preparedStatementFactory;
 
     /**
@@ -64,8 +67,9 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      *
      * @since 0.2.0
      */
-    SqlDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable SqlTransaction transaction) {
+    SqlDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable SqlTransaction transaction, @NotNull Supplier<Transaction> transactionSupplier) {
         super(entityMetadata, transaction);
+        this.transactionSupplier = transactionSupplier;
         this.preparedStatementFactory = new PreparedStatementFactory();
     }
 

@@ -28,6 +28,7 @@ import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +42,13 @@ import org.jetbrains.annotations.Nullable;
  * @since 0.2.0
  */
 public final class SqlDaoFactory implements DaoFactory {
+
+    private final Supplier<Transaction> transactionSupplier;
+
+    @Contract(pure = true)
+    public SqlDaoFactory(@NotNull Supplier<Transaction> transactionSupplier) {
+        this.transactionSupplier = transactionSupplier;
+    }
 
     /**
      * @param entityMetadata
@@ -60,7 +68,7 @@ public final class SqlDaoFactory implements DaoFactory {
     public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
         if (transaction instanceof SqlTransaction sqlTransaction) {
             EntityMetadata.inferRelationTypes(entityMetadata);
-            return new SqlDao<>(entityMetadata, sqlTransaction);
+            return new SqlDao<>(entityMetadata, sqlTransaction, transactionSupplier);
         } else {
             throw new IllegalArgumentException("Transaction must be of type SqlTransaction");
         }

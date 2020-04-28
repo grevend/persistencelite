@@ -25,10 +25,12 @@
 package grevend.persistencelite.internal.service.sql;
 
 import grevend.common.LazyCollection;
+import grevend.persistencelite.dao.Transaction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,14 +45,17 @@ import org.jetbrains.annotations.Nullable;
 public final class SqlRelationView<E> implements LazyCollection<E> {
 
     private final String query;
+    private final Supplier<Transaction> transactionSupplier;
     private final List<E> elements;
 
     @Contract(pure = true)
-    public SqlRelationView(@NotNull String query) {
+    public SqlRelationView(@NotNull String query, @NotNull Supplier<Transaction> transactionSupplier) {
         this.query = query;
+        this.transactionSupplier = transactionSupplier;
         this.elements = new ArrayList<>();
     }
 
+    @Contract(pure = true)
     private List<E> retrieve() {
         if (this.elements.isEmpty()) {
             //TODO retrieve

@@ -24,6 +24,8 @@
 
 package grevend.persistencelite.service.sql;
 
+import static grevend.persistencelite.internal.util.ExceptionEscapeHatch.escape;
+
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
@@ -31,6 +33,7 @@ import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.service.sql.SqlDaoFactory;
 import grevend.persistencelite.internal.service.sql.SqlTransactionFactory;
+import grevend.persistencelite.internal.util.ExceptionEscapeHatch;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.sql.Connection;
@@ -149,7 +152,15 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Override
     @Contract(value = " -> new", pure = true)
     public DaoFactory getDaoFactory() {
-        return new SqlDaoFactory();
+        var exceptionEscapeHatch = new ExceptionEscapeHatch();
+        DaoFactory res = new SqlDaoFactory(
+            escape(() -> this.getTransactionFactory().createTransaction(), exceptionEscapeHatch));
+        try {
+            exceptionEscapeHatch.rethrow();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return res;
     }
 
     /**
