@@ -87,7 +87,7 @@ public interface Dao<E> {
      * @see Map
      * @since 0.2.0
      */
-    @NotNull Optional<E> retrieve(@NotNull Map<String, Object> identifiers) throws Throwable;
+    @NotNull Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable;
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
@@ -102,7 +102,7 @@ public interface Dao<E> {
      * @since 0.2.0
      */
     @NotNull
-    Collection<E> retrieve() throws Throwable;
+    Collection<E> retrieveAll() throws Throwable;
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
@@ -186,13 +186,13 @@ public interface Dao<E> {
      *
      * @throws Throwable If an error occurs during the persistence process.
      * @see Seq
-     * @see #retrieve()
+     * @see #retrieveAll()
      * @see Iterable
      * @since 0.2.0
      */
     @NotNull
     default <S extends Seq<E, S>> Seq<E, S> sequence() throws Throwable {
-        return Seq.of(this.retrieve());
+        return Seq.of(this.retrieveAll());
     }
 
 }

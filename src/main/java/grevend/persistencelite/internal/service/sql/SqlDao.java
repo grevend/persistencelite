@@ -143,7 +143,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     @NotNull
     @Override
-    public Optional<E> retrieve(@NotNull Map<String, Object> identifiers) throws Throwable {
+    public Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         this.setRetrieveStatementValues(this.getEntityMetadata(), preparedStatement, identifiers);
@@ -188,7 +188,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @NotNull
     @Override
     @UnmodifiableView
-    public Collection<E> retrieve() throws Throwable {
+    public Collection<E> retrieveAll() throws Throwable {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         var res = preparedStatement.executeQuery();
@@ -237,7 +237,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             }
         }
 
-        return Objects.requireNonNull(this.retrieve(props).orElse(null));
+        return Objects.requireNonNull(this.retrieveById(props).orElse(null));
     }
 
     private void update(@NotNull EntityMetadata<?> child, @NotNull Map<String, Object> properties) throws Throwable {
