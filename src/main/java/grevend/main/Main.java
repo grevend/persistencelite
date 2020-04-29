@@ -24,6 +24,7 @@
 
 package grevend.main;
 
+import grevend.common.Lazy;
 import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.entity.Entity;
 import grevend.persistencelite.entity.EntityMetadata;
@@ -106,7 +107,7 @@ public class Main {
         @Relation(selfProperties = {"display_name",
             "tag_number"}, targetEntity = Author.class, targetProperties = {"discord_name",
             "discord_tag"})
-        Author author
+        Lazy<Author>author
     ) {}
 
     @Entity(name = "author")
@@ -130,7 +131,7 @@ public class Main {
         @Relation(selfProperties = {"discord_name",
             "discord_tag"}, targetEntity = DiscordCredential.class, targetProperties = {
             "display_name", "tag_number"})
-        DiscordCredential discordCredential,
+        Lazy<DiscordCredential>discordCredential,
         @Relation(selfProperties = {}, targetEntity = Book.class, targetProperties = {})
         Collection<Book>books
     ) {}
