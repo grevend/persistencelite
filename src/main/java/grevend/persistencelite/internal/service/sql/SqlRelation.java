@@ -26,6 +26,8 @@ package grevend.persistencelite.internal.service.sql;
 
 import grevend.common.LazyCollection;
 import grevend.persistencelite.dao.Transaction;
+import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.entity.EntityRelation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -42,15 +44,17 @@ import org.jetbrains.annotations.Nullable;
  * @see LazyCollection
  * @since 0.2.0
  */
-public final class SqlRelationView<E> implements LazyCollection<E> {
+public final class SqlRelation<E> implements LazyCollection<E> {
 
-    private final String query;
+    private final EntityMetadata<?> entityMetadata;
+    private final EntityRelation entityRelation;
     private final Supplier<Transaction> transactionSupplier;
     private final List<E> elements;
 
     @Contract(pure = true)
-    public SqlRelationView(@NotNull String query, @NotNull Supplier<Transaction> transactionSupplier) {
-        this.query = query;
+    public SqlRelation(@NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Supplier<Transaction> transactionSupplier) {
+        this.entityMetadata = entityMetadata;
+        this.entityRelation = entityRelation;
         this.transactionSupplier = transactionSupplier;
         this.elements = new ArrayList<>();
     }

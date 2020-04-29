@@ -24,10 +24,11 @@
 
 package grevend.persistencelite.internal.entity.factory;
 
+import grevend.common.FreezableCollection;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.EntityType;
-import grevend.common.FreezableCollection;
+import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
 import java.sql.Date;
@@ -70,7 +71,7 @@ public final class EntityFactory {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata, properties.keySet(), false,
-                properties::get);
+                key -> Utils.extract(key, properties, List.of())/*properties::get*/);
         };
     }
 
@@ -87,12 +88,14 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final ResultSet values) throws Throwable {
+    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final ResultSet values, @NotNull final Map<String, Object> properties) throws Throwable {
+        var props = entityMetadata.getDeclaredProperties().stream()
+            .map(EntityProperty::propertyName)
+            .collect(Collectors.toList());
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
-            case RECORD -> constructRecord(entityMetadata,
-                entityMetadata.getDeclaredProperties().stream().map(EntityProperty::propertyName)
-                    .collect(Collectors.toList()), true, values::getObject);
+            case RECORD -> constructRecord(entityMetadata, props, true,
+                key -> Utils.extract(key, props, values, List.of(properties)) /*values::getObject*/);
         };
     }
 

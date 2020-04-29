@@ -28,7 +28,10 @@ import grevend.persistencelite.entity.Ignore;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -127,16 +130,18 @@ public final class Utils {
     }
 
     /**
-     * @since 0.2.0
      * @param key
      * @param map
      * @param maps
      * @param <T>
      * @param <R>
+     *
      * @return
+     *
+     * @since 0.2.0
      */
     @Nullable
-    public static <T, R> R extract(@NotNull T key, @NotNull Map<T, R> map, @NotNull Iterable<? extends Map<T, R>> maps) {
+    public static <T, R> R extract(@Nullable T key, @NotNull Map<T, R> map, @NotNull Iterable<? extends Map<T, R>> maps) {
         R value = null;
 
         if (map.containsKey(key)) {
@@ -153,6 +158,30 @@ public final class Utils {
         return value;
     }
 
+    /**
+     * @param key
+     * @param properties
+     * @param resultSet
+     * @param maps
+     *
+     * @return
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
+    @Nullable
+    public static Object extract(@Nullable String key, @NotNull Collection<String> properties, @NotNull ResultSet resultSet, @NotNull Iterable<? extends Map<String, Object>> maps) throws SQLException {
+        if (properties.contains(key)) {
+            return resultSet.getObject(key);
+        } else {
+            for (Map<String, Object> next : maps) {
+                if (next.containsKey(key)) {
+                    return next.get(key);
+                }
+            }
+        }
+        return null;
+    }
 
     /*public static void test(final Map<String, String> map) {
         var copy = new HashMap<>(map);
@@ -177,5 +206,5 @@ public final class Utils {
         System.out.println("---------------");
         System.out.println(test);
     }*/
-    
+
 }

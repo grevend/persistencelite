@@ -148,7 +148,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         this.setRetrieveStatementValues(this.getEntityMetadata(), preparedStatement, identifiers);
         var res = preparedStatement.executeQuery();
-        return res.next() ? Optional.of(EntityFactory.construct(this.getEntityMetadata(), res))
+        return res.next() ? Optional.of(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()))
             : Optional.empty();
     }
 
@@ -194,7 +194,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         var res = preparedStatement.executeQuery();
         Collection<E> entities = new ArrayList<>();
         while (res.next()) {
-            entities.add(EntityFactory.construct(this.getEntityMetadata(), res));
+            entities.add(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()));
         }
         return Collections.unmodifiableCollection(entities);
     }
