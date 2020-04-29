@@ -50,14 +50,6 @@ class TripletTest {
         assertThat(triplet.toString()).isEqualTo("Triplet{a=null, b=null, c=null}");
     }
 
-    /*@Test
-    void testTripletWithArraysToString() {
-        var triplet = Triplet.of(new Optional<?>[]{Option.of(12)}, new Option<?>[]{Option.of(21)},
-            new Option<?>[]{Option.of(21)});
-        assertThat(triplet.toString())
-            .isEqualTo("Triplet{a=[Option[12]], b=[Option[21]], c=[Option[21]]}");
-    }*/
-
     @Test
     void testTripletWithPrimitiveArraysToString() {
         var triplet = Triplet.of(new int[]{12, 42}, new long[]{21, 24}, new byte[]{12, 24});

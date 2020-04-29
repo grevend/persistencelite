@@ -51,12 +51,6 @@ class PairTest {
         assertThat(pair.toString()).isEqualTo("Pair{a=null, b=null}");
     }
 
-    /*@Test
-    void testPairWithArraysToString() {
-        var pair = Pair.of(new Option<?>[]{Option.of(12)}, new Option<?>[]{Option.of(21)});
-        assertThat(pair.toString()).isEqualTo("Pair{a=[Option[12]], b=[Option[21]]}");
-    }*/
-
     @Test
     void testPairWithPrimitiveArraysToString() {
         var pair = Pair.of(new int[]{12, 42}, new long[]{21, 24});

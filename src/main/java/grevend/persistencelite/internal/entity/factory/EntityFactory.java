@@ -71,7 +71,7 @@ public final class EntityFactory {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata, properties.keySet(), false,
-                key -> Utils.extract(key, properties, List.of())/*properties::get*/);
+                key -> Utils.extract(key, properties, List.of()));
         };
     }
 
@@ -95,7 +95,7 @@ public final class EntityFactory {
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata, props, true,
-                key -> Utils.extract(key, props, values, List.of(properties)) /*values::getObject*/);
+                key -> Utils.extract(key, props, values, List.of(properties)));
         };
     }
 
