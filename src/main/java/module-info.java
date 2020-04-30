@@ -18,6 +18,7 @@ module PersistenceLite {
     exports grevend.sequence;
 
     opens grevend.jacoco;
+    opens grevend.common;
     opens grevend.persistencelite;
     opens grevend.persistencelite.dao;
     opens grevend.persistencelite.entity;
