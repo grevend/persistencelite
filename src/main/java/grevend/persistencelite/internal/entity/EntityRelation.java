@@ -24,7 +24,7 @@
 
 package grevend.persistencelite.internal.entity;
 
-import grevend.jacoco.Generated;
+import grevend.common.jacoco.Generated;
 import grevend.persistencelite.entity.Relation;
 import java.util.Arrays;
 import java.util.Objects;

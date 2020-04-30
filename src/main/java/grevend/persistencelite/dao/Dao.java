@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
  * @author David Greven
  * @version 0.2.0
  */
-public interface Dao<E> {
+public interface Dao<E> extends AutoCloseable {
 
     /**
      * An implementation of the <b>create</b> CRUD operation that persists an entity.

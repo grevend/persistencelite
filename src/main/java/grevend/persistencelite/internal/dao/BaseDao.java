@@ -214,4 +214,13 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
         escapeHatch.rethrow();
     }
 
+    /**
+     * @throws Exception
+     * @since 0.2.0
+     */
+    @Override
+    public void close() throws Exception {
+        //if (this.transaction != null) { this.transaction.close(); }
+    }
+
 }

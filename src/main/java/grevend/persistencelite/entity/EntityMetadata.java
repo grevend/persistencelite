@@ -26,7 +26,7 @@ package grevend.persistencelite.entity;
 
 import static grevend.common.Memoizer.memoize;
 
-import grevend.jacoco.Generated;
+import grevend.common.jacoco.Generated;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.EntityRelationType;
 import grevend.persistencelite.internal.entity.EntityType;

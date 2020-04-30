@@ -24,7 +24,7 @@
 
 package grevend.common;
 
-import grevend.jacoco.Generated;
+import grevend.common.jacoco.Generated;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;

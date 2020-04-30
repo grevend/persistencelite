@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package grevend.jacoco;
+package grevend.common.jacoco;
 
 /**
  * An annotation to enable jacoco's filtering options for marked auto-generated code.

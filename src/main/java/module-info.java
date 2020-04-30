@@ -5,7 +5,7 @@ module PersistenceLite {
     requires java.sql;
     requires reflections;
 
-    exports grevend.jacoco;
+    exports grevend.common.jacoco;
     exports grevend.common;
     exports grevend.persistencelite;
     exports grevend.persistencelite.dao;
@@ -17,7 +17,7 @@ module PersistenceLite {
     exports grevend.sequence.iterators;
     exports grevend.sequence;
 
-    opens grevend.jacoco;
+    opens grevend.common.jacoco;
     opens grevend.common;
     opens grevend.persistencelite;
     opens grevend.persistencelite.dao;
