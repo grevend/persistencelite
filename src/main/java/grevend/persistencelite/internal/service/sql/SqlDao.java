@@ -129,7 +129,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     }
 
     /**
-     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
      * based on the key-value pairs passed as parameters in the form of a {@code Map}.
      *
      * @param identifiers The key-value pairs in the form of a {@code Map}.
@@ -146,9 +146,11 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     public Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
-        this.setRetrieveStatementValues(this.getEntityMetadata(), preparedStatement, identifiers);
+        this.setRetrieveByIdStatementValues(this.getEntityMetadata(), preparedStatement,
+            identifiers);
         var res = preparedStatement.executeQuery();
-        return res.next() ? Optional.of(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()))
+        return res.next() ? Optional
+            .of(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()))
             : Optional.empty();
     }
 
@@ -160,9 +162,62 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      * @throws SQLException
      * @since 0.2.0
      */
-    private void setRetrieveStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+    private void setRetrieveByIdStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
         for (EntityProperty property : entityMetadata.getDeclaredIdentifiers()) {
+            var value = properties.get(property.propertyName());
+            if (value == null || value.equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+            } else {
+                statement.setObject(i + 1, value);
+            }
+            i++;
+        }
+    }
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param identifiers The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entities found in the form of an {@code Collection}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Collection
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    @Override
+    @UnmodifiableView
+    public Collection<E> retrieveByProps(@NotNull Map<String, Object> identifiers) throws Throwable {
+        var preparedStatement = Objects.requireNonNull(this.getTransaction()).connection()
+            .prepareStatement(this.preparedStatementFactory
+                .prepareSelectWithAttributes(this.getEntityMetadata(), identifiers.keySet()));
+        this.setRetrieveByPropsStatementValues(this.getEntityMetadata(), preparedStatement,
+            identifiers);
+        var res = preparedStatement.executeQuery();
+        Collection<E> entities = new ArrayList<>();
+        while (res.next()) {
+            entities.add(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()));
+        }
+        return Collections.unmodifiableCollection(entities);
+    }
+
+    /**
+     * @param entityMetadata
+     * @param statement
+     * @param properties
+     *
+     * @throws SQLException
+     * @since 0.2.0
+     */
+    private void setRetrieveByPropsStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+        var i = 0;
+        for (EntityProperty property : entityMetadata.getProperties().stream().filter(
+            prop -> properties.containsKey(prop.propertyName()) || properties
+                .containsKey(prop.fieldName())).collect(Collectors.toUnmodifiableList())) {
             var value = properties.get(property.propertyName());
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);

@@ -75,7 +75,7 @@ public interface Dao<E> extends AutoCloseable {
     Collection<E> create(@NotNull Iterable<E> entities) throws Exception;
 
     /**
-     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
      * based on the key-value pairs passed as parameters in the form of a {@code Map}.
      *
      * @param identifiers The key-value pairs in the form of a {@code Map}.
@@ -88,6 +88,21 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable;
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param properties The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entities found in the form of an {@code Collection}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Collection
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull Collection<E> retrieveByProps(@NotNull Map<String, Object> properties) throws Throwable;
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the

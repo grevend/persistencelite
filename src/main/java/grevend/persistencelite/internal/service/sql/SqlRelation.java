@@ -52,7 +52,7 @@ public final class SqlRelation<E> implements LazyCollection<E> {
     private final List<E> elements;
 
     @Contract(pure = true)
-    public SqlRelation(@NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Supplier<Transaction> transactionSupplier) {
+    public SqlRelation( EntityMetadata<?> entityMetadata, EntityRelation entityRelation, Supplier<Transaction> transactionSupplier) {
         this.entityMetadata = entityMetadata;
         this.entityRelation = entityRelation;
         this.transactionSupplier = transactionSupplier;

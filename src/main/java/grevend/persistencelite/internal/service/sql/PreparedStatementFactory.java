@@ -29,6 +29,7 @@ import grevend.persistencelite.internal.entity.EntityProperty;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -109,6 +110,26 @@ final class PreparedStatementFactory {
             .getDeclaredIdentifiers()
             .stream().map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
             .collect(Collectors.joining(" and ")) + " limit 1";
+    }
+
+    /**
+     * @param entityMetadata
+     * @param attributes
+     *
+     * @return
+     *
+     * @see EntityMetadata
+     * @since 0.2.2
+     */
+    @NotNull
+    public String prepareSelectWithAttributes(@NotNull EntityMetadata<?> entityMetadata, Collection<String> attributes) {
+        var res = this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getProperties()
+            .stream().filter(prop -> attributes.contains(prop.propertyName()) ||
+                attributes.contains(prop.fieldName()))
+            .map(prop -> (prop.identifier() != null || prop.copy() ? (entityMetadata.getName() + ".") : "") + prop.propertyName() + " = ?")
+            .collect(Collectors.joining(" and "));
+        System.out.println("Prepared: " + res);
+        return res;
     }
 
     /**

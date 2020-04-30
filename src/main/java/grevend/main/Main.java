@@ -36,6 +36,7 @@ import grevend.persistencelite.service.sql.PostgresService;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -56,7 +57,8 @@ public class Main {
             .loadCredentials("credentials.properties").service();
 
         try {
-            var discordCredentialsDao = service.createDao(DiscordCredential.class);
+            var tr = service.getTransactionFactory().createTransaction();
+            var discordCredentialsDao = service.createDao(DiscordCredential.class, tr);
             //discordCredentialsDao.create(new DiscordCredential("name", "#4871", "1234", null));
 
             System.out.println(discordCredentialsDao.retrieveAll());
@@ -70,7 +72,9 @@ public class Main {
 
             System.out.println(EntityMetadata.of(Dog.class).getUniqueProperties());
             var dogDao = service.createDao(Dog.class);
-            /*dogDao.create(new Dog(19, "Test", Status.ALIVE, 8, false));*/
+            //dogDao.create(new Dog(27, "Test", Status.ALIVE, 8, false));
+
+            System.out.println(dogDao.retrieveByProps(Map.of("name", "Test")));
 
             System.out.println(dogDao.retrieveAll());
         } catch (Throwable e) {
@@ -95,6 +99,7 @@ public class Main {
 
         @Property(name = "owner_id")
         int ownerId();
+
     }
 
     @Entity(name = "discord_credential")
