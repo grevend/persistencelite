@@ -35,27 +35,27 @@ class PairTest {
     @Test
     void testPairOf() {
         var pair = Pair.of("test", 45L);
-        assertThat(pair.getA()).isEqualTo("test");
-        assertThat(pair.getB()).isEqualTo(45L);
+        assertThat(pair.first()).isEqualTo("test");
+        assertThat(pair.second()).isEqualTo(45L);
     }
 
     @Test
     void testPairToString() {
         var pair = Pair.of("test", 45L);
-        assertThat(pair.toString()).isEqualTo("Pair{a=test, b=45}");
+        assertThat(pair.toString()).isEqualTo("Pair{first=test, second=45}");
     }
 
     @Test
     void testPairWithNullToString() {
         var pair = Pair.of(null, null);
-        assertThat(pair.toString()).isEqualTo("Pair{a=null, b=null}");
+        assertThat(pair.toString()).isEqualTo("Pair{first=null, second=null}");
     }
 
     @Test
     void testPairWithPrimitiveArraysToString() {
         var pair = Pair.of(new int[]{12, 42}, new long[]{21, 24});
-        assertThat(pair.toString()).contains("Pair{a=[I@");
-        assertThat(pair.toString()).contains(", b=[J@");
+        assertThat(pair.toString()).contains("Pair{first=[I@");
+        assertThat(pair.toString()).contains(", second=[J@");
     }
 
     @Test

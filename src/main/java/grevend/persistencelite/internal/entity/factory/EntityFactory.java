@@ -24,11 +24,11 @@
 
 package grevend.persistencelite.internal.entity.factory;
 
-import grevend.common.FreezableCollection;
 import grevend.common.Lazy;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.EntityType;
+import grevend.persistencelite.internal.service.sql.SqlRelation;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
@@ -141,8 +141,9 @@ public final class EntityFactory {
             var relation = entityMetadata.getRelation(name);
             if (relation != null && relation.relation() != null) {
                 propertyValues.add(relation.type().isAssignableFrom(Collection.class) ?
-                    FreezableCollection.empty() : (relation.type().isAssignableFrom(Lazy.class) ?
-                    new Lazy<>(() -> null) : null));
+                    new SqlRelation<>(null, null, null)
+                    : (relation.type().isAssignableFrom(Lazy.class) ?
+                        new Lazy<>(() -> null) : null));
             } else {
                 propertyValues.add(marshall(values.apply(name), prop.type(),
                     Map.of(Date.class, date -> date == null ? null : ((Date) date).toLocalDate())));

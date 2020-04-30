@@ -24,77 +24,26 @@
 
 package grevend.common;
 
-import grevend.jacoco.Generated;
 import grevend.persistencelite.internal.util.Utils;
 import java.io.Serializable;
-import java.util.Objects;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Triplet<A extends Serializable, B extends Serializable, C extends Serializable> implements
-    Serializable {
+public final record Triplet<A extends Serializable, B extends Serializable, C extends Serializable>(@Nullable A first, @Nullable B second, @Nullable C third) implements Serializable {
 
     private static final long serialVersionUID = 2550349264294704474L;
 
-    private final A a;
-    private final B b;
-    private final C c;
-
-    @Contract(pure = true)
-    private Triplet(@Nullable A a, @Nullable B b, @Nullable C c) {
-        this.a = a;
-        this.b = b;
-        this.c = c;
-    }
-
     @Contract(value = "_, _, _ -> new", pure = true)
-    public static @NotNull <A extends Serializable, B extends Serializable, C extends Serializable> Triplet<A, B, C> of(
-        A a, B b, C c) {
-        return new Triplet<>(a, b, c);
+    public static @NotNull <A extends Serializable, B extends Serializable, C extends Serializable> Triplet<A, B, C> of(A first, B second, C third) {
+        return new Triplet<>(first, second, third);
     }
 
-    public @Nullable A getA() {
-        return this.a;
-    }
-
-    public @Nullable B getB() {
-        return this.b;
-    }
-
-    public @Nullable C getC() {
-        return this.c;
-    }
-
-    @Override
-    @Generated
-    @Contract(value = "null -> false", pure = true)
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || this.getClass() != o.getClass()) {
-            return false;
-        }
-        Triplet<?, ?, ?> triplet = (Triplet<?, ?, ?>) o;
-        return Objects.equals(this.getA(), triplet.getA()) &&
-            Objects.equals(this.getB(), triplet.getB()) &&
-            Objects.equals(this.getC(), triplet.getC());
-    }
-
-    @Override
-    @Generated
-    public int hashCode() {
-        return Objects.hash(this.getA(), this.getB(), this.getC());
-    }
-
+    @NotNull
     @Override
     public String toString() {
-        return "Triplet{"
-            + "a=" + Utils.stringify(this.a)
-            + ", b=" + Utils.stringify(this.b)
-            + ", c=" + Utils.stringify(this.c)
-            + '}';
+        return "Triplet{first=" + Utils.stringify(this.first) + ", second=" +
+            Utils.stringify(this.second) + ", third=" + Utils.stringify(this.third) + '}';
     }
 
 }

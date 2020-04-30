@@ -33,29 +33,29 @@ class TripletTest {
     @Test
     void testTripletOf() {
         var triplet = Triplet.of("test", 45L, true);
-        assertThat(triplet.getA()).isEqualTo("test");
-        assertThat(triplet.getB()).isEqualTo(45L);
-        assertThat(triplet.getC()).isEqualTo(true);
+        assertThat(triplet.first()).isEqualTo("test");
+        assertThat(triplet.second()).isEqualTo(45L);
+        assertThat(triplet.third()).isEqualTo(true);
     }
 
     @Test
     void testTripletToString() {
         var triplet = Triplet.of("test", 45L, true);
-        assertThat(triplet.toString()).isEqualTo("Triplet{a=test, b=45, c=true}");
+        assertThat(triplet.toString()).isEqualTo("Triplet{first=test, second=45, third=true}");
     }
 
     @Test
     void testTripletWithNullToString() {
         var triplet = Triplet.of(null, null, null);
-        assertThat(triplet.toString()).isEqualTo("Triplet{a=null, b=null, c=null}");
+        assertThat(triplet.toString()).isEqualTo("Triplet{first=null, second=null, third=null}");
     }
 
     @Test
     void testTripletWithPrimitiveArraysToString() {
         var triplet = Triplet.of(new int[]{12, 42}, new long[]{21, 24}, new byte[]{12, 24});
-        assertThat(triplet.toString()).contains("Triplet{a=[I@");
-        assertThat(triplet.toString()).contains(", b=[J@");
-        assertThat(triplet.toString()).contains(", c=[B@");
+        assertThat(triplet.toString()).contains("Triplet{first=[I@");
+        assertThat(triplet.toString()).contains(", second=[J@");
+        assertThat(triplet.toString()).contains(", third=[B@");
     }
 
 }
