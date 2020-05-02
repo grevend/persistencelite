@@ -229,7 +229,8 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      *                                       insertion restrictions
      */
     @Override
-    public boolean add(E e) {
+    @Contract(value = "_ -> fail", pure = true)
+    public boolean add(@NotNull E e) {
         throw new UnsupportedOperationException();
     }
 
@@ -252,6 +253,7 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      *                                       this collection
      */
     @Override
+    @Contract(value = "_ -> fail", pure = true)
     public boolean remove(Object o) {
         throw new UnsupportedOperationException();
     }
@@ -303,6 +305,7 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      * @see #add(Object)
      */
     @Override
+    @Contract(value = "_ -> fail", pure = true)
     public boolean addAll(@NotNull Collection<? extends E> c) {
         throw new UnsupportedOperationException();
     }
@@ -329,6 +332,7 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      * @see #contains(Object)
      */
     @Override
+    @Contract(value = "_ -> fail", pure = true)
     public boolean removeAll(@NotNull Collection<?> c) {
         throw new UnsupportedOperationException();
     }
@@ -355,6 +359,7 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      * @see #contains(Object)
      */
     @Override
+    @Contract(value = "_ -> fail", pure = true)
     public boolean retainAll(@NotNull Collection<?> c) {
         throw new UnsupportedOperationException();
     }
@@ -367,6 +372,7 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      *                                       collection
      */
     @Override
+    @Contract(value = " -> fail", pure = true)
     public void clear() {
         throw new UnsupportedOperationException();
     }
