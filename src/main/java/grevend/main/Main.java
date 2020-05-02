@@ -77,6 +77,11 @@ public class Main {
             System.out.println(dogDao.retrieveByProps(Map.of("name", "Test")));
 
             System.out.println(dogDao.retrieveAll());
+
+            var bookDao = service.createDao(Book.class);
+            //bookDao.create(new Book("1-56619-909-3", "Test Title", List.of()));
+
+            System.out.println(bookDao.retrieveById(Map.of("isbn", "1-56619-909-3")));
         } catch (Throwable e) {
             e.printStackTrace();
         }

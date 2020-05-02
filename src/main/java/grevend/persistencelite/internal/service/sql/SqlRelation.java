@@ -371,4 +371,10 @@ public final class SqlRelation<E> implements LazyCollection<E> {
         throw new UnsupportedOperationException();
     }
 
+    @NotNull
+    @Override
+    public String toString() {
+        return "SqlRelation" + this.elements.toString();
+    }
+
 }

@@ -149,8 +149,9 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         this.setRetrieveByIdStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
         var res = preparedStatement.executeQuery();
+        var relations = Map.<String, Object>of();
         return res.next() ? Optional
-            .of(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()))
+            .of(EntityFactory.construct(this.getEntityMetadata(), res, relations))
             : Optional.empty();
     }
 
@@ -198,9 +199,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         this.setRetrieveByPropsStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
         var res = preparedStatement.executeQuery();
+        var relations = Map.<String, Object>of();
         Collection<E> entities = new ArrayList<>();
         while (res.next()) {
-            entities.add(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()));
+            entities.add(EntityFactory.construct(this.getEntityMetadata(), res, relations));
         }
         return Collections.unmodifiableCollection(entities);
     }
@@ -247,9 +249,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         var res = preparedStatement.executeQuery();
+        var relations = Map.<String, Object>of();
         Collection<E> entities = new ArrayList<>();
         while (res.next()) {
-            entities.add(EntityFactory.construct(this.getEntityMetadata(), res, Map.of()));
+            entities.add(EntityFactory.construct(this.getEntityMetadata(), res, relations));
         }
         return Collections.unmodifiableCollection(entities);
     }
