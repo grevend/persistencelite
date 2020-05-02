@@ -24,11 +24,9 @@
 
 package grevend.persistencelite.internal.entity.factory;
 
-import grevend.common.Lazy;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.EntityType;
-import grevend.persistencelite.internal.service.sql.SqlRelation;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
@@ -93,10 +91,13 @@ public final class EntityFactory {
         var props = entityMetadata.getDeclaredProperties().stream()
             .map(EntityProperty::propertyName)
             .collect(Collectors.toList());
+        var propsWithoutRelations = entityMetadata.getDeclaredProperties().stream()
+            .filter(prop -> prop.relation() == null).map(EntityProperty::propertyName)
+            .collect(Collectors.toUnmodifiableList());
         return switch (entityMetadata.getEntityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata, props, true,
-                key -> Utils.extract(key, props, values, List.of(properties)));
+                key -> Utils.extract(key, propsWithoutRelations, values, List.of(properties)));
         };
     }
 
@@ -138,16 +139,8 @@ public final class EntityFactory {
         final List<Object> propertyValues = new ArrayList<>();
         for (var prop : propsMeta) {
             var name = props ? prop.propertyName() : prop.fieldName();
-            var relation = entityMetadata.getRelation(name);
-            if (relation != null && relation.relation() != null) {
-                propertyValues.add(relation.type().isAssignableFrom(Collection.class) ?
-                    new SqlRelation<>(null, null, null)
-                    : (relation.type().isAssignableFrom(Lazy.class) ?
-                        new Lazy<>(() -> null) : null));
-            } else {
-                propertyValues.add(marshall(values.apply(name), prop.type(),
-                    Map.of(Date.class, date -> date == null ? null : ((Date) date).toLocalDate())));
-            }
+            propertyValues.add(marshall(values.apply(name), prop.type(),
+                Map.of(Date.class, date -> date == null ? null : ((Date) date).toLocalDate())));
         }
         return (E) entityMetadata.getConstructor().invokeWithArguments(propertyValues);
     }

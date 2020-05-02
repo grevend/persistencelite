@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.sql;
 
+import grevend.common.Lazy;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
@@ -36,6 +37,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -149,7 +151,8 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         this.setRetrieveByIdStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
         var res = preparedStatement.executeQuery();
-        var relations = Map.<String, Object>of();
+        Map<String, Object> relations = new HashMap<>();
+        this.createRelationValues(this.getEntityMetadata(), relations);
         return res.next() ? Optional
             .of(EntityFactory.construct(this.getEntityMetadata(), res, relations))
             : Optional.empty();
@@ -199,7 +202,8 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         this.setRetrieveByPropsStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
         var res = preparedStatement.executeQuery();
-        var relations = Map.<String, Object>of();
+        Map<String, Object> relations = new HashMap<>();
+        this.createRelationValues(this.getEntityMetadata(), relations);
         Collection<E> entities = new ArrayList<>();
         while (res.next()) {
             entities.add(EntityFactory.construct(this.getEntityMetadata(), res, relations));
@@ -249,7 +253,8 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         var res = preparedStatement.executeQuery();
-        var relations = Map.<String, Object>of();
+        Map<String, Object> relations = new HashMap<>();
+        this.createRelationValues(this.getEntityMetadata(), relations);
         Collection<E> entities = new ArrayList<>();
         while (res.next()) {
             entities.add(EntityFactory.construct(this.getEntityMetadata(), res, relations));
@@ -371,6 +376,15 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             }
             i++;
         }
+    }
+
+    private void createRelationValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> map) {
+        entityMetadata.getDeclaredRelations().forEach(relation -> {
+            map.put(relation.fieldName(), relation.type().isAssignableFrom(Collection.class) ?
+                new SqlRelation<>(null, null, null) :
+                (relation.type().isAssignableFrom(Lazy.class) ?
+                    new Lazy<>(() -> null) : null));
+        });
     }
 
 }
