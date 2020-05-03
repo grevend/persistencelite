@@ -28,7 +28,7 @@ import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
-import grevend.persistencelite.internal.util.ExceptionEscapeHatch;
+import grevend.sequence.function.ThrowableEscapeHatch;
 import grevend.sequence.function.ThrowingConsumer;
 import grevend.sequence.function.ThrowingFunction;
 import java.util.ArrayList;
@@ -138,8 +138,8 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
     @NotNull
     @Override
     public Collection<E> create(@NotNull Iterable<E> entities) throws Exception {
-        final var escapeHatch = new ExceptionEscapeHatch();
-        var res = StreamSupport.stream(entities.spliterator(), false).map(ExceptionEscapeHatch
+        final var escapeHatch = new ThrowableEscapeHatch<>(Exception.class);
+        var res = StreamSupport.stream(entities.spliterator(), false).map(ThrowableEscapeHatch
             .escape((@NotNull ThrowingFunction<E, E>) this::create, escapeHatch))
             .filter(Objects::nonNull).collect(Collectors.toUnmodifiableList());
         escapeHatch.rethrow();
@@ -208,9 +208,9 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      */
     @Override
     public void delete(@NotNull Iterable<E> entities) throws Exception {
-        final var escapeHatch = new ExceptionEscapeHatch();
+        final var escapeHatch = new ThrowableEscapeHatch<>(Exception.class);
         entities.forEach(
-            ExceptionEscapeHatch.escape((@NotNull ThrowingConsumer<E>) this::delete, escapeHatch));
+            ThrowableEscapeHatch.escape((@NotNull ThrowingConsumer<E>) this::delete, escapeHatch));
         escapeHatch.rethrow();
     }
 

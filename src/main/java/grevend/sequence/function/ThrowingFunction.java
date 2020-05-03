@@ -29,6 +29,6 @@ import org.jetbrains.annotations.Nullable;
 @FunctionalInterface
 public interface ThrowingFunction<T, R> {
 
-    @Nullable R apply(@Nullable T t) throws Exception;
+    @Nullable R apply(@Nullable T t) throws Throwable;
 
 }

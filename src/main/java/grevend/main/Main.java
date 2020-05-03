@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println(
+        /*System.out.println(
             List.of(DiscordCredential.class, Author.class, Pet.class, Dog.class, Cat.class,
                 Book.class).stream()
                 .map(EntityMetadata::of)
@@ -51,7 +51,7 @@ public class Main {
                 .flatMap(entityMetadata -> entityMetadata.getDeclaredRelations().stream())
                 .map(EntityProperty::relation)
                 .map(Objects::toString)
-                .collect(Collectors.joining(System.lineSeparator())));
+                .collect(Collectors.joining(System.lineSeparator())));*/
 
         var service = PersistenceLite.configureService(PostgresService.class)
             .loadCredentials("credentials.properties").service();
@@ -61,27 +61,36 @@ public class Main {
             var discordCredentialsDao = service.createDao(DiscordCredential.class, tr);
             //discordCredentialsDao.create(new DiscordCredential("name", "#4871", "1234", null));
 
-            System.out.println(discordCredentialsDao.retrieveAll());
+            //System.out.println(discordCredentialsDao.retrieveAll());
 
             var authorDao = service.createDao(Author.class);
             /*authorDao.create(
                 new Author(8, "First", "Middle", "Last", LocalDateTime.now(), "name", "#4871",
                     List.of(), null, List.of()));*/
 
-            System.out.println(authorDao.retrieveAll());
+            //System.out.println(authorDao.retrieveAll());
 
-            System.out.println(EntityMetadata.of(Dog.class).getUniqueProperties());
+            authorDao.retrieveAll()
+                .forEach(author -> author.pets()
+                    .forEach(System.out::println));
+
+            var catDao = service.createDao(Cat.class);
+            //catDao.create(new Cat(1, "Cat", Status.DEAD, 8, true));
+
+            //System.out.println(EntityMetadata.of(Dog.class).getUniqueProperties());
             var dogDao = service.createDao(Dog.class);
             //dogDao.create(new Dog(27, "Test", Status.ALIVE, 8, false));
 
-            System.out.println(dogDao.retrieveByProps(Map.of("name", "Test")));
+            var dogs = dogDao.retrieveByProps(Map.of("name", "Test"));
+            //System.out.println(dogs);
 
-            System.out.println(dogDao.retrieveAll());
+            //System.out.println(dogDao.retrieveAll());
 
             var bookDao = service.createDao(Book.class);
             //bookDao.create(new Book("1-56619-909-3", "Test Title", List.of()));
 
-            System.out.println(bookDao.retrieveById(Map.of("isbn", "1-56619-909-3")));
+            var book = bookDao.retrieveById(Map.of("isbn", "1-56619-909-3"));
+            //System.out.println(book);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -142,7 +151,7 @@ public class Main {
             "discord_tag"}, targetEntity = DiscordCredential.class, targetProperties = {
             "display_name", "tag_number"})
         Lazy<DiscordCredential>discordCredential,
-        @Relation(selfProperties = {}, targetEntity = Book.class, targetProperties = {})
+        @Relation(selfProperties = "placeholder", targetEntity = Book.class, targetProperties = "placeholder")
         Collection<Book>books
     ) {}
 
@@ -164,6 +173,7 @@ public class Main {
         int id,
         String name,
         Status status,
+        @Property(name = "owner_id")
         int ownerId,
         @Property(name = "destroy_stuff")
         boolean destroyStuff
@@ -174,7 +184,7 @@ public class Main {
         @Id
         String isbn,
         String title,
-        @Relation(selfProperties = {}, targetEntity = Author.class, targetProperties = {})
+        @Relation(selfProperties = "placeholder", targetEntity = Author.class, targetProperties = "placeholder")
         Collection<Author>authors
     ) {}
 

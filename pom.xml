@@ -8,7 +8,7 @@
   <artifactId>persistencelite</artifactId>
   <name>PersistenceLite</name>
   <url>https://github.com/grevend/PersistenceLite</url>
-  <version>0.2.2-SNAPSHOT</version>
+  <version>0.2.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <distributionManagement>

@@ -65,6 +65,8 @@ public final class EntityRelation {
             throw new IllegalArgumentException(
                 Arrays.toString(selfProperties) + " should contain the same amount of elements as "
                     + Arrays.toString(targetProperties) + ".");
+        } else if(selfProperties.length == 0) {
+            throw new IllegalArgumentException("Relation without self and target properties are not allowed.");
         }
     }
 
