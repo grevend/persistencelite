@@ -24,11 +24,26 @@
 
 package grevend.persistencelite.util;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * @param <A>
+ * @param <B>
+ *
+ * @author David Greven
+ * @since 0.2.0
+ */
 @FunctionalInterface
 public interface TypeMarshaller<A, B> {
 
-  @NotNull B marshall(A value);
+    /**
+     * @param value
+     *
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @Nullable
+    B marshall(@Nullable A value);
 
 }

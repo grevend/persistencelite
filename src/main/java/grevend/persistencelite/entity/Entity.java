@@ -30,10 +30,20 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @author David Greven
+ * @since 0.2.0
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Entity {
 
-  @NotNull String name();
+    /**
+     * @return
+     *
+     * @since 0.2.0
+     */
+    @NotNull
+    String name();
 
 }

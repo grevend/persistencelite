@@ -24,64 +24,191 @@
 
 package grevend.persistencelite.dao;
 
-import grevend.persistencelite.database.Database;
-import grevend.persistencelite.util.Tuple;
-import grevend.persistencelite.util.sequence.Seq;
+import grevend.sequence.Seq;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public interface Dao<E> {
+/**
+ * A generic implementation of the DAO pattern that provides an abstract interface to some type of
+ * data source.
+ *
+ * @param <E> The type of the entity to which the DAO should apply.
+ *
+ * @author David Greven
+ * @version 0.2.0
+ */
+public interface Dao<E> extends AutoCloseable {
 
-  Dao<E> create(@NotNull E entity);
+    /**
+     * An implementation of the <b>create</b> CRUD operation that persists an entity.
+     *
+     * @param entity The entity to be persisted.
+     *
+     * @return Either returns the entity from the first parameter or creates a new instance based on
+     * the persistent version.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    @NotNull
+    E create(@NotNull E entity) throws Exception;
 
-  default Dao<E> createAll(@NotNull Collection<E> entities) {
-    entities.forEach(this::create);
-    return this;
-  }
+    /**
+     * An implementation of the <b>create</b> CRUD operation that persists none, one or many
+     * entities.
+     *
+     * @param entities An {@code Iterable} that provides the entities that should be persisted.
+     *
+     * @return Either returns the iterated entities from the first parameter or creates a new
+     * collection based on the persistent versions. The returned collection should be immutable to
+     * avoid confusion about the synchronization behavior of the contained entities with the data
+     * source.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @see Collection
+     * @see Iterable
+     * @since 0.2.0
+     */
+    @NotNull
+    Collection<E> create(@NotNull Iterable<E> entities) throws Exception;
 
-  @NotNull Optional<E> retrieveByKey(@NotNull Tuple key);
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param identifiers The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entity found in the form of an {@code Optional}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Optional
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable;
 
-  @NotNull Collection<E> retrieveByAttributes(@NotNull Map<String, ?> attributes);
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param properties The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entities found in the form of an {@code Collection}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Collection
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull Collection<E> retrieveByProps(@NotNull Map<String, Object> properties) throws Throwable;
 
-  @NotNull Collection<E> retrieveAll();
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
+     * current entity type.
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Collection
+     * @since 0.2.0
+     */
+    @NotNull
+    Collection<E> retrieveAll() throws Throwable;
 
-  default @NotNull Stream<E> stream() {
-    return this.retrieveAll().stream();
-  }
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
+     * provided entity. The properties that should be updated are passed in as the second parameter
+     * in the form of a {@code Map}.
+     *
+     * @param entity     The immutable entity that should be updated.
+     * @param properties The {@code Map} of key-value pairs that represents the properties and their
+     *                   updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable;
 
-  default @NotNull Stream<E> parallelStream() {
-    return this.retrieveAll().parallelStream();
-  }
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
+     * the provided entities. An {@code Iterable} of properties that should be updated are passed in
+     * as the second parameter in the form of a {@code Map}.
+     *
+     * @param entities   The immutable entities that should be updated.
+     * @param properties The {@code Iterable} of key-value pair {@code Map} objects that represents
+     *                   the properties and their updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Collection
+     * @see Iterable
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable;
 
-  default @NotNull <S extends Seq<E, S>> Seq<E, S> sequence() {
-    return Seq.of(this.retrieveAll());
-  }
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the
+     * current data source.
+     *
+     * @param entity The entity that should be deleted.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    void delete(@NotNull E entity) throws Exception;
 
-  default Dao<E> update(@NotNull E entity) {
-    this.delete(entity);
-    this.create(entity);
-    return this;
-  }
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
+     * identifiers from the current data source.
+     *
+     * @param identifiers The identifiers that should be used to delete the entity.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    void delete(@NotNull Map<String, Object> identifiers) throws Exception;
 
-  default Dao<E> updateAll(@NotNull Collection<E> entities) {
-    entities.forEach(this::update);
-    return this;
-  }
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes the given entities from
+     * the current data source.
+     *
+     * @param entities The {@code Iterable} of entities that should be deleted.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @see Iterable
+     * @since 0.2.0
+     */
+    void delete(@NotNull Iterable<E> entities) throws Exception;
 
-  Dao<E> delete(@NotNull E entity);
-
-  Dao<E> deleteByKey(@NotNull Tuple key);
-
-  Dao<E> deleteByAttributes(@NotNull Map<String, ?> attributes);
-
-  default Dao<E> deleteAll(@NotNull Collection<E> entities) {
-    entities.forEach(this::delete);
-    return this;
-  }
-
-  @NotNull Database getDatabase();
+    /**
+     * Returns a lazy sequence based on the collection provided by the {@code retrieve()} method.
+     *
+     * @param <S> The {@code Seq} type used for providing the return types of the chained method
+     *            calls.
+     *
+     * @return Returns a new {@code Seq} based on the provided {@code Iterable}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Seq
+     * @see #retrieveAll()
+     * @see Iterable
+     * @since 0.2.0
+     */
+    @NotNull
+    default <S extends Seq<E, S>> Seq<E, S> sequence() throws Throwable {
+        return Seq.of(this.retrieveAll());
+    }
 
 }
+
