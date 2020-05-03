@@ -28,6 +28,7 @@ import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.sequence.function.ThrowingSupplier;
 import java.sql.Connection;
+import java.util.Objects;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,15 +55,15 @@ public final class SqlTransactionFactory implements TransactionFactory {
     /**
      * @return
      *
-     * @throws Exception
+     * @throws Throwable
      * @see SqlTransaction
      * @since 0.2.0
      */
     @NotNull
     @Override
     @Contract(" -> new")
-    public Transaction createTransaction() throws Exception {
-        return new SqlTransaction(this.connectionSupplier.get());
+    public Transaction createTransaction() throws Throwable {
+        return new SqlTransaction(Objects.requireNonNull(this.connectionSupplier.get()));
     }
 
 }

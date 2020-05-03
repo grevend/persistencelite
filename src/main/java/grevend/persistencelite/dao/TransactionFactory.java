@@ -40,6 +40,6 @@ public interface TransactionFactory {
      * @since 0.2.0
      */
     @NotNull
-    Transaction createTransaction() throws Exception;
+    Transaction createTransaction() throws Throwable;
 
 }

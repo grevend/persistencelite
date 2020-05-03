@@ -119,13 +119,13 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      *
      * @return
      *
-     * @throws Exception
+     * @throws Throwable
      * @see Dao
      * @see Class
      * @since 0.2.0
      */
     @NotNull
-    public <E> Dao<E> createDao(@NotNull Class<E> entity) throws Exception {
+    public <E> Dao<E> createDao(@NotNull Class<E> entity) throws Throwable {
         return this.createDao(entity, this.getTransactionFactory().createTransaction());
     }
 
