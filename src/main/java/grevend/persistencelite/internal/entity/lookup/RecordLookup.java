@@ -46,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
  * @see ComponentLookup
  * @since 0.2.0
  */
-public class RecordLookup<E> implements ComponentLookup<E, RecordComponent> {
+public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent> {
 
     /**
      * Generates a {@code Stream} of annotated member components.

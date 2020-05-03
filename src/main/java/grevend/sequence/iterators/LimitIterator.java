@@ -27,7 +27,7 @@ package grevend.sequence.iterators;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
-public class LimitIterator<T> extends ChainIterator<T> {
+public final class LimitIterator<T> extends ChainIterator<T> {
 
     private final int maxSize;
     private int i = 0;

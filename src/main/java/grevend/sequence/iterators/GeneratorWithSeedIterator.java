@@ -29,7 +29,7 @@ import java.util.function.UnaryOperator;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class GeneratorWithSeedIterator<T> implements Iterator<T> {
+public final class GeneratorWithSeedIterator<T> implements Iterator<T> {
 
     private final UnaryOperator<T> function;
     private final T seed;

@@ -29,7 +29,7 @@ import java.util.function.Function;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class MapIterator<T, R> implements Iterator<R> {
+public final class MapIterator<T, R> implements Iterator<R> {
 
     private final Iterator<T> iterator;
     private final Function<? super T, ? extends R> function;
@@ -41,6 +41,7 @@ public class MapIterator<T, R> implements Iterator<R> {
     }
 
     @Override
+    @Contract(pure = true)
     public boolean hasNext() {
         return this.iterator.hasNext();
     }

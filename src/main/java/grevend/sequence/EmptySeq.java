@@ -22,41 +22,26 @@
  * SOFTWARE.
  */
 
-package grevend.sequence.iterators;
+package grevend.sequence;
 
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
-import org.jetbrains.annotations.NotNull;
 
-public final class DistinctIterator<T> extends ChainIterator<T> {
+public final class EmptySeq<T> extends Seq<T, EmptySeq<T>> {
 
-    private final Set<T> observed;
-    private T next;
+    EmptySeq() {
+        super(new Iterator<>() {
 
-    public DistinctIterator(@NotNull Iterator<T> iterator) {
-        super(iterator);
-        this.observed = new HashSet<>();
-    }
-
-    @Override
-    public boolean hasNext() {
-        if (this.iterator.hasNext()) {
-            var element = this.iterator.next();
-            if (!this.observed.contains(element)) {
-                this.observed.add(element);
-                this.next = element;
-                return true;
-            } else {
-                return this.hasNext();
+            @Override
+            public boolean hasNext() {
+                return false;
             }
-        }
-        return false;
-    }
 
-    @Override
-    public T next() {
-        return this.next;
+            @Override
+            public T next() {
+                return null;
+            }
+
+        });
     }
 
 }

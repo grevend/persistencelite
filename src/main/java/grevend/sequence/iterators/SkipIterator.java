@@ -27,7 +27,7 @@ package grevend.sequence.iterators;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
-public class SkipIterator<T> extends ChainIterator<T> {
+public final class SkipIterator<T> extends ChainIterator<T> {
 
     public SkipIterator(@NotNull Iterator<T> iterator, int maxSize) {
         super(iterator);

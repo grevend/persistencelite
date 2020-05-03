@@ -24,8 +24,8 @@
 
 package grevend.sequence;
 
-import grevend.sequence.function.TriFunction;
 import grevend.persistencelite.internal.util.Utils;
+import grevend.sequence.function.TriFunction;
 import grevend.sequence.iterators.ConcatIterator;
 import grevend.sequence.iterators.DistinctIterator;
 import grevend.sequence.iterators.FilterIterator;
@@ -83,6 +83,7 @@ public class Seq<T, S extends Seq<T, S>> implements Iterable<T> {
             }
 
         });
+        //return new EmptySeq<T>();
     }
 
     @Contract(value = "_ -> new", pure = true)
@@ -130,7 +131,8 @@ public class Seq<T, S extends Seq<T, S>> implements Iterable<T> {
     @Contract("_, _, _, _ -> new")
     public static @NotNull <T extends Number> NumberSeq<T> range(@NotNull T startInclusive,
         @NotNull T endInclusive, @NotNull TriFunction<T, T, T, T> stepper, @NotNull T stepSize) {
-        return new NumberSeq<>(new RangeIterator<>(startInclusive, endInclusive, stepper, stepSize));
+        return new NumberSeq<>(
+            new RangeIterator<>(startInclusive, endInclusive, stepper, stepSize));
     }
 
     @Contract("_, _, _ -> new")
@@ -456,6 +458,7 @@ public class Seq<T, S extends Seq<T, S>> implements Iterable<T> {
     private static final class GenericComparator<T> implements Comparator<T> {
 
         @Override
+        @Contract(pure = true)
         @SuppressWarnings("unchecked")
         public int compare(T a, T b) {
             if (a instanceof Comparable) {

@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
-public class PeekIterator<T> extends ChainIterator<T> {
+public final class PeekIterator<T> extends ChainIterator<T> {
 
     private final Consumer<T> consumer;
 

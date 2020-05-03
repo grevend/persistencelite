@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class GeneratorIterator<T> implements Iterator<T> {
+public final class GeneratorIterator<T> implements Iterator<T> {
 
     private final Supplier<T> supplier;
 

@@ -31,7 +31,7 @@ import java.util.Queue;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
-public class FlatMapIterator<T, R, U extends Seq<R, ?>> implements Iterator<R> {
+public final class FlatMapIterator<T, R, U extends Seq<R, ?>> implements Iterator<R> {
 
     private final Iterator<T> iterator;
     private final Function<? super T, ? extends Seq<? extends R, ?>> function;

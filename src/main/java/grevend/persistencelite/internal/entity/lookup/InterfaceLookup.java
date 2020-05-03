@@ -46,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
  * @see ComponentLookup
  * @since 0.2.0
  */
-public class InterfaceLookup<E> implements ComponentLookup<E, Method> {
+public final class InterfaceLookup<E> implements ComponentLookup<E, Method> {
 
     /**
      * Generates a {@code Stream} of annotated member components.

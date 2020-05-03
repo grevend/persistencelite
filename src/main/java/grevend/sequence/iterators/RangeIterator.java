@@ -26,9 +26,10 @@ package grevend.sequence.iterators;
 
 import grevend.sequence.function.TriFunction;
 import java.util.Iterator;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class RangeIterator<T, S> implements Iterator<T> {
+public final class RangeIterator<T, S> implements Iterator<T> {
 
     private final T start, end;
     private final TriFunction<T, T, S, T> stepper;
@@ -44,6 +45,7 @@ public class RangeIterator<T, S> implements Iterator<T> {
     }
 
     @Override
+    @Contract(pure = true)
     public boolean hasNext() {
         return !this.end.equals(this.current);
     }

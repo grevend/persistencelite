@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
-public class FilterIterator<T> extends ChainIterator<T> {
+public final class FilterIterator<T> extends ChainIterator<T> {
 
     private final Predicate<? super T> predicate;
     private T next;

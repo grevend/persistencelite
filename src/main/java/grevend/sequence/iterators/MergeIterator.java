@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 
-public class MergeIterator<T> extends ChainIterator<T> {
+public final class MergeIterator<T> extends ChainIterator<T> {
 
     private final Queue<Iterator<? extends T>> queue;
 
