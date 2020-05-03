@@ -78,52 +78,6 @@ public final class EntityFactory {
     /**
      * @param entityMetadata
      * @param properties
-     * @param <E>
-     *
-     * @return
-     *
-     * @throws Throwable
-     * @see EntityMetadata
-     * @see Map
-     * @since 0.2.0
-     */
-    @NotNull
-    @Deprecated
-    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final Map<String, Object> properties) throws Throwable {
-        return construct(entityMetadata, properties, false);
-    }
-
-    /**
-     * @param entityMetadata
-     * @param values
-     * @param <E>
-     *
-     * @return
-     *
-     * @throws Throwable
-     * @see EntityMetadata
-     * @see ResultSet
-     * @since 0.2.0
-     */
-    @NotNull
-    @Deprecated
-    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final ResultSet values, @NotNull final Map<String, Object> properties) throws Throwable {
-        var props = entityMetadata.getDeclaredProperties().stream()
-            .map(EntityProperty::propertyName)
-            .collect(Collectors.toList());
-        var propsWithoutRelations = entityMetadata.getDeclaredProperties().stream()
-            .filter(prop -> prop.relation() == null).map(EntityProperty::propertyName)
-            .collect(Collectors.toUnmodifiableList());
-        return switch (entityMetadata.getEntityType()) {
-            case CLASS, INTERFACE -> throw new UnsupportedOperationException();
-            case RECORD -> constructRecord(entityMetadata, props, true,
-                key -> Utils.extract(key, propsWithoutRelations, values, List.of(properties)));
-        };
-    }
-
-    /**
-     * @param entityMetadata
-     * @param properties
      * @param props
      * @param values
      * @param <E>
