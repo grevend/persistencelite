@@ -24,10 +24,7 @@
 
 package grevend.persistencelite.internal.util;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.Contract;
@@ -141,31 +138,6 @@ public final class Utils {
         }
 
         return value;
-    }
-
-    /**
-     * @param key
-     * @param properties
-     * @param resultSet
-     * @param maps
-     *
-     * @return
-     *
-     * @throws SQLException
-     * @since 0.2.0
-     */
-    @Nullable
-    public static Object extract(@Nullable String key, @NotNull Collection<String> properties, @NotNull ResultSet resultSet, @NotNull Iterable<? extends Map<String, Object>> maps) throws SQLException {
-        if (properties.contains(key)) {
-            return resultSet.getObject(key);
-        } else {
-            for (Map<String, Object> next : maps) {
-                if (next.containsKey(key)) {
-                    return next.get(key);
-                }
-            }
-        }
-        return null;
     }
 
 }

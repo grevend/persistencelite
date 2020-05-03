@@ -26,7 +26,6 @@ package grevend.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import grevend.common.Pair;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

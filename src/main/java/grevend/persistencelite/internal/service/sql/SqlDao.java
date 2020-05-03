@@ -26,7 +26,6 @@ package grevend.persistencelite.internal.service.sql;
 
 import static grevend.sequence.function.ThrowableEscapeHatch.escape;
 
-import grevend.common.Lazy;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
@@ -35,12 +34,9 @@ import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.persistencelite.internal.service.sql.PreparedStatementFactory.StatementType;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -154,9 +150,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         this.setRetrieveByIdStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
 
-        var res = this.convert(preparedStatement.executeQuery());
+        var res = SqlUtils.convert(preparedStatement.executeQuery());
         if (res.size() > 0) {
-            this.createRelationValues(this.getEntityMetadata(), res.iterator().next());
+            SqlUtils.createRelationValues(this.getEntityMetadata(), res.iterator().next(),
+                this.transactionSupplier);
         }
 
         return res.size() > 0 ? Optional
@@ -208,9 +205,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         this.setRetrieveByPropsStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
 
-        var res = this.convert(preparedStatement.executeQuery());
-        if (res.size() > 0) {
-            this.createRelationValues(this.getEntityMetadata(), res.iterator().next());
+        var res = SqlUtils.convert(preparedStatement.executeQuery());
+        for (var map : res) {
+            SqlUtils
+                .createRelationValues(this.getEntityMetadata(), map, this.transactionSupplier);
         }
 
         var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
@@ -265,9 +263,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
         var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
 
-        var res = this.convert(preparedStatement.executeQuery());
-        if (res.size() > 0) {
-            this.createRelationValues(this.getEntityMetadata(), res.iterator().next());
+        var res = SqlUtils.convert(preparedStatement.executeQuery());
+        for (var map : res) {
+            SqlUtils
+                .createRelationValues(this.getEntityMetadata(), map, this.transactionSupplier);
         }
 
         var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
@@ -394,30 +393,6 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             }
             i++;
         }
-    }
-
-    private void createRelationValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> map) {
-        entityMetadata.getDeclaredRelations().forEach(relation ->
-            map.put(relation.fieldName(), relation.type().isAssignableFrom(Collection.class) ?
-                new SqlRelation<>(entityMetadata, Objects.requireNonNull(relation.relation()),
-                    map, this.transactionSupplier)
-                : (relation.type().isAssignableFrom(Lazy.class)
-                    ? new Lazy<>(() -> null) : null)));
-    }
-
-    @NotNull
-    private Collection<Map<String, Object>> convert(@NotNull ResultSet resultSet) throws SQLException {
-        Collection<Map<String, Object>> res = new ArrayList<>();
-        var metadata = resultSet.getMetaData();
-        var columns = metadata.getColumnCount();
-        while (resultSet.next()) {
-            Map<String, Object> row = new HashMap<>();
-            for (var i = 1; i <= columns; i++) {
-                row.put(metadata.getColumnName(i), resultSet.getObject(i));
-            }
-            res.add(row);
-        }
-        return res;
     }
 
 }

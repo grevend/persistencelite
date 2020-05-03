@@ -122,13 +122,14 @@ final class PreparedStatementFactory {
      * @since 0.2.2
      */
     @NotNull
-    public String prepareSelectWithAttributes(@NotNull EntityMetadata<?> entityMetadata, @NotNull Collection<String> attributes) {
-        var res = this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getProperties()
+    String prepareSelectWithAttributes(@NotNull EntityMetadata<?> entityMetadata, @NotNull Collection<String> attributes) {
+        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getProperties()
             .stream().filter(prop -> attributes.contains(prop.propertyName()) ||
                 attributes.contains(prop.fieldName()))
-            .map(prop -> (prop.identifier() != null || prop.copy() ? (entityMetadata.getName() + ".") : "") + prop.propertyName() + " = ?")
+            .map(prop ->
+                (prop.identifier() != null || prop.copy() ? (entityMetadata.getName() + ".") : "")
+                    + prop.propertyName() + " = ?")
             .collect(Collectors.joining(" and "));
-        return res;
     }
 
     /**

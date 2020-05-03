@@ -28,7 +28,7 @@ import grevend.persistencelite.internal.util.Utils;
 import java.util.Iterator;
 import org.jetbrains.annotations.NotNull;
 
-public class NumberSeq<T extends Number> extends Seq<T, NumberSeq<T>> {
+public final class NumberSeq<T extends Number> extends Seq<T, NumberSeq<T>> {
 
     NumberSeq(@NotNull Iterator<T> iterator) {
         super(iterator);
