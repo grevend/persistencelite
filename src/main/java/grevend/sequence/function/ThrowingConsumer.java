@@ -29,6 +29,6 @@ import org.jetbrains.annotations.Nullable;
 @FunctionalInterface
 public interface ThrowingConsumer<T> {
 
-    void accept(@Nullable T t) throws Exception;
+    void accept(@Nullable T t) throws Throwable;
 
 }

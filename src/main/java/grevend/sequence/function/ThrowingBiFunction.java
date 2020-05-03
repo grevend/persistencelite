@@ -30,6 +30,6 @@ import org.jetbrains.annotations.Nullable;
 public interface ThrowingBiFunction<T, U, R> {
 
     @Nullable
-    R apply(@Nullable T t, @Nullable U u) throws Exception;
+    R apply(@Nullable T t, @Nullable U u) throws Throwable;
 
 }

@@ -30,6 +30,6 @@ import org.jetbrains.annotations.Nullable;
 public interface ThrowingSupplier<T> {
 
     @Nullable
-    T get() throws Exception;
+    T get() throws Throwable;
 
 }
