@@ -87,7 +87,26 @@ public interface Dao<E> extends AutoCloseable {
      * @see Map
      * @since 0.2.0
      */
-    @NotNull Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable;
+    @NotNull
+    Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable;
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param key   The key component.
+     * @param value The value component.
+     *
+     * @return Returns the entity found in the form of an {@code Optional}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Optional
+     * @since 0.2.0
+     */
+    @NotNull
+    default Optional<E> retrieveById(@NotNull String key, @NotNull Object value) throws Throwable {
+        return this.retrieveById(Map.of(key, value));
+    }
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
@@ -102,7 +121,27 @@ public interface Dao<E> extends AutoCloseable {
      * @see Map
      * @since 0.2.0
      */
-    @NotNull Collection<E> retrieveByProps(@NotNull Map<String, Object> properties) throws Throwable;
+    @NotNull
+    Collection<E> retrieveByProps(@NotNull Map<String, Object> properties) throws Throwable;
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param key   The key component.
+     * @param value The value component.
+     *
+     * @return Returns the entities found in the form of an {@code Collection}.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Collection
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    default Collection<E> retrieveByProps(@NotNull String key, @NotNull Object value) throws Throwable {
+        return this.retrieveByProps(Map.of(key, value));
+    }
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
@@ -136,6 +175,26 @@ public interface Dao<E> extends AutoCloseable {
      */
     @NotNull
     E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable;
+
+    /**
+     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
+     * provided entity. The properties that should be updated are passed in as the second parameter
+     * in the form of a {@code Map}.
+     *
+     * @param entity The immutable entity that should be updated.
+     * @param key    The key component.
+     * @param value  The value component.
+     *
+     * @return Returns the updated entity.
+     *
+     * @throws Throwable If an error occurs during the persistence process.
+     * @see Map
+     * @since 0.2.0
+     */
+    @NotNull
+    default E update(@NotNull E entity, @NotNull String key, @NotNull Object value) throws Throwable {
+        return this.update(entity, Map.of(key, value));
+    }
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
@@ -178,6 +237,20 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     void delete(@NotNull Map<String, Object> identifiers) throws Exception;
+
+    /**
+     * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
+     * identifiers from the current data source.
+     *
+     * @param key   The key component.
+     * @param value The value component.
+     *
+     * @throws Exception If an error occurs during the persistence process.
+     * @since 0.2.0
+     */
+    default void delete(@NotNull String key, @NotNull Object value) throws Exception {
+        this.delete(Map.of(key, value));
+    }
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes the given entities from
