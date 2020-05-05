@@ -26,6 +26,7 @@ package grevend.persistencelite.service.rest;
 
 import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -33,10 +34,22 @@ import org.jetbrains.annotations.NotNull;
  * @see RestService
  * @since 0.3.0
  */
-public class RestConfigurator implements Configurator<RestService> {
+public final class RestConfigurator implements Configurator<RestService> {
+
+    private final RestService restService;
 
     private RestMode mode = RestMode.REQUESTER;
     private Service<?> service;
+
+    /**
+     * @param restService
+     *
+     * @since 0.3.0
+     */
+    @Contract(pure = true)
+    RestConfigurator(@NotNull RestService restService) {
+        this.restService = restService;
+    }
 
     /**
      * @param mode
@@ -46,6 +59,7 @@ public class RestConfigurator implements Configurator<RestService> {
      * @since 0.3.0
      */
     @NotNull
+    @Contract("_ -> this")
     public RestConfigurator mode(@NotNull RestMode mode) {
         this.mode = mode;
         return this;
@@ -59,8 +73,13 @@ public class RestConfigurator implements Configurator<RestService> {
      * @since 0.3.0
      */
     @NotNull
+    @Contract("_ -> this")
     public RestConfigurator uses(@NotNull Service<?> service) {
-        this.service = service;
+        if (this.mode != RestMode.SERVER) {
+            throw new IllegalArgumentException();
+        } else {
+            this.service = service;
+        }
         return this;
     }
 
@@ -71,11 +90,14 @@ public class RestConfigurator implements Configurator<RestService> {
      */
     @NotNull
     @Override
+    @Contract(" -> new")
     public RestService service() {
-        if(this.service == null) {
+        if (this.mode == RestMode.SERVER && this.service == null) {
             throw new IllegalStateException("No service defined.");
         }
-        return new RestService(this.mode, this.service);
+        this.restService.setMode(this.mode);
+        this.restService.setService(this.service);
+        return this.restService;
     }
 
 }

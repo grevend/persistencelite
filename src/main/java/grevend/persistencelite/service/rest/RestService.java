@@ -37,14 +37,35 @@ import org.jetbrains.annotations.Nullable;
  * @see RestConfigurator
  * @since 0.3.0
  */
-public class RestService implements Service<RestConfigurator> {
+public final class RestService implements Service<RestConfigurator> {
 
-    private final RestMode mode;
-    private final Service<?> service;
+    private RestMode mode;
+    private Service<?> service;
 
+    /**
+     * @since 0.3.0
+     */
     @Contract(pure = true)
-    RestService(@NotNull RestMode mode, @NotNull Service<?> service) {
+    public RestService() {
+        this.mode = RestMode.REQUESTER;
+        this.service = null;
+    }
+
+    /**
+     * @param mode
+     *
+     * @since 0.3.0
+     */
+    void setMode(@NotNull RestMode mode) {
         this.mode = mode;
+    }
+
+    /**
+     * @param service
+     *
+     * @since 0.3.0
+     */
+    void setService(@Nullable Service<?> service) {
         this.service = service;
     }
 
@@ -55,8 +76,9 @@ public class RestService implements Service<RestConfigurator> {
      */
     @NotNull
     @Override
+    @Contract(value = " -> new", pure = true)
     public RestConfigurator getConfigurator() {
-        return new RestConfigurator();
+        return new RestConfigurator(this);
     }
 
     /**
