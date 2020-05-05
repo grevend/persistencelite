@@ -22,84 +22,76 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service.sql;
+package grevend.persistencelite.service.rest;
 
-import grevend.persistencelite.service.Configurator;
-import java.io.FileNotFoundException;
-import java.util.Properties;
+import grevend.persistencelite.dao.DaoFactory;
+import grevend.persistencelite.dao.TransactionFactory;
+import grevend.persistencelite.service.Service;
+import grevend.persistencelite.util.TypeMarshaller;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
- * @see Configurator
- * @see PostgresService
- * @since 0.2.0
+ * @see RestConfigurator
+ * @since 0.3.0
  */
-public final class PostgresConfigurator implements Configurator<PostgresService> {
+public class RestService implements Service<RestConfigurator> {
 
-    private final PostgresService service;
+    private final RestMode mode;
+    private final Service<?> service;
 
-    /**
-     * @param service
-     *
-     * @since 0.2.0
-     */
     @Contract(pure = true)
-    PostgresConfigurator(@NotNull PostgresService service) {
+    RestService(@NotNull RestMode mode, @NotNull Service<?> service) {
+        this.mode = mode;
         this.service = service;
     }
 
     /**
-     * @param propertiesFile
-     *
      * @return
      *
-     * @since 0.2.0
-     */
-    @NotNull
-    public PostgresConfigurator credentials(@NotNull String propertiesFile) {
-        return this.loadCredentials(propertiesFile);
-    }
-
-    /**
-     * @param propertiesFile
-     *
-     * @return
-     *
-     * @since 0.2.0
-     */
-    @NotNull
-    @Deprecated
-    @Contract("_ -> this")
-    public PostgresConfigurator loadCredentials(@NotNull String propertiesFile) {
-        Properties props = new Properties();
-
-        try (var stream = this.getClass().getClassLoader().getResourceAsStream(propertiesFile)) {
-            if (stream != null) {
-                props.load(stream);
-            } else {
-                throw new FileNotFoundException(
-                    "Credentials property file '" + propertiesFile + "' not found.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        this.service.setProperties(props);
-        return this;
-    }
-
-    /**
-     * @return
-     *
-     * @since 0.2.0
+     * @since 0.3.0
      */
     @NotNull
     @Override
-    @Contract(pure = true)
-    public PostgresService service() {
-        return this.service;
+    public RestConfigurator getConfigurator() {
+        return new RestConfigurator();
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.3.0
+     */
+    @NotNull
+    @Override
+    public DaoFactory getDaoFactory() {
+        return this.service.getDaoFactory();
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.3.0
+     */
+    @NotNull
+    @Override
+    public TransactionFactory getTransactionFactory() {
+        return this.service.getTransactionFactory();
+    }
+
+    /**
+     * @param entity
+     * @param from
+     * @param to
+     * @param marshaller
+     *
+     * @since 0.3.0
+     */
+    @Override
+    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
+        this.service.registerTypeMarshaller(entity, from, to, marshaller);
     }
 
 }

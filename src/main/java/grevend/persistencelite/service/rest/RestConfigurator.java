@@ -22,52 +22,60 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite;
+package grevend.persistencelite.service.rest;
 
 import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
-import java.lang.reflect.InvocationTargetException;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author David Greven
- * @since 0.2.0
+ * @see RestService
+ * @since 0.3.0
  */
-public final class PersistenceLite {
+public class RestConfigurator implements Configurator<RestService> {
 
-    public static System.Logger LOGGER = System.getLogger("PersistenceLiteLogger");
+    private RestMode mode = RestMode.REQUESTER;
+    private Service<?> service;
 
     /**
-     * @param service
-     * @param <C>
-     * @param <S>
+     * @param mode
      *
      * @return
      *
      * @since 0.3.0
      */
     @NotNull
-    public static <C extends Configurator<S>, S extends Service<C>> C configure(@NotNull Class<S> service) {
-        try {
-            return service.getConstructor().newInstance().getConfigurator();
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            throw new IllegalStateException("Service configurator construction failed.", e);
-        }
+    public RestConfigurator mode(@NotNull RestMode mode) {
+        this.mode = mode;
+        return this;
     }
 
     /**
      * @param service
-     * @param <C>
-     * @param <S>
      *
      * @return
      *
-     * @since 0.2.0
+     * @since 0.3.0
      */
     @NotNull
-    @Deprecated
-    public static <C extends Configurator<S>, S extends Service<C>> C configureService(@NotNull Class<S> service) {
-        return configure(service);
+    public RestConfigurator uses(@NotNull Service<?> service) {
+        this.service = service;
+        return this;
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.3.0
+     */
+    @NotNull
+    @Override
+    public RestService service() {
+        if(this.service == null) {
+            throw new IllegalStateException("No service defined.");
+        }
+        return new RestService(this.mode, this.service);
     }
 
 }
