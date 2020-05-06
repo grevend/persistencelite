@@ -38,15 +38,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An implementation of the {@code ComponentLookup} interface for interface-based entities.
+ * An implementation of the {@code EntityLookup} interface for interface-based entities.
  *
  * @param <E> The entity type.
  *
  * @author David Greven
- * @see ComponentLookup
+ * @see EntityLookup
  * @since 0.2.0
  */
-public final class InterfaceLookup<E> implements ComponentLookup<E, Method> {
+public final class InterfaceLookup<E> implements EntityLookup<E, Method> {
 
     /**
      * Generates a {@code Stream} of annotated member components.
@@ -111,7 +111,7 @@ public final class InterfaceLookup<E> implements ComponentLookup<E, Method> {
      *
      * @see MethodHandle
      * @see EntityMetadata
-     * @see ComponentLookup
+     * @see EntityLookup
      * @since 0.2.0
      */
     @Nullable

@@ -72,17 +72,6 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      */
     @NotNull
     @Contract(pure = true)
-    public Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> getMarshallerMap() {
-        return this.marshallerMap;
-    }
-
-    /**
-     * @return
-     *
-     * @since 0.2.0
-     */
-    @NotNull
-    @Contract(pure = true)
     public Properties getProperties() {
         return this.properties;
     }

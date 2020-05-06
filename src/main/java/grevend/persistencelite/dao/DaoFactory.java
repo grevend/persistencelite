@@ -35,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
  * @see Transaction
  * @since 0.2.0
  */
+@FunctionalInterface
 public interface DaoFactory {
 
     /**

@@ -1,9 +1,9 @@
-import grevend.persistencelite.internal.util.logging.PersistenceLiteLoggerFinder;
-
 module PersistenceLite {
-    requires org.jetbrains.annotations;
     requires java.sql;
+    requires jdk.httpserver;
     requires reflections;
+    requires com.google.gson;
+    requires org.jetbrains.annotations;
 
     exports grevend.common.jacoco;
     exports grevend.common;
@@ -29,5 +29,5 @@ module PersistenceLite {
     opens grevend.sequence.iterators;
     opens grevend.sequence;
 
-    provides System.LoggerFinder with PersistenceLiteLoggerFinder;
+    //provides System.LoggerFinder with PersistenceLiteLoggerFinder;
 }

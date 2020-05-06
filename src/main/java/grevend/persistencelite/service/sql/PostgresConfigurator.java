@@ -58,21 +58,8 @@ public final class PostgresConfigurator implements Configurator<PostgresService>
      * @since 0.2.0
      */
     @NotNull
-    public PostgresConfigurator credentials(@NotNull String propertiesFile) {
-        return this.loadCredentials(propertiesFile);
-    }
-
-    /**
-     * @param propertiesFile
-     *
-     * @return
-     *
-     * @since 0.2.0
-     */
-    @NotNull
-    @Deprecated
     @Contract("_ -> this")
-    public PostgresConfigurator loadCredentials(@NotNull String propertiesFile) {
+    public PostgresConfigurator credentials(@NotNull String propertiesFile) {
         Properties props = new Properties();
 
         try (var stream = this.getClass().getClassLoader().getResourceAsStream(propertiesFile)) {

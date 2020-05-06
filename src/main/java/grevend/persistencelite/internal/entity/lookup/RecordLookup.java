@@ -38,15 +38,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An implementation of the {@code ComponentLookup} interface for record-based entities.
+ * An implementation of the {@code EntityLookup} interface for record-based entities.
  *
  * @param <E> The entity type.
  *
  * @author David Greven
- * @see ComponentLookup
+ * @see EntityLookup
  * @since 0.2.0
  */
-public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent> {
+public final class RecordLookup<E> implements EntityLookup<E, RecordComponent> {
 
     /**
      * Generates a {@code Stream} of annotated member components.
@@ -108,7 +108,7 @@ public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent
      *
      * @see MethodHandle
      * @see EntityMetadata
-     * @see ComponentLookup
+     * @see EntityLookup
      * @since 0.2.0
      */
     @Nullable

@@ -30,7 +30,7 @@ import grevend.common.jacoco.Generated;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.EntityRelationType;
 import grevend.persistencelite.internal.entity.EntityType;
-import grevend.persistencelite.internal.entity.lookup.ComponentLookup;
+import grevend.persistencelite.internal.entity.lookup.EntityLookup;
 import grevend.persistencelite.internal.entity.lookup.InterfaceLookup;
 import grevend.persistencelite.internal.entity.lookup.RecordLookup;
 import java.io.Serializable;
@@ -59,7 +59,7 @@ import org.reflections.Reflections;
  */
 public final class EntityMetadata<E> {
 
-    private final ComponentLookup<E, ?> lookup;
+    private final EntityLookup<E, ?> lookup;
 
     private final Class<E> entityClass;
     private final List<EntityMetadata<?>> superTypes;
@@ -201,7 +201,7 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityMetadata
-     * @see ComponentLookup#lookupSuperTypes(EntityMetadata)
+     * @see EntityLookup#lookupSuperTypes(EntityMetadata)
      * @since 0.2.0
      */
     @NotNull
@@ -258,7 +258,7 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityProperty
-     * @see ComponentLookup#lookupProperties(EntityMetadata)
+     * @see EntityLookup#lookupProperties(EntityMetadata)
      * @since 0.2.0
      */
     @NotNull
@@ -370,7 +370,7 @@ public final class EntityMetadata<E> {
      * @return
      *
      * @see MethodHandle
-     * @see ComponentLookup#lookupConstructor(EntityMetadata)
+     * @see EntityLookup#lookupConstructor(EntityMetadata)
      * @since 0.2.0
      */
     @Nullable
