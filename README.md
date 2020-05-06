@@ -4,7 +4,49 @@ The PersistenceLite library provides an easy to use abstraction over database ac
 
 ## Usage
 
-With the upcoming release of the new architecture, documentation will be available here again.
+```java
+var postgres = PersistenceLite.configure(PostgresService.class)
+    .credentials("credentials.properties").service();
+```
+
+```java
+@Entity(name = "pet")
+public interface Pet {
+
+    @Id
+    int id();
+
+    @Property(name = "status")
+    Status status();
+
+    String name();
+
+    @Property(name = "owner_id")
+    int ownerId();
+
+}
+
+@Entity(name = "dog")
+public record Dog(
+
+    @Id
+    int id,
+        
+    String name,
+    
+    Status status,
+    
+    @Property(name = "owner_id")
+    int ownerId,
+    
+    @Property(name = "trained")
+    boolean trained
+    
+) implements Pet {}
+
+var dogDao = postgres.createDao(Dog.class);
+Collection<Dog> dogs = dogDao.retrieveAll();
+```
 
 ## License
 
