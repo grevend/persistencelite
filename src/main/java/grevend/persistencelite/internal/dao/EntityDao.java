@@ -22,24 +22,43 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.dao;
+package grevend.persistencelite.internal.dao;
 
-import grevend.sequence.Seq;
+import grevend.persistencelite.dao.Dao;
+import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.entity.factory.EntityFactory;
+import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
+import grevend.persistencelite.internal.entity.representation.EntitySerializer;
+import grevend.sequence.function.ThrowableEscapeHatch;
+import grevend.sequence.function.ThrowingFunction;
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A generic implementation of the DAO pattern that provides an abstract interface to some type of
- * data source.
- *
- * @param <E> The type of the entity to which the DAO should apply.
+ * @param <E>
  *
  * @author David Greven
- * @version 0.2.0
+ * @since 0.3.3
  */
-public interface Dao<E> extends AutoCloseable {
+public class EntityDao<E, Thr extends Exception> implements Dao<E> {
+
+    private final DaoImpl<Thr> daoImpl;
+    private final EntitySerializer<E> entitySerializer;
+    private final EntityDeserializer<E> entityDeserializer;
+
+    @Contract(pure = true)
+    public EntityDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, boolean props) {
+        this.daoImpl = daoImpl;
+        this.entitySerializer = entity -> EntityFactory.deconstruct(entityMetadata, entity);
+        this.entityDeserializer = map -> EntityFactory.construct(entityMetadata, map, props);
+    }
 
     /**
      * An implementation of the <b>create</b> CRUD operation that persists an entity.
@@ -50,10 +69,14 @@ public interface Dao<E> extends AutoCloseable {
      * the persistent version.
      *
      * @throws Exception If an error occurs during the persistence process.
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
-    E create(@NotNull E entity) throws Throwable;
+    @Override
+    public E create(@NotNull E entity) throws Throwable {
+        return this.entityDeserializer.deserialize(
+            this.daoImpl.create(this.entitySerializer.serialize(entity)));
+    }
 
     /**
      * An implementation of the <b>create</b> CRUD operation that persists none, one or many
@@ -69,10 +92,19 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Exception If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
-    Collection<E> create(@NotNull Iterable<E> entities) throws Throwable;
+    @Override
+    public Collection<E> create(@NotNull Iterable<E> entities) throws Throwable {
+        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
+        var res = StreamSupport.stream(entities.spliterator(), false)
+            .map(ThrowableEscapeHatch
+                .escape((@NotNull ThrowingFunction<E, E>) this::create, escapeHatch))
+            .filter(Objects::nonNull).collect(Collectors.toUnmodifiableList());
+        escapeHatch.rethrow();
+        return res;
+    }
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
@@ -85,62 +117,38 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Throwable If an error occurs during the persistence process.
      * @see Optional
      * @see Map
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
-    Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable;
-
-    /**
-     * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
-     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
-     *
-     * @param key   The key component.
-     * @param value The value component.
-     *
-     * @return Returns the entity found in the form of an {@code Optional}.
-     *
-     * @throws Throwable If an error occurs during the persistence process.
-     * @see Optional
-     * @since 0.2.0
-     */
-    @NotNull
-    default Optional<E> retrieveById(@NotNull String key, @NotNull Object value) throws Throwable {
-        return this.retrieveById(Map.of(key, value));
+    @Override
+    public Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable {
+        var res = this.daoImpl.retrieveById(identifiers);
+        return res.isEmpty() ? Optional.empty()
+            : Optional.of(this.entityDeserializer.deserialize(res));
     }
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
      * based on the key-value pairs passed as parameters in the form of a {@code Map}.
      *
-     * @param properties The key-value pairs in the form of a {@code Map}.
+     * @param props The key-value pairs in the form of a {@code Map}.
      *
      * @return Returns the entities found in the form of an {@code Collection}.
      *
      * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Map
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
-    Collection<E> retrieveByProps(@NotNull Map<String, Object> properties) throws Throwable;
-
-    /**
-     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
-     * based on the key-value pairs passed as parameters in the form of a {@code Map}.
-     *
-     * @param key   The key component.
-     * @param value The value component.
-     *
-     * @return Returns the entities found in the form of an {@code Collection}.
-     *
-     * @throws Throwable If an error occurs during the persistence process.
-     * @see Collection
-     * @see Map
-     * @since 0.2.0
-     */
-    @NotNull
-    default Collection<E> retrieveByProps(@NotNull String key, @NotNull Object value) throws Throwable {
-        return this.retrieveByProps(Map.of(key, value));
+    @Override
+    public Collection<E> retrieveByProps(@NotNull Map<String, Object> props) throws Throwable {
+        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
+        var res = StreamSupport.stream(this.daoImpl.retrieveByProps(props).spliterator(), false)
+            .map(ThrowableEscapeHatch.escape(this.entityDeserializer::deserialize, escapeHatch))
+            .collect(Collectors.toUnmodifiableList());
+        escapeHatch.rethrow();
+        return res;
     }
 
     /**
@@ -153,10 +161,13 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
-    Collection<E> retrieveAll() throws Throwable;
+    @Override
+    public Collection<E> retrieveAll() throws Throwable {
+        return null;
+    }
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
@@ -171,29 +182,12 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @throws Throwable If an error occurs during the persistence process.
      * @see Map
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
-    E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable;
-
-    /**
-     * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
-     * provided entity. The properties that should be updated are passed in as the second parameter
-     * in the form of a {@code Map}.
-     *
-     * @param entity The immutable entity that should be updated.
-     * @param key    The key component.
-     * @param value  The value component.
-     *
-     * @return Returns the updated entity.
-     *
-     * @throws Throwable If an error occurs during the persistence process.
-     * @see Map
-     * @since 0.2.0
-     */
-    @NotNull
-    default E update(@NotNull E entity, @NotNull String key, @NotNull Object value) throws Throwable {
-        return this.update(entity, Map.of(key, value));
+    @Override
+    public E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable {
+        return null;
     }
 
     /**
@@ -211,10 +205,13 @@ public interface Dao<E> extends AutoCloseable {
      * @see Collection
      * @see Iterable
      * @see Map
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
-    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable;
+    @Override
+    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable {
+        return null;
+    }
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the
@@ -223,9 +220,12 @@ public interface Dao<E> extends AutoCloseable {
      * @param entity The entity that should be deleted.
      *
      * @throws Exception If an error occurs during the persistence process.
-     * @since 0.2.0
+     * @since 0.3.3
      */
-    void delete(@NotNull E entity) throws Exception;
+    @Override
+    public void delete(@NotNull E entity) throws Exception {
+
+    }
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
@@ -234,22 +234,11 @@ public interface Dao<E> extends AutoCloseable {
      * @param identifiers The identifiers that should be used to delete the entity.
      *
      * @throws Exception If an error occurs during the persistence process.
-     * @since 0.2.0
+     * @since 0.3.3
      */
-    void delete(@NotNull Map<String, Object> identifiers) throws Exception;
+    @Override
+    public void delete(@NotNull Map<String, Object> identifiers) throws Exception {
 
-    /**
-     * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
-     * identifiers from the current data source.
-     *
-     * @param key   The key component.
-     * @param value The value component.
-     *
-     * @throws Exception If an error occurs during the persistence process.
-     * @since 0.2.0
-     */
-    default void delete(@NotNull String key, @NotNull Object value) throws Exception {
-        this.delete(Map.of(key, value));
     }
 
     /**
@@ -260,28 +249,53 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @throws Exception If an error occurs during the persistence process.
      * @see Iterable
-     * @since 0.2.0
+     * @since 0.3.3
      */
-    void delete(@NotNull Iterable<E> entities) throws Exception;
+    @Override
+    public void delete(@NotNull Iterable<E> entities) throws Exception {
+
+    }
 
     /**
-     * Returns a lazy sequence based on the collection provided by the {@code retrieve()} method.
+     * Closes this resource, relinquishing any underlying resources. This method is invoked
+     * automatically on objects managed by the {@code try}-with-resources statement.
      *
-     * @param <S> The {@code Seq} type used for providing the return types of the chained method
-     *            calls.
+     * <p>While this interface method is declared to throw {@code
+     * Exception}, implementers are <em>strongly</em> encouraged to declare concrete implementations
+     * of the {@code close} method to throw more specific exceptions, or to throw no exception at
+     * all if the close operation cannot fail.
      *
-     * @return Returns a new {@code Seq} based on the provided {@code Iterable}.
+     * <p> Cases where the close operation may fail require careful
+     * attention by implementers. It is strongly advised to relinquish the underlying resources and
+     * to internally <em>mark</em> the resource as closed, prior to throwing the exception. The
+     * {@code close} method is unlikely to be invoked more than once and so this ensures that the
+     * resources are released in a timely manner. Furthermore it reduces problems that could arise
+     * when the resource wraps, or is wrapped, by another resource.
      *
-     * @throws Throwable If an error occurs during the persistence process.
-     * @see Seq
-     * @see #retrieveAll()
-     * @see Iterable
-     * @since 0.2.0
+     * <p><em>Implementers of this interface are also strongly advised
+     * to not have the {@code close} method throw {@link InterruptedException}.</em>
+     * <p>
+     * This exception interacts with a thread's interrupted status, and runtime misbehavior is
+     * likely to occur if an {@code InterruptedException} is {@linkplain Throwable#addSuppressed
+     * suppressed}.
+     * <p>
+     * More generally, if it would cause problems for an exception to be suppressed, the {@code
+     * AutoCloseable.close} method should not throw it.
+     *
+     * <p>Note that unlike the {@link Closeable#close close}
+     * method of {@link Closeable}, this {@code close} method is <em>not</em> required to be
+     * idempotent.  In other words, calling this {@code close} method more than once may have some
+     * visible side effect, unlike {@code Closeable.close} which is required to have no effect if
+     * called more than once.
+     * <p>
+     * However, implementers of this interface are strongly encouraged to make their {@code close}
+     * methods idempotent.
+     *
+     * @throws Exception if this resource cannot be closed
      */
-    @NotNull
-    default <S extends Seq<E, S>> Seq<E, S> sequence() throws Throwable {
-        return Seq.of(this.retrieveAll());
+    @Override
+    public void close() throws Exception {
+
     }
 
 }
-

@@ -26,7 +26,6 @@ package grevend.persistencelite.internal.entity.representation;
 
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
@@ -35,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 @FunctionalInterface
 public interface EntityDeserializer<T> {
 
-    @Nullable
-    T serialize(@NotNull Map<String, Object> values);
+    @NotNull
+    T deserialize(@NotNull Map<String, Object> values) throws Throwable;
 
 }

@@ -22,19 +22,36 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.internal.entity.representation;
+package grevend.persistencelite.internal.dao;
 
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * @param <Thr>
+ *
  * @author David Greven
- * @since 0.3.2
+ * @since 0.3.3
  */
-@FunctionalInterface
-public interface EntitySerializer<T> {
+public interface DaoImpl<Thr extends Throwable> {
 
     @NotNull
-    Iterable<Map<String, Object>> serialize(@NotNull T value) throws Throwable;
+    Map<String, Object> create(@NotNull Iterable<Map<String, Object>> entity) throws Thr;
+
+    @NotNull
+    Map<String, Object> retrieveById(@NotNull Map<String, Object> identifiers) throws Thr;
+
+    @NotNull
+    Iterable<Map<String, Object>> retrieveByProps(@NotNull Map<String, Object> props) throws Thr;
+
+    @NotNull
+    Iterable<Map<String, Object>> retrieveAll() throws Thr;
+
+    @NotNull
+    Map<String, Object> update(@NotNull Map<String, Object> entity, @NotNull Map<String, Object> props) throws Thr;
+
+    void delete(@NotNull Map<String, Object> props) throws Thr;
+
+    void delete(@NotNull Iterable<Map<String, Object>> entities) throws Thr;
 
 }
