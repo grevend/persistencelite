@@ -5,8 +5,17 @@ The PersistenceLite library provides an easy to use abstraction over database ac
 ## Usage
 
 ```java
+// Postgres
 var postgres = PersistenceLite.configure(PostgresService.class)
     .credentials("credentials.properties").service();
+    
+// REST (REQUESTER)
+var rest = PersistenceLite.configure(RestService.class)
+    .mode(REQUESTER).service();
+    
+// REST (SERVER)
+var restServer = PersistenceLite.configure(RestService.class)
+    .mode(SERVER).uses(postgres).service();
 ```
 
 ```java
