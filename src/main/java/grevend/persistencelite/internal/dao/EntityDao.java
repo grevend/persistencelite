@@ -25,21 +25,28 @@
 package grevend.persistencelite.internal.dao;
 
 import grevend.persistencelite.dao.Dao;
+import grevend.persistencelite.dao.Transaction;
+import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
 import grevend.persistencelite.internal.entity.representation.EntitySerializer;
+import grevend.persistencelite.internal.util.Utils;
+import grevend.persistencelite.internal.util.Utils.Pair;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import grevend.sequence.function.ThrowingFunction;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @param <E>
@@ -50,12 +57,17 @@ import org.jetbrains.annotations.NotNull;
 public class EntityDao<E, Thr extends Exception> implements Dao<E> {
 
     private final DaoImpl<Thr> daoImpl;
+    private final TransactionFactory transactionFactory;
     private final EntitySerializer<E> entitySerializer;
     private final EntityDeserializer<E> entityDeserializer;
+    private Transaction transaction = null;
 
     @Contract(pure = true)
-    public EntityDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, boolean props) {
+    public EntityDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
         this.daoImpl = daoImpl;
+        this.transactionFactory = transactionFactory;
+        this.transaction =
+            transaction == null ? transactionFactory.createTransaction() : transaction;
         this.entitySerializer = entity -> EntityFactory.deconstruct(entityMetadata, entity);
         this.entityDeserializer = map -> EntityFactory.construct(entityMetadata, map, props);
     }
@@ -122,9 +134,8 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
     @NotNull
     @Override
     public Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable {
-        var res = this.daoImpl.retrieveById(identifiers);
-        return res.isEmpty() ? Optional.empty()
-            : Optional.of(this.entityDeserializer.deserialize(res));
+        var iter = this.retrieveByProps(identifiers).iterator();
+        return iter.hasNext() ? Optional.of(iter.next()) : Optional.empty();
     }
 
     /**
@@ -144,7 +155,7 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
     @Override
     public Collection<E> retrieveByProps(@NotNull Map<String, Object> props) throws Throwable {
         final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-        var res = StreamSupport.stream(this.daoImpl.retrieveByProps(props).spliterator(), false)
+        var res = StreamSupport.stream(this.daoImpl.retrieve(props).spliterator(), false)
             .map(ThrowableEscapeHatch.escape(this.entityDeserializer::deserialize, escapeHatch))
             .collect(Collectors.toUnmodifiableList());
         escapeHatch.rethrow();
@@ -166,7 +177,7 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
     @NotNull
     @Override
     public Collection<E> retrieveAll() throws Throwable {
-        return null;
+        return this.retrieveByProps(Map.of());
     }
 
     /**
@@ -175,7 +186,7 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * in the form of a {@code Map}.
      *
      * @param entity     The immutable entity that should be updated.
-     * @param properties The {@code Map} of key-value pairs that represents the properties and their
+     * @param props The {@code Map} of key-value pairs that represents the properties and their
      *                   updated values.
      *
      * @return Returns the updated entity.
@@ -186,8 +197,15 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      */
     @NotNull
     @Override
-    public E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable {
-        return null;
+    public E update(@NotNull E entity, @NotNull Map<String, Object> props) throws Throwable {
+        var entityMap = this.entitySerializer.merge(this.entitySerializer.serialize(entity));
+        this.daoImpl.update(entityMap, props);
+        var iter = this.daoImpl.retrieve(Stream.of(entityMap, props)
+            .flatMap(map -> map.entrySet().stream()).collect(Collectors
+                .toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                    (oldEntry, newEntry) -> newEntry))).iterator();
+        if (!iter.hasNext()) { throw new IllegalStateException(""); }
+        return this.entityDeserializer.deserialize(iter.next());
     }
 
     /**
@@ -196,7 +214,7 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * as the second parameter in the form of a {@code Map}.
      *
      * @param entities   The immutable entities that should be updated.
-     * @param properties The {@code Iterable} of key-value pair {@code Map} objects that represents
+     * @param props The {@code Iterable} of key-value pair {@code Map} objects that represents
      *                   the properties and their updated values.
      *
      * @return Returns the updated entity.
@@ -209,8 +227,14 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      */
     @NotNull
     @Override
-    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable {
-        return null;
+    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> props) throws Throwable {
+        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
+        var res = Utils.zip(entities.iterator(), props.iterator()).map(ThrowableEscapeHatch
+            .escape((Pair<E, Map<String, Object>> pair) -> this
+                .update(Objects.requireNonNull(pair).first(), pair.second()), escapeHatch))
+            .collect(Collectors.toUnmodifiableList());
+        escapeHatch.rethrow();
+        return res;
     }
 
     /**
@@ -292,10 +316,13 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * methods idempotent.
      *
      * @throws Exception if this resource cannot be closed
+     * @since 0.3.3
      */
     @Override
     public void close() throws Exception {
-
+        if (this.transaction != null) {
+            this.transaction.close();
+        }
     }
 
 }

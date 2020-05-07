@@ -25,8 +25,12 @@
 package grevend.persistencelite.internal.util;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.BaseStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -138,6 +142,37 @@ public final class Utils {
         }
 
         return value;
+    }
+
+    public interface Pair<A, B> {
+        A first();
+        B second();
+    }
+
+    @NotNull
+    public static <A, B> Stream<Pair<A, B>> zip(@NotNull BaseStream<A, Stream<A>> first, @NotNull BaseStream<B, Stream<B>> second) {
+        return zip(first.iterator(), second.iterator());
+    }
+
+    @NotNull
+    public static <A, B> Stream<Pair<A, B>> zip(@NotNull Iterator<A> first, @NotNull Iterator<B> second) {
+        record PairImpl<A, B>(@Nullable A first, @Nullable B second) implements Pair<A, B> {}
+
+        Iterable<Pair<A, B>> iter = () -> new Iterator<>() {
+
+            @Override
+            public boolean hasNext() {
+                return first.hasNext() && second.hasNext();
+            }
+
+            @Override
+            public Pair<A, B> next() {
+                return new PairImpl<>(first.next(), second.next());
+            }
+
+        };
+
+        return StreamSupport.stream(iter.spliterator(), false);
     }
 
 }

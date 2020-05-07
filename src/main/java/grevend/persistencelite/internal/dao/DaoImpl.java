@@ -39,19 +39,11 @@ public interface DaoImpl<Thr extends Throwable> {
     Map<String, Object> create(@NotNull Iterable<Map<String, Object>> entity) throws Thr;
 
     @NotNull
-    Map<String, Object> retrieveById(@NotNull Map<String, Object> identifiers) throws Thr;
-
-    @NotNull
-    Iterable<Map<String, Object>> retrieveByProps(@NotNull Map<String, Object> props) throws Thr;
-
-    @NotNull
-    Iterable<Map<String, Object>> retrieveAll() throws Thr;
+    Iterable<Map<String, Object>> retrieve(@NotNull Map<String, Object> props) throws Thr;
 
     @NotNull
     Map<String, Object> update(@NotNull Map<String, Object> entity, @NotNull Map<String, Object> props) throws Thr;
 
     void delete(@NotNull Map<String, Object> props) throws Thr;
-
-    void delete(@NotNull Iterable<Map<String, Object>> entities) throws Thr;
 
 }
