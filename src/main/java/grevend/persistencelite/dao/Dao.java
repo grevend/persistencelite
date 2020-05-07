@@ -248,7 +248,7 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Exception If an error occurs during the persistence process.
      * @since 0.2.0
      */
-    default void delete(@NotNull String key, @NotNull Object value) throws Exception {
+    default void delete(@NotNull String key, @NotNull Object value) throws Throwable {
         this.delete(Map.of(key, value));
     }
 

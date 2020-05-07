@@ -189,7 +189,7 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      * @since 0.2.0
      */
     @Override
-    public void delete(@NotNull E entity) throws Exception {
+    public void delete(@NotNull E entity) throws Throwable {
         var deconstructed = EntityFactory.deconstruct(this.entityMetadata, entity);
         if (!deconstructed.isEmpty()) {
             this.delete(deconstructed.iterator().next());
