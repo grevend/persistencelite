@@ -225,7 +225,7 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Exception If an error occurs during the persistence process.
      * @since 0.2.0
      */
-    void delete(@NotNull E entity) throws Exception;
+    void delete(@NotNull E entity) throws Throwable;
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
@@ -236,7 +236,7 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Exception If an error occurs during the persistence process.
      * @since 0.2.0
      */
-    void delete(@NotNull Map<String, Object> identifiers) throws Exception;
+    void delete(@NotNull Map<String, Object> identifiers) throws Throwable;
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
@@ -262,7 +262,7 @@ public interface Dao<E> extends AutoCloseable {
      * @see Iterable
      * @since 0.2.0
      */
-    void delete(@NotNull Iterable<E> entities) throws Exception;
+    void delete(@NotNull Iterable<E> entities) throws Throwable;
 
     /**
      * Returns a lazy sequence based on the collection provided by the {@code retrieve()} method.

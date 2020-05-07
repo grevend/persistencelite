@@ -35,14 +35,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface DaoImpl<Thr extends Throwable> {
 
-    @NotNull
-    Map<String, Object> create(@NotNull Iterable<Map<String, Object>> entity) throws Thr;
+    void create(@NotNull Iterable<Map<String, Object>> entity) throws Thr;
 
     @NotNull
     Iterable<Map<String, Object>> retrieve(@NotNull Map<String, Object> props) throws Thr;
 
-    @NotNull
-    Map<String, Object> update(@NotNull Map<String, Object> entity, @NotNull Map<String, Object> props) throws Thr;
+    void update(@NotNull Map<String, Object> entity, @NotNull Map<String, Object> props) throws Thr;
 
     void delete(@NotNull Map<String, Object> props) throws Thr;
 

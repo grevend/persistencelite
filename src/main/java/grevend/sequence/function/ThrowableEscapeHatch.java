@@ -137,7 +137,7 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
      */
     @NotNull
     @Contract(pure = true)
-    public Class<Thr> getThrowableClass() {
+    private Class<Thr> getThrowableClass() {
         return this.clazz;
     }
 

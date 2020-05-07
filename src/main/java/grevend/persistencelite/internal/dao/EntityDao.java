@@ -66,8 +66,8 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
     public EntityDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
         this.daoImpl = daoImpl;
         this.transactionFactory = transactionFactory;
-        this.transaction =
-            transaction == null ? transactionFactory.createTransaction() : transaction;
+        this.transaction = transaction == null ?
+            transactionFactory.createTransaction() : transaction;
         this.entitySerializer = entity -> EntityFactory.deconstruct(entityMetadata, entity);
         this.entityDeserializer = map -> EntityFactory.construct(entityMetadata, map, props);
     }
@@ -86,8 +86,11 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
     @NotNull
     @Override
     public E create(@NotNull E entity) throws Throwable {
-        return this.entityDeserializer.deserialize(
-            this.daoImpl.create(this.entitySerializer.serialize(entity)));
+        var entityComponents = this.entitySerializer.serialize(entity);
+        this.daoImpl.create(entityComponents);
+        var iter = this.daoImpl.retrieve(this.entitySerializer.merge(entityComponents)).iterator();
+        if (!iter.hasNext()) { throw new IllegalStateException(""); }
+        return this.entityDeserializer.deserialize(iter.next());
     }
 
     /**
@@ -185,9 +188,9 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * provided entity. The properties that should be updated are passed in as the second parameter
      * in the form of a {@code Map}.
      *
-     * @param entity     The immutable entity that should be updated.
-     * @param props The {@code Map} of key-value pairs that represents the properties and their
-     *                   updated values.
+     * @param entity The immutable entity that should be updated.
+     * @param props  The {@code Map} of key-value pairs that represents the properties and their
+     *               updated values.
      *
      * @return Returns the updated entity.
      *
@@ -213,9 +216,9 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * the provided entities. An {@code Iterable} of properties that should be updated are passed in
      * as the second parameter in the form of a {@code Map}.
      *
-     * @param entities   The immutable entities that should be updated.
-     * @param props The {@code Iterable} of key-value pair {@code Map} objects that represents
-     *                   the properties and their updated values.
+     * @param entities The immutable entities that should be updated.
+     * @param props    The {@code Iterable} of key-value pair {@code Map} objects that represents
+     *                 the properties and their updated values.
      *
      * @return Returns the updated entity.
      *
@@ -247,8 +250,8 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * @since 0.3.3
      */
     @Override
-    public void delete(@NotNull E entity) throws Exception {
-
+    public void delete(@NotNull E entity) throws Throwable {
+        this.delete(this.entitySerializer.merge(this.entitySerializer.serialize(entity)));
     }
 
     /**
@@ -261,8 +264,8 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * @since 0.3.3
      */
     @Override
-    public void delete(@NotNull Map<String, Object> identifiers) throws Exception {
-
+    public void delete(@NotNull Map<String, Object> identifiers) throws Throwable {
+        this.daoImpl.delete(identifiers);
     }
 
     /**
@@ -276,8 +279,11 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
      * @since 0.3.3
      */
     @Override
-    public void delete(@NotNull Iterable<E> entities) throws Exception {
-
+    public void delete(@NotNull Iterable<E> entities) throws Throwable {
+        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
+        entities.forEach(ThrowableEscapeHatch
+            .escape((E entity) -> this.delete(Objects.requireNonNull(entity)), escapeHatch));
+        escapeHatch.rethrow();
     }
 
     /**
