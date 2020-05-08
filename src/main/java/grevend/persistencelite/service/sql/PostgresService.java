@@ -30,7 +30,7 @@ import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
-import grevend.persistencelite.internal.service.sql.SqlDaoImpl;
+import grevend.persistencelite.internal.service.sql.SqlDao;
 import grevend.persistencelite.internal.service.sql.SqlTransaction;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
@@ -145,7 +145,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
                 if (transaction instanceof SqlTransaction sqlTransaction) {
                     EntityMetadata.inferRelationTypes(entityMetadata);
                     try {
-                        return new BaseDao<>(entityMetadata, new SqlDaoImpl<>(entityMetadata,
+                        return new BaseDao<>(entityMetadata, new SqlDao<>(entityMetadata,
                             sqlTransaction, PostgresService.this.transactionFactory()),
                             PostgresService.this.transactionFactory(), transaction, true);
                     } catch (Throwable throwable) {
