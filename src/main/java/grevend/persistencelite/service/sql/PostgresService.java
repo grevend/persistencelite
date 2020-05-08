@@ -29,7 +29,8 @@ import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.internal.service.sql.SqlDao;
+import grevend.persistencelite.internal.dao.BaseDao;
+import grevend.persistencelite.internal.service.sql.SqlDaoImpl;
 import grevend.persistencelite.internal.service.sql.SqlTransaction;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
@@ -131,7 +132,6 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @return
      *
      * @see DaoFactory
-     * @see SqlDaoFactory
      * @since 0.2.0
      */
     @NotNull
@@ -144,15 +144,13 @@ public final class PostgresService implements Service<PostgresConfigurator> {
             public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
                 if (transaction instanceof SqlTransaction sqlTransaction) {
                     EntityMetadata.inferRelationTypes(entityMetadata);
-                    return new SqlDao<>(entityMetadata, sqlTransaction, () -> {
-                        try {
-                            return PostgresService.this.transactionFactory()
-                                .createTransaction();
-                        } catch (Throwable throwable) {
-                            throw new IllegalStateException("Failed to create transaction.",
-                                throwable);
-                        }
-                    });
+                    try {
+                        return new BaseDao<>(entityMetadata, new SqlDaoImpl<>(entityMetadata,
+                            sqlTransaction, PostgresService.this.transactionFactory()),
+                            PostgresService.this.transactionFactory(), transaction, true);
+                    } catch (Throwable throwable) {
+                        throw new IllegalStateException("Failed to construct Dao.", throwable);
+                    }
                 } else {
                     throw new IllegalArgumentException(
                         "Transaction must be of type SqlTransaction.");

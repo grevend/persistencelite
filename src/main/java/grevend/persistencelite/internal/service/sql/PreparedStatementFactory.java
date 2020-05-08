@@ -84,9 +84,9 @@ final class PreparedStatementFactory {
 
     @NotNull
     @Contract("_, _, _ -> param2")
-    public PreparedStatement values(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+    public PreparedStatement values(@NotNull Iterable<EntityProperty> props, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        for (EntityProperty property : entityMetadata.uniqueProperties()) {
+        for (EntityProperty property : props) {
             var value = properties.get(property.propertyName());
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);

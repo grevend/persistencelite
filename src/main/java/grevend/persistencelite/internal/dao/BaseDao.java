@@ -54,7 +54,7 @@ import org.jetbrains.annotations.Nullable;
  * @author David Greven
  * @since 0.3.3
  */
-public class EntityDao<E, Thr extends Exception> implements Dao<E> {
+public class BaseDao<E, Thr extends Exception> implements Dao<E> {
 
     private final DaoImpl<Thr> daoImpl;
     private final TransactionFactory transactionFactory;
@@ -63,7 +63,7 @@ public class EntityDao<E, Thr extends Exception> implements Dao<E> {
     private Transaction transaction = null;
 
     @Contract(pure = true)
-    public EntityDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
+    public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
         this.daoImpl = daoImpl;
         this.transactionFactory = transactionFactory;
         this.transaction = transaction == null ?

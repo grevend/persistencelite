@@ -25,7 +25,7 @@
 package grevend.persistencelite.internal.service.sql;
 
 import grevend.persistencelite.crud.Crud;
-import grevend.persistencelite.dao.Transaction;
+import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.internal.util.Utils;
@@ -33,7 +33,6 @@ import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,11 +42,11 @@ import org.jetbrains.annotations.NotNull;
  * @author David Greven
  * @since 0.3.3
  */
-public final record SqlDaoImpl<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull SqlTransaction transaction, @NotNull Supplier<Transaction>transactionSupplier, @NotNull PreparedStatementFactory preparedStatementFactory) implements DaoImpl<SQLException> {
+public final record SqlDaoImpl<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull SqlTransaction transaction, @NotNull TransactionFactory transactionFactory, @NotNull PreparedStatementFactory preparedStatementFactory) implements DaoImpl<SQLException> {
 
     @Contract(pure = true)
-    public SqlDaoImpl(@NotNull EntityMetadata<E> entityMetadata, @NotNull SqlTransaction transaction, @NotNull Supplier<Transaction> transactionSupplier) {
-        this(entityMetadata, transaction, transactionSupplier, new PreparedStatementFactory());
+    public SqlDaoImpl(@NotNull EntityMetadata<E> entityMetadata, @NotNull SqlTransaction transaction, @NotNull TransactionFactory transactionFactory) {
+        this(entityMetadata, transaction, transactionFactory, new PreparedStatementFactory());
     }
 
     @Override
@@ -56,10 +55,11 @@ public final record SqlDaoImpl<E>(@NotNull EntityMetadata<E>entityMetadata, @Not
 
         Utils.zip(this.entityMetadata.superTypes().iterator(), entity.iterator())
             .filter(Objects::nonNull).forEach(ThrowableEscapeHatch.escapeSuper(
-            pair -> this.preparedStatementFactory.values(Objects.requireNonNull(pair).first(),
-                Objects.requireNonNull(this.preparedStatementFactory
-                    .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)), pair.second())
-                .executeUpdate(), escapeHatch));
+            pair -> this.preparedStatementFactory
+                .values(Objects.requireNonNull(pair).first().uniqueProperties(), Objects
+                        .requireNonNull(this.preparedStatementFactory
+                            .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)),
+                    pair.second()).executeUpdate(), escapeHatch));
 
         escapeHatch.rethrow();
     }
@@ -77,7 +77,10 @@ public final record SqlDaoImpl<E>(@NotNull EntityMetadata<E>entityMetadata, @Not
 
     @Override
     public void delete(@NotNull Map<String, Object> props) throws SQLException {
-
+        this.preparedStatementFactory.values(this.entityMetadata.declaredIdentifiers(),
+            Objects.requireNonNull(this.preparedStatementFactory
+                .prepare(Crud.DELETE, this.entityMetadata, this.transaction,
+                    true, -1)), props).executeUpdate();
     }
 
 }

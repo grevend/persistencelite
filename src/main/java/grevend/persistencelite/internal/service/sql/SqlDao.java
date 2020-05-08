@@ -101,11 +101,11 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      * @since 0.2.0
      */
     private void create(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) throws SQLException {
-        /*var preparedStatement = this.preparedStatementFactory.prepare(Crud.CREATE, entityMetadata,
+        var preparedStatement = this.preparedStatementFactory.prepare(Crud.CREATE, entityMetadata,
             Objects.requireNonNull(this.getTransaction()), true);
         this.setCreateStatementValues(entityMetadata,
             Objects.requireNonNull(preparedStatement), properties);
-        preparedStatement.executeUpdate();*/
+        preparedStatement.executeUpdate();
     }
 
     /**
@@ -145,7 +145,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @NotNull
     @Override
     public Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable {
-        /*var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT,
+        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         this.setRetrieveByIdStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
@@ -158,7 +158,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
 
         return res.size() > 0 ? Optional
             .of(EntityFactory.construct(this.getEntityMetadata(), res.iterator().next(), true))
-            : Optional.empty();*/
+            : Optional.empty();
         return Optional.empty();
     }
 
