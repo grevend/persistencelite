@@ -11,11 +11,11 @@ var postgres = PersistenceLite.configure(PostgresService.class)
     
 // REST (REQUESTER)
 var rest = PersistenceLite.configure(RestService.class)
-    .mode(REQUESTER).service();
+    .mode(REQUESTER).version(2).service();
     
 // REST (SERVER)
 var restServer = PersistenceLite.configure(RestService.class)
-    .mode(SERVER).uses(postgres).service();
+    .mode(SERVER).version(2).scope("org.example.entities").uses(postgres).service();
 ```
 
 ```java
