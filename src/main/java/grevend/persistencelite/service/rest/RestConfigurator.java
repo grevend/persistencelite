@@ -40,6 +40,8 @@ public final class RestConfigurator implements Configurator<RestService> {
 
     private RestMode mode = RestMode.REQUESTER;
     private Service<?> service;
+    private int version;
+    private String scope;
 
     /**
      * @param restService
@@ -79,6 +81,38 @@ public final class RestConfigurator implements Configurator<RestService> {
             throw new IllegalArgumentException();
         } else {
             this.service = service;
+        }
+        return this;
+    }
+
+    /**
+     * @param version
+     *
+     * @return
+     *
+     * @since 0.3.3
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator version(int version) {
+        this.version = version;
+        return this;
+    }
+
+    /**
+     * @param packageScope
+     *
+     * @return
+     *
+     * @since 0.3.3
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator scope(@NotNull String packageScope) {
+        if (this.mode != RestMode.SERVER) {
+            throw new IllegalArgumentException();
+        } else {
+            this.scope = packageScope;
         }
         return this;
     }
