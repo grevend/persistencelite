@@ -31,12 +31,12 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
-import grevend.persistencelite.internal.service.crud.Crud;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -102,11 +102,11 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      * @since 0.2.0
      */
     private void create(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) throws SQLException {
-        var preparedStatement = this.preparedStatementFactory.build(Crud.CREATE, entityMetadata,
+        /*var preparedStatement = this.preparedStatementFactory.build(Crud.CREATE, entityMetadata,
             Objects.requireNonNull(this.getTransaction()), true);
         this.setCreateStatementValues(entityMetadata,
             Objects.requireNonNull(preparedStatement), properties);
-        preparedStatement.executeUpdate();
+        preparedStatement.executeUpdate();*/
     }
 
     /**
@@ -146,7 +146,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @NotNull
     @Override
     public Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable {
-        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT,
+        /*var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         this.setRetrieveByIdStatementValues(this.getEntityMetadata(), preparedStatement,
             identifiers);
@@ -159,7 +159,8 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
 
         return res.size() > 0 ? Optional
             .of(EntityFactory.construct(this.getEntityMetadata(), res.iterator().next(), true))
-            : Optional.empty();
+            : Optional.empty();*/
+        return Optional.empty();
     }
 
     /**
@@ -261,7 +262,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @Override
     @UnmodifiableView
     public Collection<E> retrieveAll() throws Throwable {
-        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
+        /*var preparedStatement = this.preparedStatementFactory.prepare(StatementType.SELECT_ALL,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
 
         var res = SqlUtils.convert(preparedStatement.executeQuery());
@@ -277,7 +278,8 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             .collect(Collectors.toUnmodifiableList());
         escapeHatch.rethrow();
 
-        return entities;
+        return entities;*/
+        return List.of();
     }
 
     /**
@@ -322,10 +324,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     }
 
     private void update(@NotNull EntityMetadata<?> child, @NotNull Map<String, Object> properties) throws Throwable {
-        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.UPDATE,
+        /*var preparedStatement = this.preparedStatementFactory.prepare(StatementType.UPDATE,
             Objects.requireNonNull(this.getTransaction()).connection(), child);
         this.setUpdateStatementValues(child, preparedStatement, properties);
-        preparedStatement.executeUpdate();
+        preparedStatement.executeUpdate();*/
     }
 
     /**
@@ -369,10 +371,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     @Override
     public void delete(@NotNull Map<String, Object> identifiers) throws Exception {
-        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.DELETE,
+        /*var preparedStatement = this.preparedStatementFactory.prepare(StatementType.DELETE,
             Objects.requireNonNull(this.getTransaction()).connection(), this.getEntityMetadata());
         this.setDeleteStatementValues(this.getEntityMetadata(), preparedStatement, identifiers);
-        preparedStatement.executeUpdate();
+        preparedStatement.executeUpdate();*/
     }
 
     /**

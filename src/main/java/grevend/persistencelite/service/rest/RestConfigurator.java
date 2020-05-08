@@ -24,7 +24,10 @@
 
 package grevend.persistencelite.service.rest;
 
+import static grevend.persistencelite.service.rest.RestMode.SERVER;
+
 import grevend.persistencelite.service.Configurator;
+import grevend.persistencelite.service.Service;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,6 +39,10 @@ import org.jetbrains.annotations.NotNull;
 public final class RestConfigurator implements Configurator<RestService> {
 
     private final RestService restService;
+    private RestMode mode;
+    private int version;
+    private String scope;
+    private Service<?> service;
 
     /**
      * @param restService
@@ -55,21 +62,71 @@ public final class RestConfigurator implements Configurator<RestService> {
      * @since 0.3.0
      */
     @NotNull
-    public Configurator<RestService> mode(@NotNull RestMode mode) {
-        return mode == RestMode.SERVER ? new RestServerConfigurator(this.restService)
-            : new RestRequesterConfigurator(this.restService);
+    @Contract("_ -> this")
+    public RestConfigurator mode(@NotNull RestMode mode) {
+        this.mode = mode;
+        return this;
     }
 
     /**
+     * @param version
+     *
+     * @return
+     *
+     * @since 0.3.3
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator version(int version) {
+        this.version = version;
+        return this;
+    }
+
+    /**
+     * @param service
+     *
      * @return
      *
      * @since 0.3.0
      */
     @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator uses(@NotNull Service<?> service) {
+        if (this.mode != SERVER) { throw new IllegalStateException(); }
+        this.service = service;
+        return this;
+    }
+
+    /**
+     * @param packageScope
+     *
+     * @return
+     *
+     * @since 0.3.3
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator scope(@NotNull String packageScope) {
+        if (this.mode != SERVER) { throw new IllegalStateException(); }
+        this.scope = packageScope;
+        return this;
+    }
+
+
+    /**
+     * @return
+     *
+     * @since 0.3.3
+     */
+    @NotNull
     @Override
-    @Contract(" -> fail")
     public RestService service() {
-        throw new UnsupportedOperationException();
+        if (this.mode == SERVER && this.service == null) {
+            throw new IllegalStateException("No service defined.");
+        }
+        this.restService.setMode(this.mode);
+        this.restService.setService(this.service);
+        return this.restService;
     }
 
 }

@@ -22,19 +22,12 @@
  * SOFTWARE.
  */
 
-package grevend.common;
+package grevend.persistencelite.crud;
 
-import org.jetbrains.annotations.Nullable;
-
-public interface Triplet<A, B, C> {
-
-    @Nullable
-    A first();
-
-    @Nullable
-    B second();
-
-    @Nullable
-    C third();
-
+/**
+ * @author David Greven
+ * @since 0.3.3
+ */
+public enum Crud {
+    CREATE, RETRIEVE, UPDATE, DELETE;
 }
