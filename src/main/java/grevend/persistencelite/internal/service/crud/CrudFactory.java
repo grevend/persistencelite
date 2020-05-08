@@ -22,54 +22,28 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service.rest;
+package grevend.persistencelite.internal.service.crud;
 
-import grevend.persistencelite.service.Configurator;
-import org.jetbrains.annotations.Contract;
+import grevend.persistencelite.dao.Transaction;
+import grevend.persistencelite.entity.EntityMetadata;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
+ * @param <T>
+ * @param <Arg>
+ *
  * @author David Greven
- * @see RestService
- * @since 0.3.0
+ * @since 0.3.3
  */
-public final class RestConfigurator implements Configurator<RestService> {
+public interface CrudFactory<T, Tx extends Transaction, Arg> {
 
-    private final RestService restService;
+    @Nullable
+    T build(@NotNull Crud crud, @NotNull EntityMetadata<?> entityMetadata, @NotNull Tx transaction, boolean cached, @Nullable Arg arg);
 
-    /**
-     * @param restService
-     *
-     * @since 0.3.0
-     */
-    @Contract(pure = true)
-    RestConfigurator(@NotNull RestService restService) {
-        this.restService = restService;
-    }
-
-    /**
-     * @param mode
-     *
-     * @return
-     *
-     * @since 0.3.0
-     */
-    @NotNull
-    public Configurator<RestService> mode(@NotNull RestMode mode) {
-        return mode == RestMode.SERVER ? new RestServerConfigurator(this.restService)
-            : new RestRequesterConfigurator(this.restService);
-    }
-
-    /**
-     * @return
-     *
-     * @since 0.3.0
-     */
-    @NotNull
-    @Override
-    @Contract(" -> fail")
-    public RestService service() {
-        throw new UnsupportedOperationException();
+    @Nullable
+    default T build(@NotNull Crud crud, @NotNull EntityMetadata<?> entityMetadata, @NotNull Tx transaction, boolean cached) {
+        return this.build(crud, entityMetadata, transaction, cached, null);
     }
 
 }

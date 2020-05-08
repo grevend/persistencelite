@@ -22,54 +22,25 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service.rest;
+package grevend.persistencelite.internal.service.crud;
 
-import grevend.persistencelite.service.Configurator;
-import org.jetbrains.annotations.Contract;
+import grevend.persistencelite.entity.EntityMetadata;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * @param <T>
+ *
  * @author David Greven
- * @see RestService
- * @since 0.3.0
+ * @since 0.3.3
  */
-public final class RestConfigurator implements Configurator<RestService> {
+public interface CrudFactoryCache<T> {
 
-    private final RestService restService;
-
-    /**
-     * @param restService
-     *
-     * @since 0.3.0
-     */
-    @Contract(pure = true)
-    RestConfigurator(@NotNull RestService restService) {
-        this.restService = restService;
-    }
-
-    /**
-     * @param mode
-     *
-     * @return
-     *
-     * @since 0.3.0
-     */
     @NotNull
-    public Configurator<RestService> mode(@NotNull RestMode mode) {
-        return mode == RestMode.SERVER ? new RestServerConfigurator(this.restService)
-            : new RestRequesterConfigurator(this.restService);
-    }
+    Map<EntityMetadata<?>, Map<Crud, T>> cache();
 
-    /**
-     * @return
-     *
-     * @since 0.3.0
-     */
-    @NotNull
-    @Override
-    @Contract(" -> fail")
-    public RestService service() {
-        throw new UnsupportedOperationException();
+    default void clear() {
+        this.cache().clear();
     }
 
 }

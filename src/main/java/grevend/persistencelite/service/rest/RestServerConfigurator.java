@@ -25,51 +25,88 @@
 package grevend.persistencelite.service.rest;
 
 import grevend.persistencelite.service.Configurator;
+import grevend.persistencelite.service.Service;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author David Greven
- * @see RestService
- * @since 0.3.0
+ * @since 0.3.3
  */
-public final class RestConfigurator implements Configurator<RestService> {
+public class RestServerConfigurator implements Configurator<RestService> {
 
     private final RestService restService;
+    private int version;
+    private String scope;
+    private Service<?> service;
 
     /**
      * @param restService
      *
-     * @since 0.3.0
+     * @since 0.3.3
      */
     @Contract(pure = true)
-    RestConfigurator(@NotNull RestService restService) {
+    RestServerConfigurator(@NotNull RestService restService) {
         this.restService = restService;
     }
 
     /**
-     * @param mode
+     * @param version
+     *
+     * @return
+     *
+     * @since 0.3.3
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public Configurator<RestService> version(int version) {
+        this.version = version;
+        return this;
+    }
+
+    /**
+     * @param service
      *
      * @return
      *
      * @since 0.3.0
      */
     @NotNull
-    public Configurator<RestService> mode(@NotNull RestMode mode) {
-        return mode == RestMode.SERVER ? new RestServerConfigurator(this.restService)
-            : new RestRequesterConfigurator(this.restService);
+    @Contract("_ -> this")
+    public Configurator<RestService> uses(@NotNull Service<?> service) {
+        this.service = service;
+        return this;
     }
+
+    /**
+     * @param packageScope
+     *
+     * @return
+     *
+     * @since 0.3.3
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public Configurator<RestService> scope(@NotNull String packageScope) {
+        this.scope = packageScope;
+        return this;
+    }
+
 
     /**
      * @return
      *
-     * @since 0.3.0
+     * @since 0.3.3
      */
     @NotNull
     @Override
-    @Contract(" -> fail")
     public RestService service() {
-        throw new UnsupportedOperationException();
+        if (this.service == null) {
+            throw new IllegalStateException("No service defined.");
+        }
+        this.restService.setMode(RestMode.SERVER);
+        this.restService.setService(this.service);
+        return this.restService;
     }
 
 }

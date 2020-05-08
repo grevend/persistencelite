@@ -29,47 +29,27 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author David Greven
- * @see RestService
- * @since 0.3.0
+ * @since 0.3.3
  */
-public final class RestConfigurator implements Configurator<RestService> {
+public class RestRequesterConfigurator implements Configurator<RestService> {
 
     private final RestService restService;
 
-    /**
-     * @param restService
-     *
-     * @since 0.3.0
-     */
     @Contract(pure = true)
-    RestConfigurator(@NotNull RestService restService) {
+    RestRequesterConfigurator(@NotNull RestService restService) {
         this.restService = restService;
     }
 
     /**
-     * @param mode
-     *
      * @return
      *
-     * @since 0.3.0
-     */
-    @NotNull
-    public Configurator<RestService> mode(@NotNull RestMode mode) {
-        return mode == RestMode.SERVER ? new RestServerConfigurator(this.restService)
-            : new RestRequesterConfigurator(this.restService);
-    }
-
-    /**
-     * @return
-     *
-     * @since 0.3.0
+     * @since 0.3.3
      */
     @NotNull
     @Override
-    @Contract(" -> fail")
     public RestService service() {
-        throw new UnsupportedOperationException();
+        this.restService.setMode(RestMode.REQUESTER);
+        return this.restService;
     }
 
 }
