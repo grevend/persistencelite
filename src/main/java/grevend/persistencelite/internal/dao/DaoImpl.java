@@ -40,7 +40,7 @@ public interface DaoImpl<Thr extends Throwable> {
     @NotNull
     Iterable<Map<String, Object>> retrieve(@NotNull Map<String, Object> props) throws Thr;
 
-    void update(@NotNull Map<String, Object> entity, @NotNull Map<String, Object> props) throws Thr;
+    void update(@NotNull Iterable<Map<String, Object>> entity, @NotNull Map<String, Object> props) throws Thr;
 
     void delete(@NotNull Map<String, Object> props) throws Thr;
 

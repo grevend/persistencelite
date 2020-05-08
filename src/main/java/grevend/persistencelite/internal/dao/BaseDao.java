@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.dao;
 
+import grevend.common.Pair;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
@@ -32,7 +33,6 @@ import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
 import grevend.persistencelite.internal.entity.representation.EntitySerializer;
 import grevend.persistencelite.internal.util.Utils;
-import grevend.persistencelite.internal.util.Utils.Pair;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import grevend.sequence.function.ThrowingFunction;
 import java.io.Closeable;
@@ -57,7 +57,6 @@ import org.jetbrains.annotations.Nullable;
 public class BaseDao<E, Thr extends Exception> implements Dao<E> {
 
     private final DaoImpl<Thr> daoImpl;
-    private final TransactionFactory transactionFactory;
     private final EntitySerializer<E> entitySerializer;
     private final EntityDeserializer<E> entityDeserializer;
     private Transaction transaction = null;
@@ -65,7 +64,6 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
     @Contract(pure = true)
     public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
         this.daoImpl = daoImpl;
-        this.transactionFactory = transactionFactory;
         this.transaction = transaction == null ?
             transactionFactory.createTransaction() : transaction;
         this.entitySerializer = entity -> EntityFactory.deconstruct(entityMetadata, entity);
@@ -201,9 +199,9 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
     @NotNull
     @Override
     public E update(@NotNull E entity, @NotNull Map<String, Object> props) throws Throwable {
-        var entityMap = this.entitySerializer.merge(this.entitySerializer.serialize(entity));
-        this.daoImpl.update(entityMap, props);
-        var iter = this.daoImpl.retrieve(Stream.of(entityMap, props)
+        var components = this.entitySerializer.serialize(entity);
+        this.daoImpl.update(components, props);
+        var iter = this.daoImpl.retrieve(Stream.of(this.entitySerializer.merge(components), props)
             .flatMap(map -> map.entrySet().stream()).collect(Collectors
                 .toUnmodifiableMap(Entry::getKey, Entry::getValue,
                     (oldEntry, newEntry) -> newEntry))).iterator();

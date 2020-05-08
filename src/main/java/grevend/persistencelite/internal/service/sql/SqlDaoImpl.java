@@ -32,7 +32,11 @@ import grevend.persistencelite.internal.util.Utils;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -71,8 +75,31 @@ public final record SqlDaoImpl<E>(@NotNull EntityMetadata<E>entityMetadata, @Not
     }
 
     @Override
-    public void update(@NotNull Map<String, Object> entity, @NotNull Map<String, Object> props) throws SQLException {
+    public void update(@NotNull Iterable<Map<String, Object>> entity, @NotNull Map<String, Object> props) throws SQLException {
+        var superTypes = this.entityMetadata.superTypes().iterator();
 
+        var mergedProps = Stream.concat(StreamSupport.stream(entity.spliterator(), false)
+            .flatMap(map -> map.entrySet().stream())
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2))
+            .entrySet().stream(), props.entrySet().stream()).collect(Collectors
+            .toUnmodifiableMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2));
+
+        for (var component : entity) {
+            if (component.keySet().stream().anyMatch(props::containsKey)) {
+                var superType = superTypes.next();
+                this.preparedStatementFactory.values(Stream
+                    .concat(superType.uniqueProperties().stream(),
+                        superType.declaredIdentifiers().stream())
+                    .collect(Collectors.toUnmodifiableList()), Objects.requireNonNull(
+                    this.preparedStatementFactory
+                        .prepare(Crud.UPDATE, superType, this.transaction, true, -1)), mergedProps)
+                    .executeUpdate();
+            } else {
+                if (superTypes.hasNext()) {
+                    superTypes.next();
+                }
+            }
+        }
     }
 
     @Override

@@ -112,7 +112,6 @@ public final class RestConfigurator implements Configurator<RestService> {
         return this;
     }
 
-
     /**
      * @return
      *
