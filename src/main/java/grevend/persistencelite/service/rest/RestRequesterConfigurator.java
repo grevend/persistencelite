@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @since 0.3.3
  */
-public class RestRequesterConfigurator implements Configurator<RestService> {
+public final class RestRequesterConfigurator implements Configurator<RestService> {
 
     private final RestService restService;
 

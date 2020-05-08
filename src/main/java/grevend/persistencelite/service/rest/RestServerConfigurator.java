@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
  * @author David Greven
  * @since 0.3.3
  */
-public class RestServerConfigurator implements Configurator<RestService> {
+public final class RestServerConfigurator implements Configurator<RestService> {
 
     private final RestService restService;
     private int version;

@@ -82,7 +82,7 @@ public final class EntityMetadata<E> {
         this.superTypes = new ArrayList<>();
         this.subTypeLookup = memoize(self -> {
             Reflections reflections = new Reflections("grevend.main");
-            return reflections.getSubTypesOf(self.getEntityClass()).stream().map(EntityMetadata::of)
+            return reflections.getSubTypesOf(self.entityClass()).stream().map(EntityMetadata::of)
                 .collect(Collectors.toUnmodifiableSet());
         });
         this.properties = new ArrayList<>();
@@ -116,7 +116,7 @@ public final class EntityMetadata<E> {
                 "Entity %s must be annotated with @%s" + Entity.class.getCanonicalName());
         } else {
             if (entity.isRecord() || entity.isInterface()) {
-                return (EntityMetadata<E>) EntityMetadataCache.getInstance().getEntityMetadataMap()
+                return (EntityMetadata<E>) EntityMetadataCache.instance().cache()
                     .computeIfAbsent(entity, clazz -> new EntityMetadata<>(entity,
                         entity.isRecord() ? EntityType.RECORD : EntityType.INTERFACE));
             } else {
@@ -127,22 +127,22 @@ public final class EntityMetadata<E> {
 
     @Contract("_ -> param1")
     public static <E> @NotNull EntityMetadata<E> inferRelationTypes(@NotNull EntityMetadata<E> metadata) {
-        metadata.getDeclaredRelations().stream().map(EntityProperty::relation).filter(
+        metadata.declaredRelations().stream().map(EntityProperty::relation).filter(
             relation -> Objects.requireNonNull(relation).getType() == EntityRelationType.UNKNOWN)
             .forEach(
-                relation -> EntityMetadata.of(relation.getTargetEntity()).getDeclaredRelations()
+                relation -> EntityMetadata.of(relation.getTargetEntity()).declaredRelations()
                     .stream()
                     .map(EntityProperty::relation).filter(Objects::nonNull)
                     .filter(
-                        relation2 -> relation2.getTargetEntity().equals(metadata.getEntityClass()))
+                        relation2 -> relation2.getTargetEntity().equals(metadata.entityClass()))
                     .forEach(relation2 -> {
                         relation.setCircularDependency(true);
                         relation2.setCircularDependency(true);
                     }));
 
-        metadata.getDeclaredRelations().forEach(prop ->
+        metadata.declaredRelations().forEach(prop ->
             EntityMetadata.of(Objects.requireNonNull(prop.relation()).getTargetEntity())
-                .getDeclaredRelations().forEach(prop2 -> {
+                .declaredRelations().forEach(prop2 -> {
                 if (prop.type().isAssignableFrom(Collection.class)) {
                     if (prop2.type().isAssignableFrom(Collection.class)) {
                         Objects.requireNonNull(prop.relation())
@@ -180,8 +180,8 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @NotNull
-    public String getName() {
-        return this.getEntityClass().getAnnotation(Entity.class).name();
+    public String name() {
+        return this.entityClass().getAnnotation(Entity.class).name();
     }
 
     /**
@@ -192,7 +192,7 @@ public final class EntityMetadata<E> {
      */
     @NotNull
     @Contract(pure = true)
-    public Class<E> getEntityClass() {
+    public Class<E> entityClass() {
         return this.entityClass;
     }
 
@@ -206,7 +206,7 @@ public final class EntityMetadata<E> {
      */
     @NotNull
     @Contract(pure = true)
-    public Collection<EntityMetadata<?>> getDeclaredSuperTypes() {
+    public Collection<EntityMetadata<?>> declaredSuperTypes() {
         if (this.superTypes.isEmpty()) {
             this.superTypes.addAll(this.lookup.lookupSuperTypes(this));
         }
@@ -218,15 +218,15 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityMetadata
-     * @see #getDeclaredSuperTypes()
+     * @see #declaredSuperTypes()
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityMetadata<?>> getSuperTypes() {
-        Collection<EntityMetadata<?>> list = this.getDeclaredSuperTypes().stream()
-            .flatMap(superType -> superType.getSuperTypes().stream())
+    public Collection<EntityMetadata<?>> superTypes() {
+        Collection<EntityMetadata<?>> list = this.declaredSuperTypes().stream()
+            .flatMap(superType -> superType.superTypes().stream())
             .collect(Collectors.toList());
-        list.addAll(this.getDeclaredSuperTypes());
+        list.addAll(this.declaredSuperTypes());
         return list;
     }
 
@@ -236,7 +236,7 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityMetadata<?>> getSubTypes() {
+    public Collection<EntityMetadata<?>> subTypes() {
         return this.subTypeLookup.apply(this);
     }
 
@@ -246,10 +246,10 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityMetadata<?>> getConcreteSubTypes() {
-        return this.getSubTypes().stream().filter(subType ->
-            subType.getEntityType() == EntityType.RECORD ||
-                subType.getEntityType() == EntityType.CLASS)
+    public Collection<EntityMetadata<?>> concreteSubTypes() {
+        return this.subTypes().stream().filter(subType ->
+            subType.entityType() == EntityType.RECORD ||
+                subType.entityType() == EntityType.CLASS)
             .collect(Collectors.toUnmodifiableSet());
     }
 
@@ -262,7 +262,7 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityProperty> getDeclaredProperties() {
+    public Collection<EntityProperty> declaredProperties() {
         if (this.properties.isEmpty()) {
             this.properties.addAll(this.lookup.lookupProperties(this));
         }
@@ -274,15 +274,15 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityProperty
-     * @see #getDeclaredProperties()
+     * @see #declaredProperties()
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityProperty> getUniqueProperties() {
-        var allSuperProps = this.getSuperTypes().stream()
-            .flatMap(superType -> superType.getDeclaredProperties().stream())
+    public Collection<EntityProperty> uniqueProperties() {
+        var allSuperProps = this.superTypes().stream()
+            .flatMap(superType -> superType.declaredProperties().stream())
             .map(EntityProperty::fieldName).collect(Collectors.toUnmodifiableSet());
-        return this.getDeclaredProperties().stream().filter(
+        return this.declaredProperties().stream().filter(
             prop -> !allSuperProps.contains(prop.fieldName()) || prop.identifier() != null ||
                 prop.copy()).filter(prop -> prop.relation() == null)
             .collect(Collectors.toUnmodifiableSet());
@@ -294,12 +294,12 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityProperty> getProperties() {
-        Collection<EntityProperty> list = this.getDeclaredSuperTypes().stream()
-            .flatMap(superType -> superType.getSuperTypes().stream())
-            .flatMap(superType -> superType.getDeclaredProperties().stream()).distinct()
+    public Collection<EntityProperty> properties() {
+        Collection<EntityProperty> list = this.declaredSuperTypes().stream()
+            .flatMap(superType -> superType.superTypes().stream())
+            .flatMap(superType -> superType.declaredProperties().stream()).distinct()
             .collect(Collectors.toList());
-        list.addAll(this.getDeclaredProperties());
+        list.addAll(this.declaredProperties());
         return list;
     }
 
@@ -308,14 +308,14 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityProperty
-     * @see #getDeclaredProperties()
+     * @see #declaredProperties()
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityProperty> getDeclaredIdentifiers() {
+    public Collection<EntityProperty> declaredIdentifiers() {
         if (this.identifiers.isEmpty()) {
             this.identifiers.addAll(
-                this.getDeclaredProperties().stream().filter(prop -> prop.identifier() != null)
+                this.declaredProperties().stream().filter(prop -> prop.identifier() != null)
                     .collect(Collectors.toList()));
         }
         return this.identifiers;
@@ -326,12 +326,12 @@ public final class EntityMetadata<E> {
      *
      * @see Collection
      * @see EntityProperty
-     * @see #getDeclaredProperties()
+     * @see #declaredProperties()
      * @since 0.2.0
      */
     @NotNull
-    public Collection<EntityProperty> getDeclaredRelations() {
-        return this.getDeclaredProperties().stream().filter(prop -> prop.relation() != null)
+    public Collection<EntityProperty> declaredRelations() {
+        return this.declaredProperties().stream().filter(prop -> prop.relation() != null)
             .collect(Collectors.toList());
     }
 
@@ -343,7 +343,7 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     public boolean isRelation(@NotNull String property) {
-        return this.getProperties().stream().anyMatch(prop -> prop.fieldName().equals(property) ||
+        return this.properties().stream().anyMatch(prop -> prop.fieldName().equals(property) ||
             prop.propertyName().equals(property) || prop.relation() != null);
     }
 
@@ -355,9 +355,9 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @Nullable
-    public EntityProperty getRelation(@NotNull String property) {
+    public EntityProperty relation(@NotNull String property) {
         if (this.isRelation(property)) {
-            return this.getDeclaredRelations().stream()
+            return this.declaredRelations().stream()
                 .filter(prop -> prop.fieldName().equals(property) ||
                     prop.propertyName().equals(property))
                 .filter(prop -> prop.relation() != null)
@@ -374,7 +374,7 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @Nullable
-    public MethodHandle getConstructor() {
+    public MethodHandle constructor() {
         if (this.constructor == null) {
             this.constructor = this.lookup.lookupConstructor(this);
         }
@@ -389,7 +389,7 @@ public final class EntityMetadata<E> {
      */
     @NotNull
     @Contract(pure = true)
-    public EntityType getEntityType() {
+    public EntityType entityType() {
         return this.entityType;
     }
 
@@ -402,8 +402,8 @@ public final class EntityMetadata<E> {
      * @since 0.2.0
      */
     @SuppressWarnings("unused")
-    public boolean isSerializable() {
-        return Serializable.class.isAssignableFrom(this.getEntityClass());
+    public boolean serializable() {
+        return Serializable.class.isAssignableFrom(this.entityClass());
     }
 
     /**
@@ -421,16 +421,16 @@ public final class EntityMetadata<E> {
      * @see EntityType
      * @since 0.2.0
      */
-    public boolean isValid() {
-        return !this.getDeclaredIdentifiers().isEmpty() && this.getDeclaredIdentifiers()
+    public boolean valid() {
+        return !this.declaredIdentifiers().isEmpty() && this.declaredIdentifiers()
             .containsAll(
-                this.getDeclaredSuperTypes().stream()
-                    .flatMap(superType -> superType.getDeclaredIdentifiers().stream())
-                    .collect(Collectors.toUnmodifiableSet())) && this.getDeclaredSuperTypes()
+                this.declaredSuperTypes().stream()
+                    .flatMap(superType -> superType.declaredIdentifiers().stream())
+                    .collect(Collectors.toUnmodifiableSet())) && this.declaredSuperTypes()
             .stream()
-            .allMatch(EntityMetadata::isValid) && (
-            (this.getEntityType() == EntityType.RECORD && this.getConstructor() != null) || (
-                this.getEntityType() == EntityType.INTERFACE && this.getConstructor() == null));
+            .allMatch(EntityMetadata::valid) && (
+            (this.entityType() == EntityType.RECORD && this.constructor() != null) || (
+                this.entityType() == EntityType.INTERFACE && this.constructor() == null));
     }
 
     @Override
@@ -440,14 +440,14 @@ public final class EntityMetadata<E> {
         if (this == o) { return true; }
         if (o == null || this.getClass() != o.getClass()) { return false; }
         EntityMetadata<?> that = (EntityMetadata<?>) o;
-        return this.getEntityClass().equals(that.getEntityClass()) &&
-            this.getEntityType() == that.getEntityType();
+        return this.entityClass().equals(that.entityClass()) &&
+            this.entityType() == that.entityType();
     }
 
     @Override
     @Generated
     public int hashCode() {
-        return Objects.hash(this.getEntityClass(), this.getEntityType());
+        return Objects.hash(this.entityClass(), this.entityType());
     }
 
     @NotNull
@@ -456,22 +456,22 @@ public final class EntityMetadata<E> {
     @Contract(pure = true)
     public String toString() {
         return "EntityMetadata{" +
-            "entityType=" + this.getEntityType() +
-            ", entityClass=" + this.getEntityClass() +
-            ", superTypes=" + this.getDeclaredSuperTypes() +
-            ", properties=" + this.getDeclaredProperties() +
-            ", constructor=" + this.getConstructor() +
+            "entityType=" + this.entityType() +
+            ", entityClass=" + this.entityClass() +
+            ", superTypes=" + this.declaredSuperTypes() +
+            ", properties=" + this.declaredProperties() +
+            ", constructor=" + this.constructor() +
             '}';
     }
 
     /**
      * @return
      *
-     * @see #getEntityType()
-     * @see #getEntityClass()
-     * @see #getDeclaredSuperTypes()
-     * @see #getDeclaredProperties()
-     * @see #getConstructor()
+     * @see #entityType()
+     * @see #entityClass()
+     * @see #declaredSuperTypes()
+     * @see #declaredProperties()
+     * @see #constructor()
      * @since 0.2.0
      */
     @NotNull
@@ -484,8 +484,8 @@ public final class EntityMetadata<E> {
                  properties=%s
                  constructor=%s
             }"""
-            .formatted(this.getEntityType(), this.getEntityClass(), this.getDeclaredSuperTypes(),
-                this.getDeclaredProperties(), this.getConstructor());
+            .formatted(this.entityType(), this.entityClass(), this.declaredSuperTypes(),
+                this.declaredProperties(), this.constructor());
     }
 
     /**
@@ -513,7 +513,7 @@ public final class EntityMetadata<E> {
          * @since 0.2.0
          */
         @NotNull
-        private static EntityMetadataCache getInstance() {
+        private static EntityMetadataCache instance() {
             var result = INSTANCE;
             if (result == null) {
                 synchronized (MUTEX) {
@@ -535,7 +535,7 @@ public final class EntityMetadata<E> {
          */
         @NotNull
         @Contract(pure = true)
-        private Map<Class<?>, EntityMetadata<?>> getEntityMetadataMap() {
+        private Map<Class<?>, EntityMetadata<?>> cache() {
             return this.entityMetadataMap;
         }
 
@@ -543,7 +543,7 @@ public final class EntityMetadata<E> {
          * @since 0.2.0
          */
         @SuppressWarnings("unused")
-        void clearCache() {
+        void clear() {
             this.entityMetadataMap.clear();
         }
 

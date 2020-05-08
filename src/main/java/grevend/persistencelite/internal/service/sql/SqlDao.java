@@ -31,7 +31,7 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
-import grevend.persistencelite.internal.service.sql.PreparedStatementFactory.StatementType;
+import grevend.persistencelite.internal.service.crud.Crud;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -68,7 +68,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      *
      * @since 0.2.0
      */
-    SqlDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable SqlTransaction transaction, @NotNull Supplier<Transaction> transactionSupplier) {
+    public SqlDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable SqlTransaction transaction, @NotNull Supplier<Transaction> transactionSupplier) {
         super(entityMetadata, transaction);
         this.transactionSupplier = transactionSupplier;
         this.preparedStatementFactory = new PreparedStatementFactory();
@@ -87,7 +87,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @Override
     @Contract("_, _ -> param1")
     protected E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws SQLException {
-        var iterator = this.getEntityMetadata().getSuperTypes().iterator();
+        var iterator = this.getEntityMetadata().superTypes().iterator();
         for (Map<String, Object> props : properties) {
             this.create(iterator.hasNext() ? iterator.next() : this.getEntityMetadata(), props);
         }
@@ -102,9 +102,10 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      * @since 0.2.0
      */
     private void create(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) throws SQLException {
-        var preparedStatement = this.preparedStatementFactory.prepare(StatementType.INSERT,
-            Objects.requireNonNull(this.getTransaction()).connection(), entityMetadata);
-        this.setCreateStatementValues(entityMetadata, preparedStatement, properties);
+        var preparedStatement = this.preparedStatementFactory.build(Crud.CREATE, entityMetadata,
+            Objects.requireNonNull(this.getTransaction()), true);
+        this.setCreateStatementValues(entityMetadata,
+            Objects.requireNonNull(preparedStatement), properties);
         preparedStatement.executeUpdate();
     }
 
@@ -118,7 +119,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     private void setCreateStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        for (EntityProperty property : entityMetadata.getUniqueProperties()) {
+        for (EntityProperty property : entityMetadata.uniqueProperties()) {
             var value = properties.get(property.propertyName());
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);
@@ -171,7 +172,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     private void setRetrieveByIdStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        for (EntityProperty property : entityMetadata.getDeclaredIdentifiers()) {
+        for (EntityProperty property : entityMetadata.declaredIdentifiers()) {
             var value = properties.get(property.propertyName());
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);
@@ -231,7 +232,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     private void setRetrieveByPropsStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        for (EntityProperty property : entityMetadata.getProperties().stream().filter(
+        for (EntityProperty property : entityMetadata.properties().stream().filter(
             prop -> properties.containsKey(prop.propertyName()) || properties
                 .containsKey(prop.fieldName())).collect(Collectors.toUnmodifiableList())) {
             var value = properties.get(property.propertyName());
@@ -297,7 +298,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
     @NotNull
     @Override
     public E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable {
-        var iterator = this.getEntityMetadata().getSuperTypes().iterator();
+        var iterator = this.getEntityMetadata().superTypes().iterator();
         var deconstructed = EntityFactory.deconstruct(this.getEntityMetadata(), entity);
 
         var props = Stream.concat(
@@ -337,7 +338,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     private void setUpdateStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        for (EntityProperty property : entityMetadata.getUniqueProperties()) {
+        for (EntityProperty property : entityMetadata.uniqueProperties()) {
             var value = properties.get(property.propertyName());
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);
@@ -346,7 +347,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
             }
             i++;
         }
-        for (EntityProperty property : entityMetadata.getDeclaredIdentifiers()) {
+        for (EntityProperty property : entityMetadata.declaredIdentifiers()) {
             var value = properties.get(property.propertyName());
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);
@@ -384,7 +385,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      */
     private void setDeleteStatementValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        for (EntityProperty property : entityMetadata.getDeclaredIdentifiers()) {
+        for (EntityProperty property : entityMetadata.declaredIdentifiers()) {
             var value = properties.get(property.propertyName());
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);

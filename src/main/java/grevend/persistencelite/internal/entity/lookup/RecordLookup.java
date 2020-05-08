@@ -62,7 +62,7 @@ public final class RecordLookup<E> implements EntityLookup<E, RecordComponent> {
     @NotNull
     @Override
     public Stream<RecordComponent> components(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getRecordComponents());
+        return Stream.of(entityMetadata.entityClass().getRecordComponents());
     }
 
     /**
@@ -117,7 +117,7 @@ public final class RecordLookup<E> implements EntityLookup<E, RecordComponent> {
         try {
             MethodType methodType = MethodType.methodType(component.getType());
             return lookup
-                .findVirtual(entityMetadata.getEntityClass(), component.getName(), methodType);
+                .findVirtual(entityMetadata.entityClass(), component.getName(), methodType);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             e.printStackTrace();
             return null;
@@ -142,10 +142,10 @@ public final class RecordLookup<E> implements EntityLookup<E, RecordComponent> {
         try {
             var lookup = MethodHandles.lookup();
             MethodType methodType = MethodType.methodType(void.class,
-                entityMetadata.getDeclaredProperties().stream().map(EntityProperty::type)
+                entityMetadata.declaredProperties().stream().map(EntityProperty::type)
                     .collect(Collectors.toUnmodifiableList()));
 
-            return lookup.findConstructor(entityMetadata.getEntityClass(), methodType);
+            return lookup.findConstructor(entityMetadata.entityClass(), methodType);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             e.printStackTrace();
             return null;
@@ -165,7 +165,7 @@ public final class RecordLookup<E> implements EntityLookup<E, RecordComponent> {
     @NotNull
     @Override
     public Collection<EntityMetadata<?>> lookupSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getInterfaces())
+        return Stream.of(entityMetadata.entityClass().getInterfaces())
             .filter(superType -> superType.isAnnotationPresent(Entity.class))
             .map(EntityMetadata::of)
             .collect(Collectors.toUnmodifiableList());

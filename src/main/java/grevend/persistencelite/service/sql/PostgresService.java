@@ -24,16 +24,13 @@
 
 package grevend.persistencelite.service.sql;
 
-import static grevend.sequence.function.ThrowableEscapeHatch.escape;
-
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.internal.service.sql.SqlDaoFactory;
-import grevend.persistencelite.internal.service.sql.SqlTransactionFactory;
-import grevend.sequence.function.ThrowableEscapeHatch;
+import grevend.persistencelite.internal.service.sql.SqlDao;
+import grevend.persistencelite.internal.service.sql.SqlTransaction;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.sql.Connection;
@@ -81,7 +78,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      *
      * @since 0.2.0
      */
-    public void setProperties(@NotNull Properties properties) {
+    void setProperties(@NotNull Properties properties) {
         this.properties = properties;
     }
 
@@ -141,29 +138,40 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Override
     @Contract(value = " -> new", pure = true)
     public DaoFactory getDaoFactory() {
-        var exceptionEscapeHatch = new ThrowableEscapeHatch<>(Exception.class);
-        DaoFactory res = new SqlDaoFactory(
-            escape(() -> this.getTransactionFactory().createTransaction(), exceptionEscapeHatch));
-        try {
-            exceptionEscapeHatch.rethrow();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return res;
+        return new DaoFactory() {
+            @NotNull
+            @Override
+            public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
+                if (transaction instanceof SqlTransaction sqlTransaction) {
+                    EntityMetadata.inferRelationTypes(entityMetadata);
+                    return new SqlDao<>(entityMetadata, sqlTransaction, () -> {
+                        try {
+                            return PostgresService.this.getTransactionFactory()
+                                .createTransaction();
+                        } catch (Throwable throwable) {
+                            throw new IllegalStateException("Failed to create transaction.",
+                                throwable);
+                        }
+                    });
+                } else {
+                    throw new IllegalArgumentException(
+                        "Transaction must be of type SqlTransaction.");
+                }
+            }
+        };
     }
 
     /**
      * @return
      *
      * @see TransactionFactory
-     * @see SqlTransactionFactory
      * @since 0.2.0
      */
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
     public TransactionFactory getTransactionFactory() {
-        return new SqlTransactionFactory(this::createConnection);
+        return () -> new SqlTransaction(this.createConnection());
     }
 
     /**

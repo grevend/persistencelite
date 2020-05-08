@@ -39,6 +39,7 @@ public interface CrudFactoryCache<T> {
     @NotNull
     Map<EntityMetadata<?>, Map<Crud, T>> cache();
 
+    @SuppressWarnings("unused")
     default void clear() {
         this.cache().clear();
     }

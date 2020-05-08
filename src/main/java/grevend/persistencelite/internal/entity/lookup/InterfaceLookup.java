@@ -62,7 +62,7 @@ public final class InterfaceLookup<E> implements EntityLookup<E, Method> {
     @NotNull
     @Override
     public Stream<Method> components(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getDeclaredMethods()).filter(
+        return Stream.of(entityMetadata.entityClass().getDeclaredMethods()).filter(
             method -> method.getParameterCount() == 0 && !method.isDefault() && !method.isBridge()
                 && !method.isVarArgs() && !method.isSynthetic() && !Modifier
                 .isStatic(method.getModifiers()) && !method.isAnnotationPresent(Ignore.class));
@@ -156,7 +156,7 @@ public final class InterfaceLookup<E> implements EntityLookup<E, Method> {
     @NotNull
     @Override
     public Collection<EntityMetadata<?>> lookupSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getInterfaces())
+        return Stream.of(entityMetadata.entityClass().getInterfaces())
             .filter(superType -> superType.isAnnotationPresent(Entity.class))
             .map(EntityMetadata::of)
             .collect(Collectors.toList());

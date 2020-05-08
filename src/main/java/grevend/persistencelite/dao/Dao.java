@@ -49,7 +49,7 @@ public interface Dao<E> extends AutoCloseable {
      * @return Either returns the entity from the first parameter or creates a new instance based on
      * the persistent version.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     @NotNull
@@ -66,7 +66,7 @@ public interface Dao<E> extends AutoCloseable {
      * avoid confusion about the synchronization behavior of the contained entities with the data
      * source.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
      * @since 0.2.0
@@ -222,7 +222,7 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @param entity The entity that should be deleted.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     void delete(@NotNull E entity) throws Throwable;
@@ -233,7 +233,7 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @param identifiers The identifiers that should be used to delete the entity.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     void delete(@NotNull Map<String, Object> identifiers) throws Throwable;
@@ -245,7 +245,7 @@ public interface Dao<E> extends AutoCloseable {
      * @param key   The key component.
      * @param value The value component.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     default void delete(@NotNull String key, @NotNull Object value) throws Throwable {
@@ -258,7 +258,7 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @param entities The {@code Iterable} of entities that should be deleted.
      *
-     * @throws Exception If an error occurs during the persistence process.
+     * @throws Throwable If an error occurs during the persistence process.
      * @see Iterable
      * @since 0.2.0
      */

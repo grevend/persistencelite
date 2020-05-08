@@ -64,7 +64,7 @@ final class SqlUtils {
     private static void setRetrieveStatementValues(@NotNull PreparedStatement preparedStatement, @NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Map<String, Object> values) throws SQLException {
         var i = 1;
         var selfProperties = List.of(entityRelation.getSelfProperties());
-        for (EntityProperty property : entityMetadata.getProperties().stream().filter(
+        for (EntityProperty property : entityMetadata.properties().stream().filter(
             prop -> selfProperties.contains(prop.propertyName()) || selfProperties
                 .contains(prop.fieldName())).collect(Collectors.toUnmodifiableList())) {
             var value = values.get(property.propertyName());
@@ -84,7 +84,7 @@ final class SqlUtils {
      * @since 0.2.4
      */
     static void createRelationValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> map, @NotNull Supplier<Transaction> transactionSupplier) {
-        entityMetadata.getDeclaredRelations().forEach(relation -> map.put(relation.fieldName(),
+        entityMetadata.declaredRelations().forEach(relation -> map.put(relation.fieldName(),
             relation.type().isAssignableFrom(Collection.class) ? new SqlRelation<>(entityMetadata,
                 Objects.requireNonNull(relation.relation()), map, transactionSupplier)
                 : (relation.type().isAssignableFrom(Lazy.class) ? new Lazy<>(() -> SqlUtils
@@ -116,8 +116,8 @@ final class SqlUtils {
             try {
                 var targetMetadata = EntityMetadata.of(entityRelation.getTargetEntity());
                 Collection<EntityMetadata<?>> types;
-                if (targetMetadata.getEntityType() == EntityType.INTERFACE) {
-                    types = targetMetadata.getSubTypes();
+                if (targetMetadata.entityType() == EntityType.INTERFACE) {
+                    types = targetMetadata.subTypes();
                 } else {
                     types = List.of(targetMetadata);
                 }
