@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.util;
 
+import grevend.common.Pair;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -142,11 +143,6 @@ public final class Utils {
         }
 
         return value;
-    }
-
-    public interface Pair<A, B> {
-        A first();
-        B second();
     }
 
     @NotNull

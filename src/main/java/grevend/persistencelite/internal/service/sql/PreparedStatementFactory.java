@@ -29,6 +29,7 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
 final class PreparedStatementFactory {
 
     @Nullable
-    PreparedStatement build(@NotNull Crud crud, @NotNull EntityMetadata<?> entityMetadata, @NotNull SqlTransaction transaction, boolean cached, int limit) {
+    PreparedStatement prepare(@NotNull Crud crud, @NotNull EntityMetadata<?> entityMetadata, @NotNull SqlTransaction transaction, boolean cached, int limit) {
         var cache = StatementCache.instance().cache();
         if (!cache.containsKey(entityMetadata)) {
             cache.put(entityMetadata, new HashMap<>());
@@ -79,6 +80,22 @@ final class PreparedStatementFactory {
             + String
             .join(", ", Collections.nCopies(entityMetadata.uniqueProperties().size(), "?"))
             + ")";
+    }
+
+    @NotNull
+    @Contract("_, _, _ -> param2")
+    public PreparedStatement values(@NotNull EntityMetadata<?> entityMetadata, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+        var i = 0;
+        for (EntityProperty property : entityMetadata.uniqueProperties()) {
+            var value = properties.get(property.propertyName());
+            if (value == null || value.equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+            } else {
+                statement.setObject(i + 1, value);
+            }
+            i++;
+        }
+        return statement;
     }
 
     @NotNull

@@ -29,7 +29,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public interface Pair<A, B> {
 
@@ -47,10 +46,8 @@ public interface Pair<A, B> {
         return Collectors.toUnmodifiableMap(Pair::first, Pair::second);
     }
 
-    @Nullable
     A first();
 
-    @Nullable
     B second();
 
 }

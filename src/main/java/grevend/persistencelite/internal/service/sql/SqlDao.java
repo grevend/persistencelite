@@ -28,7 +28,6 @@ import static grevend.sequence.function.ThrowableEscapeHatch.escape;
 
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.sequence.function.ThrowableEscapeHatch;
@@ -102,7 +101,7 @@ public final class SqlDao<E> extends BaseDao<E, SqlTransaction> {
      * @since 0.2.0
      */
     private void create(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> properties) throws SQLException {
-        /*var preparedStatement = this.preparedStatementFactory.build(Crud.CREATE, entityMetadata,
+        /*var preparedStatement = this.preparedStatementFactory.prepare(Crud.CREATE, entityMetadata,
             Objects.requireNonNull(this.getTransaction()), true);
         this.setCreateStatementValues(entityMetadata,
             Objects.requireNonNull(preparedStatement), properties);

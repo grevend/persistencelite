@@ -102,6 +102,23 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         };
     }
 
+    @NotNull
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public static <T, Thr extends Throwable> Consumer<? super T> escapeSuper(@NotNull ThrowingConsumer<? super T> consumer, @NotNull ThrowableEscapeHatch<Thr> escapeHatch) {
+        return arg -> {
+            try {
+                consumer.accept(arg);
+            } catch (Throwable throwable) {
+                if (!escapeHatch.getThrowableClass().isAssignableFrom(throwable.getClass())) {
+                    throw new RuntimeException("Encountered unexpected throwable.", throwable);
+                } else {
+                    escapeHatch.escape((Thr) throwable);
+                }
+            }
+        };
+    }
+
     /**
      * @param supplier
      * @param escapeHatch
