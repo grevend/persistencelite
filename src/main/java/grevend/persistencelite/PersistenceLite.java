@@ -49,7 +49,7 @@ public final class PersistenceLite {
     @NotNull
     public static <C extends Configurator<S>, S extends Service<C>> C configure(@NotNull Class<S> service) {
         try {
-            return service.getConstructor().newInstance().getConfigurator();
+            return service.getConstructor().newInstance().configurator();
         } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
             throw new IllegalStateException("Service configurator construction failed.", e);
         }

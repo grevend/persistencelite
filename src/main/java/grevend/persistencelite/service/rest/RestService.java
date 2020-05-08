@@ -77,7 +77,7 @@ public final class RestService implements Service<RestConfigurator> {
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
-    public RestConfigurator getConfigurator() {
+    public RestConfigurator configurator() {
         return new RestConfigurator(this);
     }
 
@@ -88,8 +88,8 @@ public final class RestService implements Service<RestConfigurator> {
      */
     @NotNull
     @Override
-    public DaoFactory getDaoFactory() {
-        return this.service.getDaoFactory();
+    public DaoFactory daoFactory() {
+        return this.service.daoFactory();
     }
 
     /**
@@ -99,8 +99,8 @@ public final class RestService implements Service<RestConfigurator> {
      */
     @NotNull
     @Override
-    public TransactionFactory getTransactionFactory() {
-        return this.service.getTransactionFactory();
+    public TransactionFactory transactionFactory() {
+        return this.service.transactionFactory();
     }
 
     /**

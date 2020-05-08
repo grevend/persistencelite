@@ -96,7 +96,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      */
     @NotNull
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
-        return this.getDaoFactory().createDao(EntityMetadata.of(entity), transaction);
+        return this.daoFactory().createDao(EntityMetadata.of(entity), transaction);
     }
 
     /**
@@ -112,7 +112,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      */
     @NotNull
     public <E> Dao<E> createDao(@NotNull Class<E> entity) throws Throwable {
-        return this.createDao(entity, this.getTransactionFactory().createTransaction());
+        return this.createDao(entity, this.transactionFactory().createTransaction());
     }
 
     /**
@@ -123,7 +123,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
-    public PostgresConfigurator getConfigurator() {
+    public PostgresConfigurator configurator() {
         return new PostgresConfigurator(this);
     }
 
@@ -137,7 +137,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
-    public DaoFactory getDaoFactory() {
+    public DaoFactory daoFactory() {
         return new DaoFactory() {
             @NotNull
             @Override
@@ -146,7 +146,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
                     EntityMetadata.inferRelationTypes(entityMetadata);
                     return new SqlDao<>(entityMetadata, sqlTransaction, () -> {
                         try {
-                            return PostgresService.this.getTransactionFactory()
+                            return PostgresService.this.transactionFactory()
                                 .createTransaction();
                         } catch (Throwable throwable) {
                             throw new IllegalStateException("Failed to create transaction.",
@@ -170,7 +170,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
-    public TransactionFactory getTransactionFactory() {
+    public TransactionFactory transactionFactory() {
         return () -> new SqlTransaction(this.createConnection());
     }
 

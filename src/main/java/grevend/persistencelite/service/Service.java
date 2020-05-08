@@ -45,7 +45,7 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    C getConfigurator();
+    C configurator();
 
     /**
      * @return
@@ -53,7 +53,7 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    DaoFactory getDaoFactory();
+    DaoFactory daoFactory();
 
     /**
      * @return
@@ -61,7 +61,7 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    TransactionFactory getTransactionFactory();
+    TransactionFactory transactionFactory();
 
     /**
      * @param from
