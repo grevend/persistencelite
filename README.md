@@ -15,7 +15,7 @@ var rest = PersistenceLite.configure(RestService.class)
     
 // REST (SERVER)
 var restServer = PersistenceLite.configure(RestService.class)
-    .mode(SERVER).version(2).scope("org.example.entities").uses(postgres).service();
+    .mode(SERVER).threadPool(10).version(2).scope("org.example.entities").uses(postgres).service();
 ```
 
 ```java
