@@ -25,7 +25,9 @@
 package grevend.persistencelite.dao;
 
 import grevend.common.Result;
+import grevend.common.ResultCollection;
 import grevend.common.Success;
+import grevend.common.SuccessCollection;
 import grevend.sequence.Seq;
 import java.util.Collection;
 import java.util.Map;
@@ -51,7 +53,6 @@ public interface Dao<E> extends AutoCloseable {
      * @return Either returns the entity from the first parameter or creates a new instance based on
      * the persistent version.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     @NotNull
@@ -68,13 +69,12 @@ public interface Dao<E> extends AutoCloseable {
      * avoid confusion about the synchronization behavior of the contained entities with the data
      * source.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
      * @since 0.2.0
      */
     @NotNull
-    Result<Collection<E>> create(@NotNull Iterable<E> entities);
+    ResultCollection<E> create(@NotNull Iterable<E> entities);
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
@@ -84,7 +84,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the entity found in the form of an {@code Optional}.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Optional
      * @see Map
      * @since 0.2.0
@@ -101,7 +100,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the entity found in the form of an {@code Optional}.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Optional
      * @since 0.2.0
      */
@@ -118,13 +116,12 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the entities found in the form of an {@code Collection}.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Map
      * @since 0.2.0
      */
     @NotNull
-    Result<Collection<E>> retrieveByProps(@NotNull Map<String, Object> properties);
+    ResultCollection<E> retrieveByProps(@NotNull Map<String, Object> properties);
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
@@ -135,13 +132,12 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the entities found in the form of an {@code Collection}.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Map
      * @since 0.2.0
      */
     @NotNull
-    default Result<Collection<E>> retrieveByProps(@NotNull String key, @NotNull Object value) {
+    default ResultCollection<E> retrieveByProps(@NotNull String key, @NotNull Object value) {
         return this.retrieveByProps(Map.of(key, value));
     }
 
@@ -153,12 +149,11 @@ public interface Dao<E> extends AutoCloseable {
      * should be immutable to avoid confusion about the synchronization behavior of the contained
      * entities with the data source.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @since 0.2.0
      */
     @NotNull
-    Result<Collection<E>> retrieveAll();
+    ResultCollection<E> retrieveAll();
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
@@ -171,7 +166,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the updated entity.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Map
      * @since 0.2.0
      */
@@ -189,7 +183,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the updated entity.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Map
      * @since 0.2.0
      */
@@ -209,14 +202,13 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the updated entity.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
      * @see Map
      * @since 0.2.0
      */
     @NotNull
-    Result<Collection<E>> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties);
+    ResultCollection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties);
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the
@@ -287,7 +279,7 @@ public interface Dao<E> extends AutoCloseable {
      */
     @NotNull
     default <S extends Seq<E, S>> Seq<E, S> sequence() {
-        return this.retrieveAll() instanceof Success<Collection<E>> collection ? Seq
+        return this.retrieveAll() instanceof SuccessCollection<E> collection ? Seq
             .of(collection.get()) : Seq.empty();
     }
 
