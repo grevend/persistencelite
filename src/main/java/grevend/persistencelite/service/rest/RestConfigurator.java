@@ -123,8 +123,13 @@ public final class RestConfigurator implements Configurator<RestService> {
         if (this.mode == SERVER && this.service == null) {
             throw new IllegalStateException("No service defined.");
         }
+        if (this.mode == SERVER && this.scope == null) {
+            throw new IllegalStateException("No scope defined.");
+        }
         this.restService.setMode(this.mode);
         this.restService.setService(this.service);
+        this.restService.setVersion(this.version);
+        this.restService.setScope(this.scope);
         return this.restService;
     }
 

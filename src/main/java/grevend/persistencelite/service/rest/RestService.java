@@ -24,10 +24,20 @@
 
 package grevend.persistencelite.service.rest;
 
+import static grevend.persistencelite.service.rest.RestMode.SERVER;
+
+import com.sun.net.httpserver.HttpServer;
+import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.TransactionFactory;
+import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.service.Service;
+import grevend.persistencelite.service.sql.PostgresService;
 import grevend.persistencelite.util.TypeMarshaller;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.util.List;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +51,8 @@ public final class RestService implements Service<RestConfigurator> {
 
     private RestMode mode;
     private Service<?> service;
+    private int version;
+    private String scope;
 
     /**
      * @since 0.3.0
@@ -51,6 +63,16 @@ public final class RestService implements Service<RestConfigurator> {
         this.service = null;
     }
 
+    public static void main(String[] args) throws IOException {
+        var restServer = PersistenceLite.configure(RestService.class)
+            .mode(SERVER)
+            .version(2)
+            .scope("grevend.main")
+            .uses(new PostgresService())
+            .service();
+        restServer.start();
+    }
+
     /**
      * @param mode
      *
@@ -59,6 +81,20 @@ public final class RestService implements Service<RestConfigurator> {
     void setMode(@NotNull RestMode mode) {
         this.mode = mode;
     }
+
+    /**
+     * @param version
+     *
+     * @since 0.3.3
+     */
+    void setVersion(int version) { this.version = version; }
+
+    /**
+     * @param scope
+     *
+     * @since 0.3.3
+     */
+    void setScope(@NotNull String scope) { this.scope = scope; }
 
     /**
      * @param service
@@ -114,6 +150,37 @@ public final class RestService implements Service<RestConfigurator> {
     @Override
     public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
         this.service.registerTypeMarshaller(entity, from, to, marshaller);
+    }
+
+    /**
+     * @since 0.3.3
+     */
+    @NotNull
+    public HttpServer start() throws IOException {
+        if (this.mode != RestMode.SERVER && this.scope != null) {
+            throw new IllegalStateException();
+        }
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        EntityMetadata.entities(this.scope).forEach(entity -> {
+            server.createContext("/api/v" + this.version + "/" + entity.name().toLowerCase(),
+                exchange -> {
+                    System.out.println("Request...");
+                    String response =
+                        "{\"api\": \"" + this.version + "\", \"persistencelite\": \""
+                            + PersistenceLite.VERSION
+                            + "\", \"entity\": \"Cat\", \"message\": \"Hello World!\"}";
+                    exchange.getResponseHeaders()
+                        .put("Content-Type", List.of("application/json; utf-8"));
+                    exchange.sendResponseHeaders(200, response.length());
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
+                });
+        });
+        server.setExecutor(null); // creates a default executor
+        server.start();
+        System.out.println(server.getAddress());
+        return server;
     }
 
 }

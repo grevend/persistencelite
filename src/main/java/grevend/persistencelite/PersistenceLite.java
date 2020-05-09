@@ -35,7 +35,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class PersistenceLite {
 
-    public static System.Logger LOGGER = System.getLogger("PersistenceLiteLogger");
+    public static final System.Logger LOGGER = System.getLogger("PersistenceLiteLogger");
+    public static final String VERSION = "0.3.3";
 
     /**
      * @param service

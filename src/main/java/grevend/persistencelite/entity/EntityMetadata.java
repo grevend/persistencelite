@@ -33,7 +33,6 @@ import grevend.persistencelite.internal.entity.EntityType;
 import grevend.persistencelite.internal.entity.lookup.EntityLookup;
 import grevend.persistencelite.internal.entity.lookup.InterfaceLookup;
 import grevend.persistencelite.internal.entity.lookup.RecordLookup;
-import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -123,6 +122,12 @@ public final class EntityMetadata<E> {
                 throw new IllegalArgumentException();
             }
         }
+    }
+
+    public static Collection<EntityMetadata<?>> entities(@NotNull String packageScope) {
+        Reflections reflections = new Reflections(packageScope);
+        return reflections.getTypesAnnotatedWith(Entity.class).stream().map(EntityMetadata::of)
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Contract("_ -> param1")
@@ -336,37 +341,6 @@ public final class EntityMetadata<E> {
     }
 
     /**
-     * @param property
-     *
-     * @return
-     *
-     * @since 0.2.0
-     */
-    public boolean isRelation(@NotNull String property) {
-        return this.properties().stream().anyMatch(prop -> prop.fieldName().equals(property) ||
-            prop.propertyName().equals(property) || prop.relation() != null);
-    }
-
-    /**
-     * @param property
-     *
-     * @return
-     *
-     * @since 0.2.0
-     */
-    @Nullable
-    public EntityProperty relation(@NotNull String property) {
-        if (this.isRelation(property)) {
-            return this.declaredRelations().stream()
-                .filter(prop -> prop.fieldName().equals(property) ||
-                    prop.propertyName().equals(property))
-                .filter(prop -> prop.relation() != null)
-                .findFirst().orElse(null);
-        }
-        return null;
-    }
-
-    /**
      * @return
      *
      * @see MethodHandle
@@ -391,19 +365,6 @@ public final class EntityMetadata<E> {
     @Contract(pure = true)
     public EntityType entityType() {
         return this.entityType;
-    }
-
-    /**
-     * Checks if the entity is serializable.
-     *
-     * @return True if the entity class is serializable.
-     *
-     * @see Serializable
-     * @since 0.2.0
-     */
-    @SuppressWarnings("unused")
-    public boolean serializable() {
-        return Serializable.class.isAssignableFrom(this.entityClass());
     }
 
     /**
@@ -462,30 +423,6 @@ public final class EntityMetadata<E> {
             ", properties=" + this.declaredProperties() +
             ", constructor=" + this.constructor() +
             '}';
-    }
-
-    /**
-     * @return
-     *
-     * @see #entityType()
-     * @see #entityClass()
-     * @see #declaredSuperTypes()
-     * @see #declaredProperties()
-     * @see #constructor()
-     * @since 0.2.0
-     */
-    @NotNull
-    public String toStructuredString() {
-        return """
-            EntityMetadata {
-                 entityType=%s
-                 entityClass=%s
-                 superTypes=%s
-                 properties=%s
-                 constructor=%s
-            }"""
-            .formatted(this.entityType(), this.entityClass(), this.declaredSuperTypes(),
-                this.declaredProperties(), this.constructor());
     }
 
     /**
