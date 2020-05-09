@@ -24,9 +24,16 @@
 
 package grevend.common;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface Failure<T> extends Result<T> {
+
+    @NotNull
+    @Contract(pure = true)
+    static <T> Failure<T> of(@NotNull Failure<?> failure) {
+        return failure::fail;
+    }
 
     @Override
     default boolean success() {

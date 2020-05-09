@@ -24,9 +24,46 @@
 
 package grevend.common;
 
+import grevend.sequence.function.ThrowingRunnable;
+import grevend.sequence.function.ThrowingSupplier;
+import java.util.Optional;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface Result<T> {
+
+    @NotNull
+    @Contract(pure = true)
+    static <T> Result<T> of(@NotNull Failure<?> failure) {
+        return (Failure<T>) failure::fail;
+    }
+
+    @NotNull
+    @Contract(value = "_ -> param1", pure = true)
+    static <T> Result<T> of(@NotNull Success<T> success) {
+        return success;
+    }
+
+    @NotNull
+    static <T> Result<T> ofThrowing(@NotNull ThrowingSupplier<T> supplier) {
+        try {
+            var value = supplier.get();
+            return (Success<T>) () -> value;
+        } catch (Throwable throwable) {
+            return (Failure<T>) () -> throwable;
+        }
+    }
+
+    @NotNull
+    static Result<Void> ofThrowing(@NotNull ThrowingRunnable runnable) {
+        try {
+            runnable.run();
+            return (Success<Void>) () -> null;
+        } catch (Throwable throwable) {
+            return (Failure<Void>) () -> throwable;
+        }
+    }
 
     boolean success();
 
@@ -41,6 +78,11 @@ public interface Result<T> {
     @Nullable
     default T orNull() {
         return this.or(null);
+    }
+
+    @NotNull
+    default Optional<T> toOptional() {
+        return this.failure() ? Optional.empty() : Optional.ofNullable(this.orNull());
     }
 
 }

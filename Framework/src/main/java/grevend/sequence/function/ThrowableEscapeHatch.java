@@ -24,6 +24,9 @@
 
 package grevend.sequence.function;
 
+import grevend.common.Failure;
+import grevend.common.Result;
+import grevend.common.Success;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -178,6 +181,12 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         if (this.throwable != null) {
             throw this.throwable;
         }
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public <T> Result<T> fail() {
+        return this.throwable == null ? (Failure<T>) () -> this.throwable : (Success<T>) () -> null;
     }
 
 }

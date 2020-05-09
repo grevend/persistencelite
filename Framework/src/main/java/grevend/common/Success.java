@@ -24,7 +24,15 @@
 
 package grevend.common;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 public interface Success<T> extends Result<T> {
+
+    @Contract(value = "_ -> param1", pure = true)
+    static <T> Success<T> of(@NotNull Success<T> success) {
+        return success;
+    }
 
     @Override
     default boolean success() {
