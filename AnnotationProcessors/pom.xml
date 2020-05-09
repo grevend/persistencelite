@@ -46,20 +46,10 @@
           <target>14</target>
           <compilerArgs>
             <arg>--enable-preview</arg>
-            <arg>-proc:none</arg>
+            <!--<arg>-proc:none</arg>-->
           </compilerArgs>
           <forceJavacCompilerUse>true</forceJavacCompilerUse>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>3.8.2</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>3.0.0</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

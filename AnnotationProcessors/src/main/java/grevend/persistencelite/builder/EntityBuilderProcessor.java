@@ -33,6 +33,7 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,7 +48,7 @@ public class EntityBuilderProcessor extends AbstractProcessor {
      * @param roundEnv
      */
     @Override
-    public boolean process(@NotNull Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         /*for (var element : annotations) {
             if(element.getKind() == ElementKind.RECORD) {*/
         try {
@@ -59,8 +60,8 @@ public class EntityBuilderProcessor extends AbstractProcessor {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Test");
         }
+        this.processingEnv.getMessager().printMessage(Kind.NOTE, "TestBuilder");
            /* }
         }*/
         return true;
