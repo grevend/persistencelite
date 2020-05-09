@@ -120,16 +120,20 @@ public final class RestConfigurator implements Configurator<RestService> {
     @NotNull
     @Override
     public RestService service() {
-        if (this.mode == SERVER && this.service == null) {
-            throw new IllegalStateException("No service defined.");
-        }
-        if (this.mode == SERVER && this.scope == null) {
-            throw new IllegalStateException("No scope defined.");
+        if (this.mode == SERVER) {
+            if (this.service == null) {
+                throw new IllegalStateException("No service defined.");
+            } else {
+                this.restService.setService(this.service);
+            }
+            if (this.scope == null) {
+                throw new IllegalStateException("No scope defined.");
+            } else {
+                this.restService.setScope(this.scope);
+            }
         }
         this.restService.setMode(this.mode);
-        this.restService.setService(this.service);
         this.restService.setVersion(this.version);
-        this.restService.setScope(this.scope);
         return this.restService;
     }
 

@@ -64,13 +64,16 @@ public final class RestService implements Service<RestConfigurator> {
     }
 
     public static void main(String[] args) throws IOException {
-        var restServer = PersistenceLite.configure(RestService.class)
+        var postgres = PersistenceLite.configure(PostgresService.class)
+            .credentials("credentials.properties").service();
+
+        PersistenceLite.configure(RestService.class)
             .mode(SERVER)
             .version(2)
             .scope("grevend.main")
-            .uses(new PostgresService())
-            .service();
-        restServer.start();
+            .uses(postgres)
+            .service()
+            .start();
     }
 
     /**
@@ -168,7 +171,7 @@ public final class RestService implements Service<RestConfigurator> {
                     String response =
                         "{\"api\": \"" + this.version + "\", \"persistencelite\": \""
                             + PersistenceLite.VERSION
-                            + "\", \"entity\": \"Cat\", \"message\": \"Hello World!\"}";
+                            + "\", \"entity\": \"" + entity.name() + "\", \"message\": \"Hello World!\"}";
                     exchange.getResponseHeaders()
                         .put("Content-Type", List.of("application/json; utf-8"));
                     exchange.sendResponseHeaders(200, response.length());

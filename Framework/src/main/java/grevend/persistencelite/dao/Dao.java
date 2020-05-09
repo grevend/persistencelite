@@ -265,7 +265,7 @@ public interface Dao<E> extends AutoCloseable {
     void delete(@NotNull Iterable<E> entities) throws Throwable;
 
     /**
-     * Returns a lazy sequence based on the collection provided by the {@code retrieve()} method.
+     * Returns a lazy grevend.sequence based on the collection provided by the {@code retrieve()} method.
      *
      * @param <S> The {@code Seq} type used for providing the return types of the chained method
      *            calls.

@@ -31,6 +31,7 @@ import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -71,7 +72,7 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
     @NotNull
     @Override
     public Iterable<Map<String, Object>> retrieve(@NotNull Map<String, Object> props) throws SQLException {
-        return null;
+        return List.of();
     }
 
     @Override

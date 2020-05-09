@@ -1,6 +1,7 @@
 module PersistenceLite {
     requires java.sql;
     requires jdk.httpserver;
+    requires java.compiler;
     requires reflections;
     requires com.google.gson;
     requires org.jetbrains.annotations;
@@ -28,6 +29,8 @@ module PersistenceLite {
     opens grevend.sequence.function;
     opens grevend.sequence.iterators;
     opens grevend.sequence;
+
+    //opens grevend.persistencelite.builder;
 
     //provides System.LoggerFinder with PersistenceLiteLoggerFinder;
 }

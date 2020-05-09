@@ -26,6 +26,8 @@ package grevend.persistencelite.internal.util.logging;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public final class PersistenceLiteLogger implements System.Logger {
 
@@ -34,7 +36,9 @@ public final class PersistenceLiteLogger implements System.Logger {
      *
      * @return the logger name.
      */
+    @NotNull
     @Override
+    @Contract(pure = true)
     public String getName() {
         return "PersistenceLiteLogger";
     }
@@ -49,6 +53,7 @@ public final class PersistenceLiteLogger implements System.Logger {
      * @throws NullPointerException if {@code level} is {@code null}.
      */
     @Override
+    @Contract(pure = true)
     public boolean isLoggable(Level level) {
         return true;
     }
