@@ -24,6 +24,8 @@
 
 package grevend.persistencelite.dao;
 
+import grevend.common.Result;
+import grevend.common.Success;
 import grevend.sequence.Seq;
 import java.util.Collection;
 import java.util.Map;
@@ -53,7 +55,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    E create(@NotNull E entity) throws Throwable;
+    Result<E> create(@NotNull E entity);
 
     /**
      * An implementation of the <b>create</b> CRUD operation that persists none, one or many
@@ -72,7 +74,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    Collection<E> create(@NotNull Iterable<E> entities) throws Throwable;
+    Result<Collection<E>> create(@NotNull Iterable<E> entities);
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
@@ -88,7 +90,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable;
+    Result<E> retrieveById(@NotNull Map<String, Object> identifiers);
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns the matching entity
@@ -104,7 +106,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    default Optional<E> retrieveById(@NotNull String key, @NotNull Object value) throws Throwable {
+    default Result<E> retrieveById(@NotNull String key, @NotNull Object value) {
         return this.retrieveById(Map.of(key, value));
     }
 
@@ -122,7 +124,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    Collection<E> retrieveByProps(@NotNull Map<String, Object> properties) throws Throwable;
+    Result<Collection<E>> retrieveByProps(@NotNull Map<String, Object> properties);
 
     /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
@@ -139,7 +141,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    default Collection<E> retrieveByProps(@NotNull String key, @NotNull Object value) throws Throwable {
+    default Result<Collection<E>> retrieveByProps(@NotNull String key, @NotNull Object value) {
         return this.retrieveByProps(Map.of(key, value));
     }
 
@@ -156,7 +158,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    Collection<E> retrieveAll() throws Throwable;
+    Result<Collection<E>> retrieveAll();
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
@@ -174,7 +176,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    E update(@NotNull E entity, @NotNull Map<String, Object> properties) throws Throwable;
+    Result<E> update(@NotNull E entity, @NotNull Map<String, Object> properties);
 
     /**
      * An implementation of the <b>update</b> CRUD operation which returns an updated version of the
@@ -192,7 +194,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    default E update(@NotNull E entity, @NotNull String key, @NotNull Object value) throws Throwable {
+    default Result<E> update(@NotNull E entity, @NotNull String key, @NotNull Object value) {
         return this.update(entity, Map.of(key, value));
     }
 
@@ -214,7 +216,7 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable;
+    Result<Collection<E>> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties);
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the
@@ -225,7 +227,8 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
-    void delete(@NotNull E entity) throws Throwable;
+    @NotNull
+    Result<Void> delete(@NotNull E entity);
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
@@ -236,7 +239,8 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
-    void delete(@NotNull Map<String, Object> identifiers) throws Throwable;
+    @NotNull
+    Result<Void> delete(@NotNull Map<String, Object> identifiers);
 
     /**
      * An implementation of the <b>delete</b> CRUD operation which deletes an entity based on the
@@ -248,8 +252,9 @@ public interface Dao<E> extends AutoCloseable {
      * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
-    default void delete(@NotNull String key, @NotNull Object value) throws Throwable {
-        this.delete(Map.of(key, value));
+    @NotNull
+    default Result<Void> delete(@NotNull String key, @NotNull Object value) {
+        return this.delete(Map.of(key, value));
     }
 
     /**
@@ -262,10 +267,12 @@ public interface Dao<E> extends AutoCloseable {
      * @see Iterable
      * @since 0.2.0
      */
-    void delete(@NotNull Iterable<E> entities) throws Throwable;
+    @NotNull
+    Result<Void> delete(@NotNull Iterable<E> entities);
 
     /**
-     * Returns a lazy grevend.sequence based on the collection provided by the {@code retrieve()} method.
+     * Returns a lazy grevend.sequence based on the collection provided by the {@code retrieve()}
+     * method.
      *
      * @param <S> The {@code Seq} type used for providing the return types of the chained method
      *            calls.
@@ -279,8 +286,9 @@ public interface Dao<E> extends AutoCloseable {
      * @since 0.2.0
      */
     @NotNull
-    default <S extends Seq<E, S>> Seq<E, S> sequence() throws Throwable {
-        return Seq.of(this.retrieveAll());
+    default <S extends Seq<E, S>> Seq<E, S> sequence() {
+        return this.retrieveAll() instanceof Success<Collection<E>> collection ? Seq
+            .of(collection.get()) : Seq.empty();
     }
 
 }
