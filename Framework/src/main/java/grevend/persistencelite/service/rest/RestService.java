@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.Executors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +52,7 @@ public final class RestService implements Service<RestConfigurator> {
 
     private RestMode mode;
     private Service<?> service;
-    private int version;
+    private int version, poolSize;
     private String scope;
 
     /**
@@ -71,6 +72,7 @@ public final class RestService implements Service<RestConfigurator> {
             .mode(SERVER)
             .version(2)
             .scope("grevend.main")
+            .threadPool(10)
             .uses(postgres)
             .service()
             .start();
@@ -98,6 +100,13 @@ public final class RestService implements Service<RestConfigurator> {
      * @since 0.3.3
      */
     void setScope(@NotNull String scope) { this.scope = scope; }
+
+    /**
+     * @param poolSize
+     *
+     * @since 0.3.3
+     */
+    void setPoolSize(int poolSize) { this.poolSize = poolSize; }
 
     /**
      * @param service
@@ -171,7 +180,8 @@ public final class RestService implements Service<RestConfigurator> {
                     String response =
                         "{\"api\": \"" + this.version + "\", \"persistencelite\": \""
                             + PersistenceLite.VERSION
-                            + "\", \"entity\": \"" + entity.name() + "\", \"message\": \"Hello World!\"}";
+                            + "\", \"entity\": \"" + entity.name()
+                            + "\", \"message\": \"Hello World!\"}";
                     exchange.getResponseHeaders()
                         .put("Content-Type", List.of("application/json; utf-8"));
                     exchange.sendResponseHeaders(200, response.length());
@@ -180,7 +190,8 @@ public final class RestService implements Service<RestConfigurator> {
                     os.close();
                 });
         });
-        server.setExecutor(null); // creates a default executor
+        server.setExecutor(this.poolSize == -1 ? null
+            : Executors.newFixedThreadPool(this.poolSize));
         server.start();
         System.out.println(server.getAddress());
         return server;

@@ -40,7 +40,7 @@ public final class RestConfigurator implements Configurator<RestService> {
 
     private final RestService restService;
     private RestMode mode;
-    private int version;
+    private int version, poolSize = -1;
     private String scope;
     private Service<?> service;
 
@@ -112,6 +112,13 @@ public final class RestConfigurator implements Configurator<RestService> {
         return this;
     }
 
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator threadPool(int size) {
+        this.poolSize = size;
+        return this;
+    }
+
     /**
      * @return
      *
@@ -131,6 +138,7 @@ public final class RestConfigurator implements Configurator<RestService> {
             } else {
                 this.restService.setScope(this.scope);
             }
+            this.restService.setPoolSize(this.poolSize);
         }
         this.restService.setMode(this.mode);
         this.restService.setVersion(this.version);
