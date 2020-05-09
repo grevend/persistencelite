@@ -25,8 +25,6 @@
 package grevend.persistencelite.internal.service.rest;
 
 import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import grevend.main.Main;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
@@ -34,7 +32,6 @@ import grevend.persistencelite.internal.entity.representation.EntitySerializer;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -87,11 +84,6 @@ public class RestRequesterDao implements DaoImpl<IOException> {
     @Override
     public void delete(@NotNull Map<String, Object> props) throws IOException {
 
-    }
-
-    public static void main(String[] args) throws IOException {
-        var test = new RestRequesterDao(EntityMetadata.of(Main.Author.class));
-        System.out.println(test.retrieve(Map.of()));
     }
 
 }
