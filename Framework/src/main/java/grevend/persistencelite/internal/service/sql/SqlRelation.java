@@ -28,6 +28,7 @@ import grevend.common.LazyCollection;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityRelation;
+import grevend.sequence.Seq;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -385,6 +386,12 @@ public final class SqlRelation<E> implements LazyCollection<E> {
     @Override
     public String toString() {
         return "SqlRelation" + this.elements.toString();
+    }
+
+    @NotNull
+    @Override
+    public <S extends Seq<E, S>> Seq<E, S> sequence() {
+        return Seq.of(this.retrieve());
     }
 
 }

@@ -24,6 +24,7 @@
 
 package grevend.common;
 
+import grevend.sequence.Seq;
 import java.util.Collection;
 import java.util.Iterator;
 import org.jetbrains.annotations.Contract;
@@ -362,5 +363,11 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
      */
     @Override
     public void clear() {}
+
+    @NotNull
+    @Override
+    public <S extends Seq<E, S>> Seq<E, S> sequence() {
+        return Seq.empty();
+    }
 
 }

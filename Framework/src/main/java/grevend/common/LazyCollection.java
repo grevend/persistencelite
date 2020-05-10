@@ -24,10 +24,16 @@
 
 package grevend.common;
 
+import grevend.sequence.Seq;
 import java.util.Collection;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author David Greven
  * @since 0.2.0
  */
-public interface LazyCollection<E> extends Collection<E> {}
+public interface LazyCollection<E> extends Collection<E> {
+
+    @NotNull <S extends Seq<E, S>> Seq<E, S> sequence();
+
+}

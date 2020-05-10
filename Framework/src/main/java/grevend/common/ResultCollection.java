@@ -24,6 +24,12 @@
 
 package grevend.common;
 
+import grevend.sequence.Seq;
 import java.util.Collection;
+import org.jetbrains.annotations.NotNull;
 
-public interface ResultCollection<E> extends Collection<E>, Result<Collection<E>> {}
+public interface ResultCollection<E> extends Collection<E>, Result<Collection<E>> {
+
+    @NotNull <S extends Seq<E, S>> Seq<E, S> sequence();
+
+}
