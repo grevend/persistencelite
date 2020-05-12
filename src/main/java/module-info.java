@@ -29,5 +29,5 @@ module PersistenceLite {
     opens grevend.sequence.iterators;
     opens grevend.sequence;
 
-    provides System.LoggerFinder with PersistenceLiteLoggerFinder;
+    //provides System.LoggerFinder with PersistenceLiteLoggerFinder;
 }
