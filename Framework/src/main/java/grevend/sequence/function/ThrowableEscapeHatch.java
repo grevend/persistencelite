@@ -78,6 +78,24 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         };
     }
 
+    @NotNull
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public static <T, R, Thr extends Throwable> Function<T, R> escape(@NotNull Result.AbortableFunction<T, R> function, @NotNull ThrowableEscapeHatch<Thr> escapeHatch) {
+        return arg -> {
+            try {
+                return function.apply(arg);
+            } catch (Throwable throwable) {
+                if (!escapeHatch.getThrowableClass().isAssignableFrom(throwable.getClass())) {
+                    throw new RuntimeException("Encountered unexpected throwable.", throwable);
+                } else {
+                    escapeHatch.escape((Thr) throwable);
+                    return null;
+                }
+            }
+        };
+    }
+
     /**
      * @param consumer
      * @param escapeHatch

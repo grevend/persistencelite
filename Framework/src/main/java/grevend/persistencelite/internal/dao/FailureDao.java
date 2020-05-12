@@ -25,7 +25,9 @@
 package grevend.persistencelite.internal.dao;
 
 import grevend.common.Failure;
+import grevend.common.FailureCollection;
 import grevend.common.Result;
+import grevend.common.ResultCollection;
 import grevend.persistencelite.dao.Dao;
 import java.io.Closeable;
 import java.util.Collection;
@@ -44,8 +46,8 @@ public class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
 
     @NotNull
     @Override
-    public Throwable fail() {
-        return this.failure.fail();
+    public Throwable reason() {
+        return this.failure.reason();
     }
 
     /**
@@ -81,8 +83,8 @@ public class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
-    public Result<Collection<E>> create(@NotNull Iterable<E> entities) {
-        return Result.of(this.failure);
+    public ResultCollection<E> create(@NotNull Iterable<E> entities) {
+        return FailureCollection.of(this.failure);
     }
 
     /**
@@ -116,8 +118,8 @@ public class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
-    public Result<Collection<E>> retrieveByProps(@NotNull Map<String, Object> properties) {
-        return Result.of(this.failure);
+    public ResultCollection<E> retrieveByProps(@NotNull Map<String, Object> properties) {
+        return FailureCollection.of(this.failure);
     }
 
     /**
@@ -133,8 +135,8 @@ public class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
-    public Result<Collection<E>> retrieveAll() {
-        return Result.of(this.failure);
+    public ResultCollection<E> retrieveAll() {
+        return FailureCollection.of(this.failure);
     }
 
     /**
@@ -175,8 +177,8 @@ public class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
-    public Result<Collection<E>> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) {
-        return Result.of(this.failure);
+    public ResultCollection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) {
+        return FailureCollection.of(this.failure);
     }
 
     /**
@@ -226,9 +228,9 @@ public class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      * <p>While this interface method is declared to throw {@code
      * Exception}, implementers are <em>strongly</em> encouraged to declare concrete implementations
      * of the {@code close} method to throw more specific exceptions, or to throw no exception at
-     * all if the close operation cannot fail.
+     * all if the close operation cannot reason.
      *
-     * <p> Cases where the close operation may fail require careful
+     * <p> Cases where the close operation may reason require careful
      * attention by implementers. It is strongly advised to relinquish the underlying resources and
      * to internally <em>mark</em> the resource as closed, prior to throwing the exception. The
      * {@code close} method is unlikely to be invoked more than once and so this ensures that the

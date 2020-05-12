@@ -24,7 +24,13 @@
 
 package grevend.persistencelite.internal.dao;
 
+import grevend.common.Failure;
+import grevend.common.FailureCollection;
 import grevend.common.Pair;
+import grevend.common.Result;
+import grevend.common.ResultCollection;
+import grevend.common.Success;
+import grevend.common.SuccessCollection;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
@@ -33,8 +39,7 @@ import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
 import grevend.persistencelite.internal.entity.representation.EntitySerializer;
 import grevend.persistencelite.internal.util.Utils;
-import grevend.sequence.function.ThrowableEscapeHatch;
-import grevend.sequence.function.ThrowingFunction;
+import grevend.sequence.Seq;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Map;
@@ -43,7 +48,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -78,17 +82,21 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      * @return Either returns the entity from the first parameter or creates a new instance based on
      * the persistent version.
      *
-     * @throws Exception If an error occurs during the persistence process.
      * @since 0.3.3
      */
     @NotNull
     @Override
-    public E create(@NotNull E entity) throws Throwable {
-        var entityComponents = this.entitySerializer.serialize(entity);
-        this.daoImpl.create(entityComponents);
-        var iter = this.daoImpl.retrieve(this.entitySerializer.merge(entityComponents)).iterator();
-        if (!iter.hasNext()) { throw new IllegalStateException(""); }
-        return this.entityDeserializer.deserialize(iter.next());
+    public Result<E> create(@NotNull E entity) {
+        try {
+            var entityComponents = this.entitySerializer.serialize(entity);
+            this.daoImpl.create(entityComponents);
+            var iter = this.daoImpl.retrieve(this.entitySerializer.merge(entityComponents))
+                .iterator();
+            if (!iter.hasNext()) { throw new IllegalStateException(""); }
+            return Result.ofThrowing(() -> this.entityDeserializer.deserialize(iter.next()));
+        } catch (Throwable throwable) {
+            return (Failure<E>) () -> throwable;
+        }
     }
 
     /**
@@ -102,21 +110,22 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      * avoid confusion about the synchronization behavior of the contained entities with the data
      * source.
      *
-     * @throws Exception If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
      * @since 0.3.3
      */
     @NotNull
     @Override
-    public Collection<E> create(@NotNull Iterable<E> entities) throws Throwable {
-        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-        var res = StreamSupport.stream(entities.spliterator(), false)
-            .map(ThrowableEscapeHatch
-                .escape((@NotNull ThrowingFunction<E, E>) this::create, escapeHatch))
-            .filter(Objects::nonNull).collect(Collectors.toUnmodifiableList());
-        escapeHatch.rethrow();
-        return res;
+    public ResultCollection<E> create(@NotNull Iterable<E> entities) {
+        var res = Seq.of(entities).map(this::create).toUnmodifiableList();
+        if (Seq.of(res).anyMatch(Result::failure)) {
+            return FailureCollection
+                .of((Failure<?>) Seq.of(res).filter(Result::failure).findFirst().get());
+        }
+
+        return SuccessCollection.of(Seq.of(res).filter(Result::success)
+            .map(result -> result instanceof Success<E> success ? success.get() : null)
+            .toUnmodifiableList());
     }
 
     /**
@@ -127,16 +136,15 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      *
      * @return Returns the entity found in the form of an {@code Optional}.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Optional
      * @see Map
      * @since 0.3.3
      */
     @NotNull
     @Override
-    public Optional<E> retrieveById(@NotNull Map<String, Object> identifiers) throws Throwable {
+    public Result<E> retrieveById(@NotNull Map<String, Object> identifiers) {
         var iter = this.retrieveByProps(identifiers).iterator();
-        return iter.hasNext() ? Optional.of(iter.next()) : Optional.empty();
+        return iter.hasNext() ? ((Success<E>) iter::next) : (Failure<E>) () -> null;
     }
 
     /**
@@ -147,20 +155,16 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      *
      * @return Returns the entities found in the form of an {@code Collection}.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Map
      * @since 0.3.3
      */
     @NotNull
     @Override
-    public Collection<E> retrieveByProps(@NotNull Map<String, Object> props) throws Throwable {
-        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-        var res = StreamSupport.stream(this.daoImpl.retrieve(props).spliterator(), false)
-            .map(ThrowableEscapeHatch.escape(this.entityDeserializer::deserialize, escapeHatch))
-            .collect(Collectors.toUnmodifiableList());
-        escapeHatch.rethrow();
-        return res;
+    public ResultCollection<E> retrieveByProps(@NotNull Map<String, Object> props) {
+        return Result.ofTry(() -> SuccessCollection.of(Seq.of(() -> this.daoImpl.retrieve(props))
+            .mapThrowing(this.entityDeserializer::deserialize).mapAbort(Result::orAbort)
+            .toUnmodifiableList()));
     }
 
     /**
@@ -171,13 +175,12 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      * should be immutable to avoid confusion about the synchronization behavior of the contained
      * entities with the data source.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @since 0.3.3
      */
     @NotNull
     @Override
-    public Collection<E> retrieveAll() throws Throwable {
+    public ResultCollection<E> retrieveAll() {
         return this.retrieveByProps(Map.of());
     }
 
@@ -192,13 +195,12 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      *
      * @return Returns the updated entity.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Map
      * @since 0.3.3
      */
     @NotNull
     @Override
-    public E update(@NotNull E entity, @NotNull Map<String, Object> props) throws Throwable {
+    public Result<E> update(@NotNull E entity, @NotNull Map<String, Object> props) {
         var components = this.entitySerializer.serialize(entity);
         this.daoImpl.update(components, props);
         var iter = this.daoImpl.retrieve(Stream.of(this.entitySerializer.merge(components), props)
@@ -220,7 +222,6 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      *
      * @return Returns the updated entity.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
      * @see Map
@@ -228,14 +229,15 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      */
     @NotNull
     @Override
-    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> props) throws Throwable {
-        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-        var res = Utils.zip(entities.iterator(), props.iterator()).map(ThrowableEscapeHatch
-            .escape((Pair<E, Map<String, Object>> pair) -> this
-                .update(Objects.requireNonNull(pair).first(), pair.second()), escapeHatch))
+    public ResultCollection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> props) {
+        var res = Utils.zip(entities.iterator(), props.iterator())
+            .map((Pair<E, Map<String, Object>> pair) -> this
+                .update(Objects.requireNonNull(pair).first(), pair.second()))
             .collect(Collectors.toUnmodifiableList());
-        escapeHatch.rethrow();
-        return res;
+
+        return Result.ofTry(() -> SuccessCollection
+            .of(Seq.of(res).mapAbort(el -> Objects.requireNonNull(el).orAbort())
+                .toUnmodifiableList()));
     }
 
     /**
@@ -244,12 +246,17 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      *
      * @param entity The entity that should be deleted.
      *
-     * @throws Exception If an error occurs during the persistence process.
      * @since 0.3.3
      */
+    @NotNull
     @Override
-    public void delete(@NotNull E entity) throws Throwable {
-        this.delete(this.entitySerializer.merge(this.entitySerializer.serialize(entity)));
+    public Result<Void> delete(@NotNull E entity) {
+        try {
+            return this.delete(this.entitySerializer
+                .merge(this.entitySerializer.serialize(entity)));
+        } catch (Throwable throwable) {
+            return (Failure<Void>) () -> throwable;
+        }
     }
 
     /**
@@ -258,12 +265,12 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      *
      * @param identifiers The identifiers that should be used to delete the entity.
      *
-     * @throws Exception If an error occurs during the persistence process.
      * @since 0.3.3
      */
+    @NotNull
     @Override
-    public void delete(@NotNull Map<String, Object> identifiers) throws Throwable {
-        this.daoImpl.delete(identifiers);
+    public Result<Void> delete(@NotNull Map<String, Object> identifiers) {
+        return Result.ofThrowing(() -> this.daoImpl.delete(identifiers));
     }
 
     /**
@@ -272,16 +279,15 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      *
      * @param entities The {@code Iterable} of entities that should be deleted.
      *
-     * @throws Exception If an error occurs during the persistence process.
      * @see Iterable
      * @since 0.3.3
      */
+    @NotNull
     @Override
-    public void delete(@NotNull Iterable<E> entities) throws Throwable {
-        final var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-        entities.forEach(ThrowableEscapeHatch
-            .escape((E entity) -> this.delete(Objects.requireNonNull(entity)), escapeHatch));
-        escapeHatch.rethrow();
+    public Result<Void> delete(@NotNull Iterable<E> entities) {
+        return Result.ofTry(() -> Seq.of(entities).filter(Objects::nonNull)
+            .mapAbort(entity -> this.delete(Objects.requireNonNull(entity)).orAbort())
+            .toUnmodifiableList());
     }
 
     /**
@@ -291,9 +297,9 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
      * <p>While this interface method is declared to throw {@code
      * Exception}, implementers are <em>strongly</em> encouraged to declare concrete implementations
      * of the {@code close} method to throw more specific exceptions, or to throw no exception at
-     * all if the close operation cannot fail.
+     * all if the close operation cannot reason.
      *
-     * <p> Cases where the close operation may fail require careful
+     * <p> Cases where the close operation may reason require careful
      * attention by implementers. It is strongly advised to relinquish the underlying resources and
      * to internally <em>mark</em> the resource as closed, prior to throwing the exception. The
      * {@code close} method is unlikely to be invoked more than once and so this ensures that the

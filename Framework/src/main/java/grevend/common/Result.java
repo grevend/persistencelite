@@ -27,6 +27,7 @@ package grevend.common;
 import grevend.sequence.function.ThrowingRunnable;
 import grevend.sequence.function.ThrowingSupplier;
 import java.util.Optional;
+import java.util.function.Function;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +37,7 @@ public interface Result<T> {
     @NotNull
     @Contract(pure = true)
     static <T> Result<T> of(@NotNull Failure<?> failure) {
-        return (Failure<T>) failure::fail;
+        return (Failure<T>) failure::reason;
     }
 
     @NotNull
@@ -65,6 +66,34 @@ public interface Result<T> {
         }
     }
 
+    @NotNull
+    static Result<Void> ofTry(@NotNull AbortableRunnable abortableRunnable) {
+        try {
+            abortableRunnable.run();
+            return (Success<Void>) () -> null;
+        } catch (AbortOnFailure abortOnFailure) {
+            return (Failure<Void>) () -> abortOnFailure.failure;
+        }
+    }
+
+    @NotNull
+    static <T> Result<T> ofTry(@NotNull AbortableSupplier<T> abortableSupplier) {
+        try {
+            return abortableSupplier.get();
+        } catch (AbortOnFailure abortOnFailure) {
+            return (Failure<T>) () -> abortOnFailure.failure;
+        }
+    }
+
+    @NotNull
+    static <T> ResultCollection<T> ofTry(@NotNull AbortableCollectionSupplier<T> abortableSupplier) {
+        try {
+            return abortableSupplier.get();
+        } catch (AbortOnFailure abortOnFailure) {
+            return FailureCollection.of((Failure<?>) () -> abortOnFailure.failure);
+        }
+    }
+
     boolean success();
 
     default boolean failure() {
@@ -80,9 +109,106 @@ public interface Result<T> {
         return this.or(null);
     }
 
+    /*@NotNull
+    default Result<T> ifSuccess(@NotNull Consumer<T> consumer) {
+        if (this instanceof Success<T> success) { consumer.accept(success.get()); }
+        return this;
+    }
+
+    @NotNull
+    default Result<T> ifFailure(@NotNull Consumer<Throwable> consumer) {
+        if (this instanceof Failure<T> success) { consumer.accept(success.reason()); }
+        return this;
+    }*/
+
     @NotNull
     default Optional<T> toOptional() {
         return this.failure() ? Optional.empty() : Optional.ofNullable(this.orNull());
     }
+
+    @NotNull
+    default <U> Result<U> map(@NotNull Function<T, U> mapper) {
+        return this instanceof Success<T> success ? (Success<U>) () -> mapper.apply(success.get())
+            : (Failure<U>) ((Failure<T>) this)::reason;
+    }
+
+    @NotNull
+    default Result<T> mapFailure(@NotNull Function<Throwable, Throwable> mapper) {
+        return this instanceof Failure<T> failure ? (Failure<T>) () -> mapper
+            .apply(failure.reason()) : this;
+    }
+
+    @NotNull
+    default Result<T> mapFailure(@NotNull String reason) {
+        return this.mapFailure(throwable -> new Throwable(reason));
+    }
+
+    @NotNull
+    default <U> Result<U> flatMap(@NotNull Function<T, Result<U>> mapper) {
+        return this instanceof Success<T> success ? mapper.apply(success.get())
+            : (Failure<U>) ((Failure<T>) this)::reason;
+    }
+
+    @NotNull
+    default T orAbort() throws AbortOnFailure {
+        if (this instanceof Success<T> success) {
+            return success.get();
+        } else {
+            throw new AbortOnFailure(((Failure<T>) this).reason());
+        }
+    }
+
+    @FunctionalInterface
+    interface AbortableSupplier<T> {
+
+        @NotNull
+        Result<T> get() throws AbortOnFailure;
+
+    }
+
+    @FunctionalInterface
+    interface AbortableCollectionSupplier<T> {
+
+        @NotNull
+        ResultCollection<T> get() throws AbortOnFailure;
+
+    }
+
+    @FunctionalInterface
+    interface AbortableRunnable {
+
+        void run() throws AbortOnFailure;
+
+    }
+
+    @FunctionalInterface
+    interface AbortableFunction<T, R> {
+
+        @Nullable
+        R apply(@Nullable T t) throws AbortOnFailure;
+
+    }
+
+    final class AbortOnFailure extends Throwable {
+
+        private final Throwable failure;
+
+        private AbortOnFailure(@NotNull Throwable failure) {
+            this.failure = failure;
+        }
+
+    }
+
+    /*@NotNull
+    default <U> Result<U> map(@NotNull Function<T, U> mapper) {
+        return this instanceof Success<T> success ? (Success<U>) () -> mapper.apply(success.get())
+            : (Failure<U>) ((Failure<T>) this)::reason;
+    }
+
+    @NotNull
+    default <U> Result<U> map(@NotNull Function<T, U> mapper) {
+        return this instanceof Success<T> success ? (Success<U>) () -> mapper.apply(success.get())
+            : (Failure<U>) ((Failure<T>) this)::reason;
+    }*/
 
 }

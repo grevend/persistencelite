@@ -25,8 +25,12 @@
 package grevend.common;
 
 import grevend.sequence.Seq;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,6 +41,31 @@ public class SuccessCollection<E> implements ResultCollection<E>, Success<Collec
     @Contract(pure = true)
     private SuccessCollection(@NotNull Collection<E> collection) {
         this.collection = collection;
+    }
+
+    @Contract(pure = true)
+    public SuccessCollection(@NotNull Collection<Result<E>> collection, boolean dummy) {
+        if (collection.stream().anyMatch(Result::failure)) {
+            throw new IllegalArgumentException();
+        }
+        this.collection = collection.stream().map(res -> res.or(null))
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    @Contract(pure = true)
+    SuccessCollection() {
+        this.collection = new ArrayList<>();
+    }
+
+    @NotNull
+    @Contract(value = "_ -> new", pure = true)
+    public static <E> SuccessCollection<E> of(@NotNull Collection<E> collection) {
+        return new SuccessCollection<>(collection);
+    }
+
+    public static void main(String[] args) {
+        var list = new SuccessCollection<>(List.of(10, 25, 12));
+        System.out.println(list.filter(el -> el < 14));
     }
 
     @Override
@@ -352,6 +381,12 @@ public class SuccessCollection<E> implements ResultCollection<E>, Success<Collec
     @Override
     public <S extends Seq<E, S>> Seq<E, S> sequence() {
         return Seq.of(this.get());
+    }
+
+    @NotNull
+    @Override
+    public Supplier<ResultCollection<E>> factory() {
+        return SuccessCollection::new;
     }
 
 }

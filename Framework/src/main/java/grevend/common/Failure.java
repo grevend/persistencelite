@@ -32,7 +32,7 @@ public interface Failure<T> extends Result<T> {
     @NotNull
     @Contract(pure = true)
     static <T> Failure<T> of(@NotNull Failure<?> failure) {
-        return failure::fail;
+        return failure::reason;
     }
 
     @Override
@@ -47,10 +47,10 @@ public interface Failure<T> extends Result<T> {
 
     @Override
     default T orThrow() throws Throwable {
-        throw this.fail();
+        throw this.reason();
     }
 
     @NotNull
-    Throwable fail();
+    Throwable reason();
 
 }

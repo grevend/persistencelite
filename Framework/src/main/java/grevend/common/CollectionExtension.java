@@ -24,6 +24,24 @@
 
 package grevend.common;
 
+import grevend.sequence.Seq;
 import java.util.Collection;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
-public interface ResultCollection<E> extends Collection<E>, CollectionExtension<E, ResultCollection<E>>, Result<Collection<E>> {}
+public interface CollectionExtension<E, C extends Collection<E>> {
+
+    @NotNull <S extends Seq<E, S>> Seq<E, S> sequence();
+
+    @NotNull
+    default C filter(@NotNull Predicate<? super E> predicate) {
+        return this.sequence().filter(predicate)
+            .collect(Collectors.toCollection(this.factory()));
+    }
+
+    @NotNull
+    Supplier<C> factory();
+
+}
