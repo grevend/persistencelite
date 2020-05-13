@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class FailureCollection<E> implements ResultCollection<E>, Failure<Collection<E>> {
+public final class FailureCollection<E> implements ResultCollection<E>, Failure<Collection<E>> {
 
     private final Failure<E> failure;
 

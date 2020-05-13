@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class SuccessCollection<E> implements ResultCollection<E>, Success<Collection<E>> {
+public final class SuccessCollection<E> implements ResultCollection<E>, Success<Collection<E>> {
 
     private final Collection<E> collection;
 

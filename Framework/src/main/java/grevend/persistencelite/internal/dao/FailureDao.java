@@ -34,7 +34,7 @@ import java.util.Map;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
+public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
 
     private final Failure<E> failure;
 
