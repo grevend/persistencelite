@@ -1,4 +1,5 @@
-module PersistenceLite {
+module grevend.persistencelite {
+
     requires java.sql;
     requires jdk.httpserver;
     requires java.compiler;

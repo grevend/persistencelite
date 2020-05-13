@@ -78,3 +78,4 @@ checkstyle.xml
 postgres.ser
 Framework/src/main/resources/credentials.properties
 Framework/src/main/java/grevend/main/Main.java
+*.properties

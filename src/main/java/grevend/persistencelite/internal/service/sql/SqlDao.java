@@ -91,15 +91,6 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
         }
 
         return Collections.unmodifiableCollection(res);
-
-        /*var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-        var entities = res.stream().map(escape((Map<String, Object> map) -> EntityFactory
-            .construct(this.getEntityMetadata(), map, true), escapeHatch))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toUnmodifiableList());
-        escapeHatch.rethrow();
-
-        return entities;*/
     }
 
     @Override
