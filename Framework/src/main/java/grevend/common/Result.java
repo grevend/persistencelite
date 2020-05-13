@@ -27,6 +27,7 @@ package grevend.common;
 import grevend.sequence.function.ThrowingRunnable;
 import grevend.sequence.function.ThrowingSupplier;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -109,7 +110,7 @@ public interface Result<T> {
         return this.or(null);
     }
 
-    /*@NotNull
+    @NotNull
     default Result<T> ifSuccess(@NotNull Consumer<T> consumer) {
         if (this instanceof Success<T> success) { consumer.accept(success.get()); }
         return this;
@@ -119,7 +120,7 @@ public interface Result<T> {
     default Result<T> ifFailure(@NotNull Consumer<Throwable> consumer) {
         if (this instanceof Failure<T> success) { consumer.accept(success.reason()); }
         return this;
-    }*/
+    }
 
     @NotNull
     default Optional<T> toOptional() {
@@ -198,17 +199,5 @@ public interface Result<T> {
         }
 
     }
-
-    /*@NotNull
-    default <U> Result<U> map(@NotNull Function<T, U> mapper) {
-        return this instanceof Success<T> success ? (Success<U>) () -> mapper.apply(success.get())
-            : (Failure<U>) ((Failure<T>) this)::reason;
-    }
-
-    @NotNull
-    default <U> Result<U> map(@NotNull Function<T, U> mapper) {
-        return this instanceof Success<T> success ? (Success<U>) () -> mapper.apply(success.get())
-            : (Failure<U>) ((Failure<T>) this)::reason;
-    }*/
 
 }
