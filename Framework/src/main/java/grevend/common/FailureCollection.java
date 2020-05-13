@@ -52,8 +52,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Returns the number of elements in this collection.  If this collection contains more than
-     * {@code Integer.MAX_VALUE} elements, returns {@code Integer.MAX_VALUE}.
+     * {@inheritDoc}
      *
      * @return the number of elements in this collection
      */
@@ -63,7 +62,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Returns {@code true} if this collection contains no elements.
+     * {@inheritDoc}
      *
      * @return {@code true} if this collection contains no elements
      */
@@ -74,9 +73,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Returns {@code true} if this collection contains the specified element. More formally,
-     * returns {@code true} if and only if this collection contains at least one element {@code e}
-     * such that {@code Objects.equals(o, e)}.
+     * {@inheritDoc}
      *
      * @param o element whose presence in this collection is to be tested
      *
@@ -94,9 +91,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Returns an iterator over the elements in this collection.  There are no guarantees concerning
-     * the order in which the elements are returned (unless this collection is an instance of some
-     * class that provides a guarantee).
+     * {@inheritDoc}
      *
      * @return an {@code Iterator} over the elements in this collection
      */
@@ -119,15 +114,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Returns an array containing all of the elements in this collection. If this collection makes
-     * any guarantees as to what order its elements are returned by its iterator, this method must
-     * return the elements in the same order. The returned array's {@linkplain
-     * Class#getComponentType runtime component type} is {@code Object}.
-     *
-     * <p>The returned array will be "safe" in that no references to it are
-     * maintained by this collection.  (In other words, this method must allocate a new array even
-     * if this collection is backed by an array). The caller is thus free to modify the returned
-     * array.
+     * {@inheritDoc}
      *
      * @return an array, whose {@linkplain Class#getComponentType runtime component type} is {@code
      * Object}, containing all of the elements in this collection
@@ -143,19 +130,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Returns an array containing all of the elements in this collection; the runtime type of the
-     * returned array is that of the specified array. If the collection fits in the specified array,
-     * it is returned therein. Otherwise, a new array is allocated with the runtime type of the
-     * specified array and the size of this collection.
-     *
-     * <p>If this collection fits in the specified array with room to spare
-     * (i.e., the array has more elements than this collection), the element in the array
-     * immediately following the end of the collection is set to {@code null}.  (This is useful in
-     * determining the length of this collection <i>only</i> if the caller knows that this
-     * collection does not contain any {@code null} elements.)
-     *
-     * <p>If this collection makes any guarantees as to what order its elements
-     * are returned by its iterator, this method must return the elements in the same order.
+     * {@inheritDoc}
      *
      * @param a the array into which the elements of this collection are to be stored, if it is big
      *          enough; otherwise, a new array of the same runtime type is allocated for this
@@ -194,20 +169,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Ensures that this collection contains the specified element (optional operation).  Returns
-     * {@code true} if this collection changed as a result of the call.  (Returns {@code false} if
-     * this collection does not permit duplicates and already contains the specified element.)<p>
-     * <p>
-     * Collections that support this operation may place limitations on what elements may be added
-     * to this collection.  In particular, some collections will refuse to add {@code null}
-     * elements, and others will impose restrictions on the type of elements that may be added.
-     * Collection classes should clearly specify in their documentation any restrictions on what
-     * elements may be added.<p>
-     * <p>
-     * If a collection refuses to add a particular element for any reason other than that it already
-     * contains the element, it <i>must</i> throw an exception (rather than returning {@code
-     * false}).  This preserves the invariant that a collection always contains the specified
-     * element after this call returns.
+     * {@inheritDoc}
      *
      * @param e element whose presence in this collection is to be ensured
      *
@@ -230,11 +192,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Removes a single instance of the specified element from this collection, if it is present
-     * (optional operation).  More formally, removes an element {@code e} such that {@code
-     * Objects.equals(o, e)}, if this collection contains one or more such elements.  Returns {@code
-     * true} if this collection contained the specified element (or equivalently, if this collection
-     * changed as a result of the call).
+     * {@inheritDoc}
      *
      * @param o element to be removed from this collection, if present
      *
@@ -253,8 +211,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Returns {@code true} if this collection contains all of the elements in the specified
-     * collection.
+     * {@inheritDoc}
      *
      * @param c collection to be checked for containment in this collection
      *
@@ -275,10 +232,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Adds all of the elements in the specified collection to this collection (optional operation).
-     * The behavior of this operation is undefined if the specified collection is modified while the
-     * operation is in progress. (This implies that the behavior of this call is undefined if the
-     * specified collection is this collection, and this collection is nonempty.)
+     * {@inheritDoc}
      *
      * @param c collection containing elements to be added to this collection
      *
@@ -304,9 +258,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Removes all of this collection's elements that are also contained in the specified collection
-     * (optional operation).  After this call returns, this collection will contain no elements in
-     * common with the specified collection.
+     * {@inheritDoc}
      *
      * @param c collection containing elements to be removed from this collection
      *
@@ -330,9 +282,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Retains only the elements in this collection that are contained in the specified collection
-     * (optional operation).  In other words, removes from this collection all of its elements that
-     * are not contained in the specified collection.
+     * {@inheritDoc}
      *
      * @param c collection containing elements to be retained in this collection
      *
@@ -356,8 +306,7 @@ public class FailureCollection<E> implements ResultCollection<E>, Failure<Collec
     }
 
     /**
-     * Removes all of the elements from this collection (optional operation). The collection will be
-     * empty after this method returns.
+     * {@inheritDoc}
      *
      * @throws UnsupportedOperationException if the {@code clear} operation is not supported by this
      *                                       collection
