@@ -34,6 +34,7 @@ import grevend.persistencelite.internal.entity.EntityRelation;
 import grevend.persistencelite.internal.entity.EntityType;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.sequence.function.ThrowableEscapeHatch;
+import grevend.sequence.function.ThrowingFunction;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -136,10 +137,12 @@ final class SqlUtils {
                     }
 
                     var exceptionEscapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-                    var entities = res.stream().map(escape(
-                        (Map<String, Object> map) -> EntityFactory
-                            .construct(subType, map, true), exceptionEscapeHatch))
-                        .filter(Objects::nonNull).collect(Collectors.toUnmodifiableList());
+                    var entities = res.stream()
+                        .map(escape((ThrowingFunction<? super Map<String, Object>, ?>)
+                                (Map<String, Object> map) -> EntityFactory
+                                    .construct(subType, Objects.requireNonNull(map), true),
+                            exceptionEscapeHatch)).filter(Objects::nonNull)
+                        .collect(Collectors.toUnmodifiableList());
                     exceptionEscapeHatch.rethrow();
                     elements.addAll((List<E>) entities);
                 }
