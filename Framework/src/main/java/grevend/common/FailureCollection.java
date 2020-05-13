@@ -57,6 +57,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      * @return the number of elements in this collection
      */
     @Override
+    @Contract(pure = true)
     public int size() {
         return 0;
     }
@@ -97,6 +98,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public Iterator<E> iterator() {
         return new Iterator<>() {
 
@@ -125,6 +127,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public Object[] toArray() {
         return new Object[0];
     }
@@ -164,6 +167,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public <T> T[] toArray(@NotNull T[] a) {
         return a;
     }
@@ -187,6 +191,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      *                                       insertion restrictions
      */
     @Override
+    @Contract(pure = true)
     public boolean add(E e) {
         return false;
     }
@@ -206,6 +211,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      *                                       this collection
      */
     @Override
+    @Contract(pure = true)
     public boolean remove(Object o) {
         return false;
     }
@@ -227,6 +233,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      * @see #contains(Object)
      */
     @Override
+    @Contract(pure = true)
     public boolean containsAll(@NotNull Collection<?> c) {
         return false;
     }
@@ -253,6 +260,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      * @see #add(Object)
      */
     @Override
+    @Contract(pure = true)
     public boolean addAll(@NotNull Collection<? extends E> c) {
         return false;
     }
@@ -277,6 +285,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      * @see #contains(Object)
      */
     @Override
+    @Contract(pure = true)
     public boolean removeAll(@NotNull Collection<?> c) {
         return false;
     }
@@ -301,6 +310,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      * @see #contains(Object)
      */
     @Override
+    @Contract(pure = true)
     public boolean retainAll(@NotNull Collection<?> c) {
         return false;
     }
@@ -312,6 +322,7 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
      *                                       collection
      */
     @Override
+    @Contract(pure = true)
     public void clear() {}
 
     @NotNull
@@ -322,8 +333,16 @@ public final class FailureCollection<E> implements ResultCollection<E>, Failure<
 
     @NotNull
     @Override
+    @Contract(pure = true)
     public Supplier<ResultCollection<E>> factory() {
         return SuccessCollection::new;
+    }
+
+    @NotNull
+    @Override
+    @Contract(pure = true)
+    public String toString() {
+        return "FailureCollection{failure=" + this.failure + '}';
     }
 
 }

@@ -31,6 +31,7 @@ import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,6 +41,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * @param <E>
@@ -71,8 +73,33 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
 
     @NotNull
     @Override
+    @UnmodifiableView
     public Iterable<Map<String, Object>> retrieve(@NotNull Map<String, Object> props) throws SQLException {
-        return List.of();
+        var preparedStatement = this.preparedStatementFactory.values(List.of(), Objects
+            .requireNonNull(this.preparedStatementFactory.prepare(Crud.RETRIEVE,
+                this.entityMetadata, this.transaction, true, -1)), Map.of());
+
+        var res = SqlUtils.convert(preparedStatement.executeQuery());
+        for (var map : res) {
+            SqlUtils.createRelationValues(this.entityMetadata, map, () -> {
+                try {
+                    return this.transactionFactory.createTransaction();
+                } catch (Throwable throwable) {
+                    return null;
+                }
+            });
+        }
+
+        return Collections.unmodifiableCollection(res);
+
+        /*var escapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
+        var entities = res.stream().map(escape((Map<String, Object> map) -> EntityFactory
+            .construct(this.getEntityMetadata(), map, true), escapeHatch))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableList());
+        escapeHatch.rethrow();
+
+        return entities;*/
     }
 
     @Override

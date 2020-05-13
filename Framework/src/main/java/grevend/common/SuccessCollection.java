@@ -28,7 +28,6 @@ import grevend.sequence.Seq;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
@@ -329,8 +328,16 @@ public final class SuccessCollection<E> implements ResultCollection<E>, Success<
 
     @NotNull
     @Override
+    @Contract(pure = true)
     public Supplier<ResultCollection<E>> factory() {
         return SuccessCollection::new;
+    }
+
+    @NotNull
+    @Override
+    @Contract(pure = true)
+    public String toString() {
+        return "SuccessCollection" + this.collection;
     }
 
 }
