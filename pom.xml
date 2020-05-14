@@ -32,7 +32,7 @@
   <artifactId>persistencelite</artifactId>
   <name>PersistenceLite</name>
   <url>https://github.com/grevend/PersistenceLite</url>
-  <version>0.3.9-SNAPSHOT</version>
+  <version>0.4.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -128,28 +128,10 @@
           <source>14</source>
           <target>14</target>
           <showWarnings>true</showWarnings>
-          <!--<verbose>true</verbose>-->
           <compilerArgs>
             <arg>--enable-preview</arg>
-            <!--<arg>-processor</arg>
-            <arg>grevend.persistencelite.builder.EntityBuilderProcessor</arg>-->
           </compilerArgs>
           <forceJavacCompilerUse>true</forceJavacCompilerUse>
-          <!--<generatedSourcesDirectory>
-            ${project.build.directory}/generated-sources/
-          </generatedSourcesDirectory>
-          <annotationProcessorPaths>
-            <annotationProcessorPath>
-              <artifactId>persistencelite-annotationprocessors</artifactId>
-              <groupId>grevend</groupId>
-              <version>0.3.3-SNAPSHOT</version>
-            </annotationProcessorPath>
-          </annotationProcessorPaths>-->
-          <!--<annotationProcessors>
-            <annotationProcessor>
-              grevend.persistencelite.builder.EntityBuilderProcessor
-            </annotationProcessor>
-          </annotationProcessors>-->
         </configuration>
       </plugin>
       <plugin>

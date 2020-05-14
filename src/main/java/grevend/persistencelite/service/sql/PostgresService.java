@@ -24,12 +24,14 @@
 
 package grevend.persistencelite.service.sql;
 
+import grevend.common.Failure;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
+import grevend.persistencelite.internal.dao.FailureDao;
 import grevend.persistencelite.internal.service.sql.SqlDao;
 import grevend.persistencelite.internal.service.sql.SqlTransaction;
 import grevend.persistencelite.service.Service;
@@ -112,8 +114,12 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @since 0.2.0
      */
     @NotNull
-    public <E> Dao<E> createDao(@NotNull Class<E> entity) throws Throwable {
-        return this.createDao(entity, this.transactionFactory().createTransaction());
+    public <E> Dao<E> createDao(@NotNull Class<E> entity) {
+        try {
+            return this.createDao(entity, this.transactionFactory().createTransaction());
+        } catch (Throwable throwable) {
+            return new FailureDao<>((Failure<?>) () -> throwable);
+        }
     }
 
     /**
