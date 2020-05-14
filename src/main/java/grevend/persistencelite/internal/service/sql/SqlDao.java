@@ -30,6 +30,7 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.util.Utils;
+import grevend.sequence.Seq;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -76,11 +77,15 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
     @Override
     @UnmodifiableView
     public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws SQLException {
-        var preparedStatement = this.preparedStatementFactory.values(keys, Objects
-            .requireNonNull(this.preparedStatementFactory
+        var preparedStatement = this.preparedStatementFactory.values(keys, Objects.requireNonNull(
+            (Utils.containsExactly(keys,
+                Seq.of(this.entityMetadata.declaredProperties()).map(EntityProperty::propertyName)
+                    .toList()) || props.isEmpty()) ? this.preparedStatementFactory
                 .prepare(Crud.RETRIEVE, this.entityMetadata, this.transaction,
-                    props.entrySet().isEmpty(),
-                    props.entrySet().isEmpty() ? -1 : 1)), props);
+                    props.entrySet().isEmpty(), props.entrySet().isEmpty() ? -1 : 1)
+                : this.transaction.connection().prepareStatement(this.preparedStatementFactory
+                    .prepareSelectWithAttributes(this.entityMetadata, Seq.of(keys).toList()))),
+            props);
 
         var res = SqlUtils.convert(preparedStatement.executeQuery());
         for (var map : res) {

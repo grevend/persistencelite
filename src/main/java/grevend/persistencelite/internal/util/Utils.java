@@ -25,7 +25,10 @@
 package grevend.persistencelite.internal.util;
 
 import grevend.common.Pair;
+import grevend.sequence.Seq;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -169,6 +172,16 @@ public final class Utils {
         };
 
         return StreamSupport.stream(iter.spliterator(), false);
+    }
+
+    public static <T> boolean containsExactly(@NotNull Collection<T> first, @NotNull Collection<T> second) {
+        Collection<T> copy = new ArrayList<>(first);
+        copy.removeAll(second);
+        return first.containsAll(second) && second.containsAll(first) && copy.isEmpty();
+    }
+
+    public static <T> boolean containsExactly(@NotNull Iterable<T> first, @NotNull Iterable<T> second) {
+        return containsExactly(Seq.of(first).toList(), Seq.of(second).toList());
     }
 
 }
