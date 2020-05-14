@@ -80,7 +80,7 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
             .requireNonNull(this.preparedStatementFactory
                 .prepare(Crud.RETRIEVE, this.entityMetadata, this.transaction,
                     props.entrySet().isEmpty(),
-                    props.entrySet().isEmpty() ? -1 : 1)), Map.of());
+                    props.entrySet().isEmpty() ? -1 : 1)), props);
 
         var res = SqlUtils.convert(preparedStatement.executeQuery());
         for (var map : res) {

@@ -64,7 +64,9 @@ final class PreparedStatementFactory {
         }
 
         try {
-            return transaction.connection().prepareStatement(cache.get(entityMetadata).get(crud));
+            var statement = cache.get(entityMetadata).get(crud);
+            if (!cached) { cache.get(entityMetadata).remove(crud); }
+            return transaction.connection().prepareStatement(statement);
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
             return null;
