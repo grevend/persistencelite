@@ -95,6 +95,11 @@ public interface Result<T> {
         }
     }
 
+    @Contract("_ -> fail")
+    static <T> T abort(@NotNull String reason) throws AbortOnFailure {
+        throw new AbortOnFailure(new Throwable(reason));
+    }
+
     boolean success();
 
     default boolean failure() {

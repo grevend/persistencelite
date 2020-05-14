@@ -84,10 +84,10 @@ final class PreparedStatementFactory {
 
     @NotNull
     @Contract("_, _, _ -> param2")
-    public PreparedStatement values(@NotNull Iterable<EntityProperty> props, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+    public PreparedStatement values(@NotNull Iterable<String> props, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
         var i = 0;
-        for (EntityProperty property : props) {
-            var value = properties.get(property.propertyName());
+        for (String property : props) {
+            var value = properties.get(property);
             if (value == null || value.equals("null")) {
                 statement.setNull(i + 1, Types.NULL);
             } else {

@@ -67,7 +67,7 @@ public class RestRequesterDao implements DaoImpl<IOException> {
 
     @NotNull
     @Override
-    public Iterable<Map<String, Object>> retrieve(@NotNull Map<String, Object> props) throws IOException {
+    public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws IOException {
         try {
             return this.entitySerializer.serialize(this.request());
         } catch (Throwable throwable) {

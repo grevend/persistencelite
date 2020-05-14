@@ -28,11 +28,11 @@ import grevend.persistencelite.crud.Crud;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
+import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -62,11 +62,12 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
 
         Utils.zip(this.entityMetadata.superTypes().iterator(), entity.iterator())
             .filter(Objects::nonNull).forEach(ThrowableEscapeHatch.escapeSuper(
-            pair -> this.preparedStatementFactory
-                .values(Objects.requireNonNull(pair).first().uniqueProperties(), Objects
-                        .requireNonNull(this.preparedStatementFactory
-                            .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)),
-                    pair.second()).executeUpdate(), escapeHatch));
+            pair -> this.preparedStatementFactory.values(
+                Objects.requireNonNull(pair).first().uniqueProperties().stream()
+                    .map(EntityProperty::propertyName).collect(Collectors.toUnmodifiableList()),
+                Objects.requireNonNull(this.preparedStatementFactory
+                    .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)), pair.second())
+                .executeUpdate(), escapeHatch));
 
         escapeHatch.rethrow();
     }
@@ -74,10 +75,12 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
     @NotNull
     @Override
     @UnmodifiableView
-    public Iterable<Map<String, Object>> retrieve(@NotNull Map<String, Object> props) throws SQLException {
-        var preparedStatement = this.preparedStatementFactory.values(List.of(), Objects
-            .requireNonNull(this.preparedStatementFactory.prepare(Crud.RETRIEVE,
-                this.entityMetadata, this.transaction, true, -1)), Map.of());
+    public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws SQLException {
+        var preparedStatement = this.preparedStatementFactory.values(keys, Objects
+            .requireNonNull(this.preparedStatementFactory
+                .prepare(Crud.RETRIEVE, this.entityMetadata, this.transaction,
+                    props.entrySet().isEmpty(),
+                    props.entrySet().isEmpty() ? -1 : 1)), Map.of());
 
         var res = SqlUtils.convert(preparedStatement.executeQuery());
         for (var map : res) {
@@ -108,7 +111,7 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
                 var superType = superTypes.next();
                 this.preparedStatementFactory.values(Stream
                     .concat(superType.uniqueProperties().stream(),
-                        superType.declaredIdentifiers().stream())
+                        superType.declaredIdentifiers().stream()).map(EntityProperty::propertyName)
                     .collect(Collectors.toUnmodifiableList()), Objects.requireNonNull(
                     this.preparedStatementFactory
                         .prepare(Crud.UPDATE, superType, this.transaction, true, -1)), mergedProps)
@@ -123,10 +126,12 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
 
     @Override
     public void delete(@NotNull Map<String, Object> props) throws SQLException {
-        this.preparedStatementFactory.values(this.entityMetadata.declaredIdentifiers(),
-            Objects.requireNonNull(this.preparedStatementFactory
-                .prepare(Crud.DELETE, this.entityMetadata, this.transaction,
-                    true, -1)), props).executeUpdate();
+        this.preparedStatementFactory.values(
+            this.entityMetadata.declaredIdentifiers().stream().map(EntityProperty::propertyName)
+                .collect(Collectors.toUnmodifiableList()), Objects.requireNonNull(
+                this.preparedStatementFactory
+                    .prepare(Crud.DELETE, this.entityMetadata, this.transaction, true, -1)), props)
+            .executeUpdate();
     }
 
 }

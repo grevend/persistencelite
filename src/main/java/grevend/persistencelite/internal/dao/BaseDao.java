@@ -28,18 +28,17 @@ import grevend.common.Failure;
 import grevend.common.Pair;
 import grevend.common.Result;
 import grevend.common.ResultCollection;
-import grevend.common.Success;
 import grevend.common.SuccessCollection;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
 import grevend.persistencelite.internal.entity.representation.EntitySerializer;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.sequence.Seq;
-import java.io.Closeable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -59,6 +58,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
 
+    private final EntityMetadata<E> entityMetadata;
     private final DaoImpl<Thr> daoImpl;
     private final EntitySerializer<E> entitySerializer;
     private final EntityDeserializer<E> entityDeserializer;
@@ -66,6 +66,7 @@ public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
 
     @Contract(pure = true)
     public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
+        this.entityMetadata = entityMetadata;
         this.daoImpl = daoImpl;
         this.transaction = transaction == null ?
             transactionFactory.createTransaction() : transaction;
@@ -89,8 +90,8 @@ public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
         return Result.ofThrowing(() -> {
             var entityComponents = this.entitySerializer.serialize(entity);
             this.daoImpl.create(entityComponents);
-            var iter = this.daoImpl.retrieve(this.entitySerializer.merge(entityComponents))
-                .iterator();
+            var merged = this.entitySerializer.merge(entityComponents);
+            var iter = this.daoImpl.retrieve(merged.keySet(), merged).iterator();
             if (!iter.hasNext()) { throw new IllegalStateException(""); }
             return this.entityDeserializer.deserialize(iter.next());
         });
@@ -132,9 +133,14 @@ public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
     @NotNull
     @Override
     public Result<E> retrieveById(@NotNull Map<String, Object> identifiers) {
-        var iter = this.retrieveByProps(identifiers).iterator();
-        return iter.hasNext() ? ((Success<E>) iter::next)
-            : (Failure<E>) () -> new Throwable("Empty collection.");
+        return Result.ofThrowing(() -> {
+            var iter = this.daoImpl.retrieve(
+                this.entityMetadata.declaredIdentifiers().stream().map(EntityProperty::propertyName)
+                    .collect(Collectors.toUnmodifiableList()), identifiers).iterator();
+
+            return iter.hasNext() ? this.entityDeserializer.deserialize(iter.next())
+                : Result.abort("Empty collection.");
+        });
     }
 
     /**
@@ -151,9 +157,10 @@ public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
     @NotNull
     @Override
     public ResultCollection<E> retrieveByProps(@NotNull Map<String, Object> props) {
-        return Result.ofTry(() -> SuccessCollection.of(Seq.of(() -> this.daoImpl.retrieve(props))
-            .mapThrowing(this.entityDeserializer::deserialize).mapAbort(Result::orAbort)
-            .toUnmodifiableList()));
+        return Result.ofTry(() -> SuccessCollection
+            .of(Seq.of(() -> this.daoImpl.retrieve(props.keySet(), props))
+                .mapThrowing(this.entityDeserializer::deserialize).mapAbort(Result::orAbort)
+                .toUnmodifiableList()));
     }
 
     /**
@@ -190,8 +197,9 @@ public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
         return Result.ofThrowing(() -> {
             var components = this.entitySerializer.serialize(entity);
             this.daoImpl.update(components, props);
+            var merged = this.entitySerializer.merge(components);
             var iter = this.daoImpl
-                .retrieve(Stream.of(this.entitySerializer.merge(components), props)
+                .retrieve(merged.keySet(), Stream.of(merged, props)
                     .flatMap(map -> map.entrySet().stream()).collect(Collectors
                         .toUnmodifiableMap(Entry::getKey, Entry::getValue,
                             (oldEntry, newEntry) -> newEntry))).iterator();
