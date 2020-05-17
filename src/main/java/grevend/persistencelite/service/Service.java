@@ -26,6 +26,7 @@ package grevend.persistencelite.service;
 
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.TransactionFactory;
+import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.util.TypeMarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

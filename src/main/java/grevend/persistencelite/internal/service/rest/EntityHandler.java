@@ -25,13 +25,18 @@
 package grevend.persistencelite.internal.service.rest;
 
 import grevend.common.Pair;
-import grevend.persistencelite.PersistenceLite;
+import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.dao.BaseDao;
+import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.service.Service;
+import grevend.sequence.Seq;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
@@ -49,31 +54,63 @@ public final record EntityHandler(@NotNull Service<?>service) implements RestHan
         };
     }
 
+    @NotNull
     private Pair<Integer, String> handleGet(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
-        String response =
+        Map<String, Object> props = Seq.of(query.entrySet())
+            .filter(param -> !param.getValue().isEmpty())
+            .map(param -> new PairImpl<>(param.getKey(), param.getValue().get(0))).collect(
+                Collectors.toUnmodifiableMap(Pair::first, Pair::second,
+                    (oldValue, newValue) -> newValue));
+
+        try {
+            Iterator<Map<String, Object>> res = this.daoImpl(entityMetadata)
+                .retrieve(props.keySet(), props).iterator();
+
+            var builder = new StringBuilder();
+            builder.append("{\"entities\": [");
+
+            builder.append(Seq.of(res).map(map -> "{" + Seq.of(map.entrySet()).map(entry -> "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"").joining(", ") + "}").joining(", "));
+
+            /*res.forEachRemaining(map -> {
+                builder.append("{");
+                map.forEach((key, value) -> builder.append("\"").append(key).append("\": \"")
+                    .append(value).append("\""));
+                builder.append("}");
+            });*/
+
+            builder.append("]}");
+            return this.handleSuccess(OK, builder.toString());
+        } catch (Throwable throwable) {
+            return this.handleFailure(NOT_FOUND, throwable.getMessage());
+        }
+
+        /*String response =
             "{\"persistencelite\": \""
                 + PersistenceLite.VERSION
                 + "\", \"entity\": \"" + entityMetadata.name()
                 + "\", \"message\": \"Hello World!\"}";
 
-        return this.handleSuccess(OK, response);
+        return this.handleSuccess(OK, response);*/
     }
 
+    @NotNull
     private Pair<Integer, String> handlePost(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
-        return null;
+        return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
     }
 
+    @NotNull
     private Pair<Integer, String> handlePatch(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
-        return null;
+        return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
     }
 
+    @NotNull
     private Pair<Integer, String> handleDelete(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
-        return null;
+        return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
     }
 
     @NotNull
     @Contract("_, _ -> new")
-    private Pair<Integer, String> handleFailure(@Range(from = 400, to = 405) int code, @NotNull String reason) {
+    private Pair<Integer, String> handleFailure(@Range(from = 400, to = 501) int code, @NotNull String reason) {
         return new PairImpl<>(code, "{\"message\": \"" + reason + "\"}");
     }
 
@@ -81,6 +118,22 @@ public final record EntityHandler(@NotNull Service<?>service) implements RestHan
     @Contract("_, _ -> new")
     private Pair<Integer, String> handleSuccess(int code, @NotNull String json) {
         return new PairImpl<>(code, json);
+    }
+
+    @NotNull
+    private DaoImpl<?> daoImpl(@NotNull EntityMetadata<?> entityMetadata) throws Throwable {
+        if (this.service.daoFactory().createDao(entityMetadata, this.service.transactionFactory()
+            .createTransaction()) instanceof BaseDao<?, ?> baseDao) {
+            return baseDao.daoImpl();
+        } else {
+            throw new IllegalStateException("Failed to construct a DaoImpl.");
+        }
+    }
+
+    @NotNull
+    private <E> Dao<E> dao(@NotNull EntityMetadata<E> entityMetadata) throws Throwable {
+        return this.service.daoFactory()
+            .createDao(entityMetadata, this.service.transactionFactory().createTransaction());
     }
 
     private record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}

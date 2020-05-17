@@ -295,4 +295,10 @@ public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
         }
     }
 
+    @NotNull
+    @Contract(pure = true)
+    public DaoImpl<Thr> daoImpl() {
+        return this.daoImpl;
+    }
+
 }

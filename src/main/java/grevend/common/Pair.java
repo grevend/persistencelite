@@ -34,15 +34,13 @@ public interface Pair<A, B> {
 
     @NotNull
     @Contract(pure = true)
-    @SuppressWarnings("unused")
-    static <A, B> Collector<Pair<A, B>, ?, Map<A, B>> toMap() {
+    static <A, B> Collector<? extends Pair<A, B>, ?, Map<A, B>> toMap() {
         return Collectors.toMap(Pair::first, Pair::second);
     }
 
     @NotNull
     @Contract(pure = true)
-    @SuppressWarnings("unused")
-    static <A, B> Collector<Pair<A, B>, ?, Map<A, B>> toUnmodifiableMap() {
+    static <A, B> Collector<? extends Pair<A, B>, ?, Map<A, B>> toUnmodifiableMap() {
         return Collectors.toUnmodifiableMap(Pair::first, Pair::second);
     }
 

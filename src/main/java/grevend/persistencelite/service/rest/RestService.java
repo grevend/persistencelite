@@ -191,6 +191,9 @@ public final class RestService implements Service<RestConfigurator> {
                     var res = handler.handle(exchange.getRequestURI(), exchange.getRequestMethod(),
                         Utils.query(exchange.getRequestURI()), this.version, entity);
 
+                    System.out.println(res.first());
+                    System.out.println(res.second());
+
                     exchange.getResponseHeaders()
                         .put("Content-Type", List.of("application/json; utf-8"));
                     exchange.sendResponseHeaders(res.first(), res.second().length());
