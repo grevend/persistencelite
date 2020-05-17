@@ -22,38 +22,34 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite;
+package grevend.persistencelite.internal.service.rest;
 
-import grevend.persistencelite.service.Configurator;
-import grevend.persistencelite.service.Service;
-import java.lang.reflect.InvocationTargetException;
+import grevend.common.Pair;
+import grevend.persistencelite.entity.EntityMetadata;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author David Greven
- * @since 0.2.0
- */
-public final class PersistenceLite {
+@FunctionalInterface
+public interface RestHandler {
 
-    public static final System.Logger LOGGER = System.getLogger("PersistenceLiteLogger");
-    public static final String VERSION = "0.4.3";
+    int OK = 200;
+    int CREATED = 201;
+    int BAD_REQUEST = 400;
+    int UNAUTHORIZED = 401;
+    int FORBIDDEN = 403;
+    int NOT_FOUND = 404;
+    int METHOD_NOT_ALLOWED = 405;
 
-    /**
-     * @param service
-     * @param <C>
-     * @param <S>
-     *
-     * @return
-     *
-     * @since 0.3.0
-     */
-    @NotNull
-    public static <C extends Configurator<S>, S extends Service<C>> C configure(@NotNull Class<S> service) {
-        try {
-            return service.getConstructor().newInstance().configurator();
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            throw new IllegalStateException("Service configurator construction failed.", e);
-        }
-    }
+    String GET = "GET";
+    String HEAD = "HEAD";
+    String POST = "POST";
+    String PUT = "PUT";
+    String DELETE = "DELETE";
+    String PATCH = "PATCH";
+
+    Pair<Integer, String> handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata) throws IOException;
 
 }

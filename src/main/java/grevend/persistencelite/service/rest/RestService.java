@@ -31,6 +31,9 @@ import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.service.rest.EntityHandler;
+import grevend.persistencelite.internal.service.rest.RestHandler;
+import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.service.sql.PostgresService;
 import grevend.persistencelite.util.TypeMarshaller;
@@ -172,21 +175,27 @@ public final class RestService implements Service<RestConfigurator> {
         if (this.mode != RestMode.SERVER && this.scope != null) {
             throw new IllegalStateException();
         }
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+
+        var server = HttpServer.create(new InetSocketAddress(8000), 0);
+        RestHandler handler = new EntityHandler(this.service);
+
         EntityMetadata.entities(this.scope).forEach(entity -> {
             server.createContext("/api/v" + this.version + "/" + entity.name().toLowerCase(),
                 exchange -> {
                     System.out.println("Request...");
-                    String response =
-                        "{\"api\": \"" + this.version + "\", \"persistencelite\": \""
-                            + PersistenceLite.VERSION
-                            + "\", \"entity\": \"" + entity.name()
-                            + "\", \"message\": \"Hello World!\"}";
+                    System.out.println(exchange.getRequestURI());
+                    System.out.println(exchange.getRequestMethod());
+                    System.out.println(exchange.getRequestURI());
+                    System.out.println(Utils.query(exchange.getRequestURI()));
+
+                    var res = handler.handle(exchange.getRequestURI(), exchange.getRequestMethod(),
+                        Utils.query(exchange.getRequestURI()), this.version, entity);
+
                     exchange.getResponseHeaders()
                         .put("Content-Type", List.of("application/json; utf-8"));
-                    exchange.sendResponseHeaders(200, response.length());
+                    exchange.sendResponseHeaders(res.first(), res.second().length());
                     OutputStream os = exchange.getResponseBody();
-                    os.write(response.getBytes());
+                    os.write(res.second().getBytes());
                     os.close();
                 });
         });

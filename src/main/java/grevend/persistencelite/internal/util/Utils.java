@@ -26,13 +26,21 @@ package grevend.persistencelite.internal.util;
 
 import grevend.common.Pair;
 import grevend.sequence.Seq;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.BaseStream;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
@@ -182,6 +190,24 @@ public final class Utils {
 
     public static <T> boolean containsExactly(@NotNull Iterable<T> first, @NotNull Iterable<T> second) {
         return containsExactly(Seq.of(first).toList(), Seq.of(second).toList());
+    }
+
+    @NotNull
+    @Contract("null -> !null")
+    public static Map<String, List<String>> query(@Nullable URI uri) {
+        record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
+
+        if (uri == null || uri.getQuery() == null || uri.getQuery().equals("")) {
+            return Collections.emptyMap();
+        }
+
+        return Arrays.stream(uri.getQuery().split("&"))
+            .map(param -> new PairImpl<>(param, param.indexOf("="))).map(param -> new PairImpl<>(
+                param.second > 0 ? param.first.substring(0, param.second) : param.first,
+                param.second > 0 && param.first.length() > (param.second + 1) ? param.first
+                    .substring(param.second + 1) : null)).collect(Collectors
+                .groupingBy(Pair::first, HashMap::new,
+                    Collectors.mapping(Pair::second, Collectors.toUnmodifiableList())));
     }
 
 }

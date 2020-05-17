@@ -129,9 +129,8 @@ public final class EntityMetadata<E> {
         return reflections.getTypesAnnotatedWith(Entity.class).stream().map(EntityMetadata::of)
             .collect(Collectors.toUnmodifiableSet());
     }
-
-    @Contract("_ -> param1")
-    public static <E> @NotNull EntityMetadata<E> inferRelationTypes(@NotNull EntityMetadata<E> metadata) {
+    
+    public static <E> void inferRelationTypes(@NotNull EntityMetadata<E> metadata) {
         metadata.declaredRelations().stream().map(EntityProperty::relation).filter(
             relation -> Objects.requireNonNull(relation).getType() == EntityRelationType.UNKNOWN)
             .forEach(
@@ -175,7 +174,6 @@ public final class EntityMetadata<E> {
                 }
             }));
 
-        return metadata;
     }
 
     /**
