@@ -26,9 +26,7 @@ package grevend.persistencelite.internal.util;
 
 import grevend.common.Pair;
 import grevend.sequence.Seq;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,8 +35,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,22 +44,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Utils {
-
-    private static final Set<String> arrayPrimitives =
-        Set.of("void[]", "byte[]", "short[]", "int[]", "long[]", "float[]", "double[]", "boolean[]",
-            "char[]");
-
-    @Contract("null -> !null")
-    @SuppressWarnings("unchecked")
-    public static <A> String stringify(A a) {
-        if (a == null) {
-            return "null";
-        } else {
-            return a.getClass().isArray() &&
-                !Utils.arrayPrimitives.contains(a.getClass().getCanonicalName()) ?
-                Arrays.toString((A[]) a) : a.toString();
-        }
-    }
 
     @Contract(pure = true)
     @SuppressWarnings("unchecked")
@@ -182,7 +162,7 @@ public final class Utils {
         return StreamSupport.stream(iter.spliterator(), false);
     }
 
-    public static <T> boolean containsExactly(@NotNull Collection<T> first, @NotNull Collection<T> second) {
+    private static <T> boolean containsExactly(@NotNull Collection<T> first, @NotNull Collection<T> second) {
         Collection<T> copy = new ArrayList<>(first);
         copy.removeAll(second);
         return first.containsAll(second) && second.containsAll(first) && copy.isEmpty();

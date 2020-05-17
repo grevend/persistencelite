@@ -129,7 +129,7 @@ public final class EntityMetadata<E> {
         return reflections.getTypesAnnotatedWith(Entity.class).stream().map(EntityMetadata::of)
             .collect(Collectors.toUnmodifiableSet());
     }
-    
+
     public static <E> void inferRelationTypes(@NotNull EntityMetadata<E> metadata) {
         metadata.declaredRelations().stream().map(EntityProperty::relation).filter(
             relation -> Objects.requireNonNull(relation).getType() == EntityRelationType.UNKNOWN)
