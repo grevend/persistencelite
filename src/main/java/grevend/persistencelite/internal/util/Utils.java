@@ -142,6 +142,11 @@ public final class Utils {
     }
 
     @NotNull
+    public static <A, B, S1 extends Seq<A, S1>, S2 extends Seq<B, S2>> Stream<Pair<A, B>> zip(@NotNull S1 first, @NotNull S2 second) {
+        return zip(first.iterator(), second.iterator());
+    }
+
+    @NotNull
     public static <A, B> Stream<Pair<A, B>> zip(@NotNull Iterator<A> first, @NotNull Iterator<B> second) {
         record PairImpl<A, B>(@Nullable A first, @Nullable B second) implements Pair<A, B> {}
 

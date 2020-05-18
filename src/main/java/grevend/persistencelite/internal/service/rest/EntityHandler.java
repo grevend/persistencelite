@@ -30,12 +30,13 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.service.Service;
+import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -43,69 +44,82 @@ import org.jetbrains.annotations.Range;
 
 public final record EntityHandler(@NotNull Service<?>service) implements RestHandler {
 
+    private static final Map<Class<?>, TypeMarshaller<String, Object>> mappers = Map.of(
+        String.class, val -> val,
+        Integer.class, Integer::parseInt,
+        Integer.TYPE, Integer::parseInt,
+        Float.class, Float::parseFloat,
+        Float.TYPE, Float::parseFloat
+    );
+
     @Override
     public Pair<Integer, String> handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata) throws IOException {
-        return switch (method) {
-            case GET -> this.handleGet(query, entityMetadata);
-            case POST -> this.handlePost(query, entityMetadata);
-            case PATCH -> this.handlePatch(query, entityMetadata);
-            case DELETE -> this.handleDelete(query, entityMetadata);
-            default -> this.handleFailure(METHOD_NOT_ALLOWED, "Unexpected method " + method + ".");
-        };
+        try {
+            var props = this.extractProps(query, entityMetadata);
+            return switch (method) {
+                case GET -> this.handleGet(props, entityMetadata);
+                case POST -> this.handlePost(props, entityMetadata);
+                case PATCH -> this.handlePatch(props, entityMetadata);
+                case DELETE -> this.handleDelete(props, entityMetadata);
+                default -> this
+                    .handleFailure(METHOD_NOT_ALLOWED, "Unexpected method " + method + ".");
+            };
+        } catch (Throwable throwable) {
+            return this.handleFailure(NOT_FOUND, throwable.getMessage());
+        }
     }
 
     @NotNull
-    private Pair<Integer, String> handleGet(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
-        Map<String, Object> props = Seq.of(query.entrySet())
+    private Map<String, Object> extractProps(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) throws Throwable {
+        var properties = entityMetadata.declaredProperties();
+
+        Map<String, String> props = Seq.of(query.entrySet())
             .filter(param -> !param.getValue().isEmpty())
             .map(param -> new PairImpl<>(param.getKey(), param.getValue().get(0))).collect(
                 Collectors.toUnmodifiableMap(Pair::first, Pair::second,
                     (oldValue, newValue) -> newValue));
 
+        return Seq.of(properties)
+            .filter(prop -> props.containsKey(prop.fieldName()))
+            .map(prop -> mappers.get(prop.type()) == null ? null
+                : new PairImpl<>(prop.fieldName(),
+                    mappers.get(prop.type()).marshall(props.get(prop.fieldName()))))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableMap(Pair::first, Pair::second,
+                (oldValue, newValue) -> newValue));
+    }
+
+    @NotNull
+    private Pair<Integer, String> handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
         try {
-            Iterator<Map<String, Object>> res = this.daoImpl(entityMetadata)
-                .retrieve(props.keySet(), props).iterator();
-
-            var builder = new StringBuilder();
-            builder.append("{\"entities\": [");
-
-            builder.append(Seq.of(res).map(map -> "{" + Seq.of(map.entrySet()).map(entry -> "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"").joining(", ") + "}").joining(", "));
-
-            /*res.forEachRemaining(map -> {
-                builder.append("{");
-                map.forEach((key, value) -> builder.append("\"").append(key).append("\": \"")
-                    .append(value).append("\""));
-                builder.append("}");
-            });*/
-
-            builder.append("]}");
-            return this.handleSuccess(OK, builder.toString());
+            return this.handleSuccess(OK, "{\"entities\": [" + Seq
+                .of(this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator()).map(
+                    map -> "{" + Seq.of(map.entrySet())
+                        .map(entry -> "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"")
+                        .joining(", ") + "}").joining(", ") + "]}");
         } catch (Throwable throwable) {
             return this.handleFailure(NOT_FOUND, throwable.getMessage());
         }
-
-        /*String response =
-            "{\"persistencelite\": \""
-                + PersistenceLite.VERSION
-                + "\", \"entity\": \"" + entityMetadata.name()
-                + "\", \"message\": \"Hello World!\"}";
-
-        return this.handleSuccess(OK, response);*/
     }
 
     @NotNull
-    private Pair<Integer, String> handlePost(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
+    private Pair<Integer, String> handlePost(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
         return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
     }
 
     @NotNull
-    private Pair<Integer, String> handlePatch(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
+    private Pair<Integer, String> handlePatch(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
         return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
     }
 
     @NotNull
-    private Pair<Integer, String> handleDelete(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
-        return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
+    private Pair<Integer, String> handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+        try {
+            this.daoImpl(entityMetadata).delete(props);
+            return this.handleSuccess(OK, "Deletion successful.");
+        } catch (Throwable throwable) {
+            return this.handleFailure(INTERNAL_SERVER_ERROR, "Not implemented yet.");
+        }
     }
 
     @NotNull
