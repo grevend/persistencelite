@@ -26,12 +26,9 @@ package grevend.persistencelite.dao;
 
 import grevend.common.Result;
 import grevend.common.ResultCollection;
-import grevend.common.Success;
 import grevend.common.SuccessCollection;
 import grevend.sequence.Seq;
-import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -69,7 +66,7 @@ public interface Dao<E> extends AutoCloseable {
      * avoid confusion about the synchronization behavior of the contained entities with the data
      * source.
      *
-     * @see Collection
+     * @see ResultCollection
      * @see Iterable
      * @since 0.2.0
      */
@@ -82,9 +79,9 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @param identifiers The key-value pairs in the form of a {@code Map}.
      *
-     * @return Returns the entity found in the form of an {@code Optional}.
+     * @return Returns the entity found in the form of an {@code Result}.
      *
-     * @see Optional
+     * @see Result
      * @see Map
      * @since 0.2.0
      */
@@ -98,9 +95,9 @@ public interface Dao<E> extends AutoCloseable {
      * @param key   The key component.
      * @param value The value component.
      *
-     * @return Returns the entity found in the form of an {@code Optional}.
+     * @return Returns the entity found in the form of an {@code Result}.
      *
-     * @see Optional
+     * @see Result
      * @since 0.2.0
      */
     @NotNull
@@ -116,7 +113,7 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the entities found in the form of an {@code Collection}.
      *
-     * @see Collection
+     * @see ResultCollection
      * @see Map
      * @since 0.2.0
      */
@@ -132,7 +129,7 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the entities found in the form of an {@code Collection}.
      *
-     * @see Collection
+     * @see ResultCollection
      * @see Map
      * @since 0.2.0
      */
@@ -149,7 +146,7 @@ public interface Dao<E> extends AutoCloseable {
      * should be immutable to avoid confusion about the synchronization behavior of the contained
      * entities with the data source.
      *
-     * @see Collection
+     * @see ResultCollection
      * @since 0.2.0
      */
     @NotNull
@@ -202,7 +199,7 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns the updated entity.
      *
-     * @see Collection
+     * @see ResultCollection
      * @see Iterable
      * @see Map
      * @since 0.2.0
@@ -216,7 +213,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @param entity The entity that should be deleted.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     @NotNull
@@ -228,7 +224,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @param identifiers The identifiers that should be used to delete the entity.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     @NotNull
@@ -241,7 +236,6 @@ public interface Dao<E> extends AutoCloseable {
      * @param key   The key component.
      * @param value The value component.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @since 0.2.0
      */
     @NotNull
@@ -255,7 +249,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @param entities The {@code Iterable} of entities that should be deleted.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Iterable
      * @since 0.2.0
      */
@@ -271,7 +264,6 @@ public interface Dao<E> extends AutoCloseable {
      *
      * @return Returns a new {@code Seq} based on the provided {@code Iterable}.
      *
-     * @throws Throwable If an error occurs during the persistence process.
      * @see Seq
      * @see #retrieveAll()
      * @see Iterable
