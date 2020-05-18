@@ -25,7 +25,6 @@
 package grevend.persistencelite.internal.service.rest;
 
 import grevend.common.Pair;
-import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.dao.DaoImpl;
@@ -142,12 +141,6 @@ public final record EntityHandler(@NotNull Service<?>service) implements RestHan
         } else {
             throw new IllegalStateException("Failed to construct a DaoImpl.");
         }
-    }
-
-    @NotNull
-    private <E> Dao<E> dao(@NotNull EntityMetadata<E> entityMetadata) throws Throwable {
-        return this.service.daoFactory()
-            .createDao(entityMetadata, this.service.transactionFactory().createTransaction());
     }
 
     private record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
