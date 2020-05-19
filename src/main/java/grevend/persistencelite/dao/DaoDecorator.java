@@ -38,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class DaoDecorator<E> implements Dao<E> {
 
-    private final Dao<E> dao;
+    protected final Dao<E> dao;
 
     /**
      * @param dao
