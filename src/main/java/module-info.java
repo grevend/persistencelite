@@ -1,4 +1,4 @@
-module grevend.persistencelite {
+open module grevend.persistencelite {
 
     requires java.sql;
     requires jdk.httpserver;
@@ -19,19 +19,8 @@ module grevend.persistencelite {
     exports grevend.sequence.iterators;
     exports grevend.sequence;
 
-    opens grevend.common.jacoco;
-    opens grevend.common;
-    opens grevend.persistencelite;
-    opens grevend.persistencelite.dao;
-    opens grevend.persistencelite.entity;
-    opens grevend.persistencelite.service;
-    opens grevend.persistencelite.service.sql;
-    opens grevend.persistencelite.util;
-    opens grevend.sequence.function;
-    opens grevend.sequence.iterators;
-    opens grevend.sequence;
-
-    //opens grevend.persistencelite.builder;
+    exports grevend.persistencelite.internal.entity.lookup;
 
     //provides System.LoggerFinder with PersistenceLiteLoggerFinder;
+
 }
