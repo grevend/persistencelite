@@ -24,18 +24,19 @@
 
 package grevend.persistencelite.internal.entity.lookup;
 
-import grevend.persistencelite.internal.entity.EntityIdentifier;
 import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.internal.entity.EntityProperty;
-import grevend.persistencelite.internal.entity.EntityRelation;
-import grevend.persistencelite.internal.entity.EntityRelationType;
 import grevend.persistencelite.entity.Id;
 import grevend.persistencelite.entity.Property;
 import grevend.persistencelite.entity.Relation;
+import grevend.persistencelite.internal.entity.EntityIdentifier;
+import grevend.persistencelite.internal.entity.EntityProperty;
+import grevend.persistencelite.internal.entity.EntityRelation;
+import grevend.persistencelite.internal.entity.EntityRelationType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.Contract;
@@ -172,10 +173,17 @@ public interface EntityLookup<E, C extends AnnotatedElement> {
      */
     @NotNull
     default Collection<EntityProperty> lookupProperties(@NotNull EntityMetadata<E> entityMetadata) {
-        var lookup = MethodHandles.lookup();
-        return this.components(entityMetadata)
-            .map(component -> this.createProperty(entityMetadata, lookup, component))
-            .collect(Collectors.toUnmodifiableList());
+        try {
+            this.getClass().getModule().addReads(entityMetadata.entityClass().getModule());
+            var lookup = MethodHandles
+                .privateLookupIn(entityMetadata.entityClass(), MethodHandles.lookup());
+            return this.components(entityMetadata)
+                .map(component -> this.createProperty(entityMetadata, lookup, component))
+                .collect(Collectors.toUnmodifiableList());
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            return Collections.emptySet();
+        }
     }
 
     /**

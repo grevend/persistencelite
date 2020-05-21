@@ -19,8 +19,6 @@ open module grevend.persistencelite {
     exports grevend.sequence.iterators;
     exports grevend.sequence;
 
-    exports grevend.persistencelite.internal.entity.lookup;
-
     //provides System.LoggerFinder with PersistenceLiteLoggerFinder;
 
 }

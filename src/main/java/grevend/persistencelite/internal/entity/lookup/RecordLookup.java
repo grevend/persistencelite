@@ -140,7 +140,9 @@ public final class RecordLookup<E> implements EntityLookup<E, RecordComponent> {
     @Override
     public MethodHandle lookupConstructor(@NotNull EntityMetadata<E> entityMetadata) {
         try {
-            var lookup = MethodHandles.lookup();
+            this.getClass().getModule().addReads(entityMetadata.entityClass().getModule());
+            var lookup = MethodHandles
+                .privateLookupIn(entityMetadata.entityClass(), MethodHandles.lookup());
             MethodType methodType = MethodType.methodType(void.class,
                 entityMetadata.declaredProperties().stream().map(EntityProperty::type)
                     .collect(Collectors.toUnmodifiableList()));
