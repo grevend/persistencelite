@@ -24,9 +24,10 @@
 
 package grevend.persistencelite.service;
 
+import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
+import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
-import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.util.TypeMarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,7 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
+    @Deprecated
     C configurator();
 
     /**
@@ -54,7 +56,29 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
+    @Deprecated
     DaoFactory daoFactory();
+
+    /**
+     * @param entity
+     * @param transaction
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction);
+
+    /**
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity);
 
     /**
      * @return
@@ -62,6 +86,7 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
+    @Deprecated
     TransactionFactory transactionFactory();
 
     /**
@@ -89,5 +114,14 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller);
+
+    /**
+     * @return
+     *
+     * @since 0.4.5
+     */
+    default boolean allowsCaching() {
+        return false;
+    }
 
 }

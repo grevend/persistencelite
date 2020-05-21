@@ -28,7 +28,9 @@ import static grevend.persistencelite.service.rest.RestMode.SERVER;
 
 import com.sun.net.httpserver.HttpServer;
 import grevend.persistencelite.PersistenceLite;
+import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
+import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.service.rest.EntityHandler;
@@ -144,6 +146,34 @@ public final class RestService implements Service<RestConfigurator> {
     }
 
     /**
+     * @param entity
+     * @param transaction
+     *
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @Override
+    @Contract(pure = true)
+    public @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
+        return null;
+    }
+
+    /**
+     * @param entity
+     *
+     * @return
+     *
+     * @since 0.4.5
+     */
+
+    @Override
+    @Contract(pure = true)
+    public @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity) {
+        return null;
+    }
+
+    /**
      * @return
      *
      * @since 0.3.0
@@ -165,6 +195,17 @@ public final class RestService implements Service<RestConfigurator> {
     @Override
     public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
         this.service.registerTypeMarshaller(entity, from, to, marshaller);
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @Override
+    @Contract(pure = true)
+    public boolean allowsCaching() {
+        return true;
     }
 
     /**

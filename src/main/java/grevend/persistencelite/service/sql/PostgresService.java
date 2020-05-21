@@ -98,6 +98,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @since 0.2.0
      */
     @NotNull
+    @Override
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
         return this.daoFactory().createDao(EntityMetadata.of(entity), transaction);
     }
@@ -114,6 +115,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @since 0.2.0
      */
     @NotNull
+    @Override
     public <E> Dao<E> createDao(@NotNull Class<E> entity) {
         try {
             return this.createDao(entity, this.transactionFactory().createTransaction());
@@ -211,6 +213,17 @@ public final class PostgresService implements Service<PostgresConfigurator> {
 
         return DriverManager
             .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @Override
+    @Contract(pure = true)
+    public boolean allowsCaching() {
+        return true;
     }
 
 }
