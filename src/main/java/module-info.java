@@ -14,6 +14,7 @@ open module grevend.persistencelite {
     exports grevend.persistencelite.entity;
     exports grevend.persistencelite.service;
     exports grevend.persistencelite.service.sql;
+    exports grevend.persistencelite.service.rest;
     exports grevend.persistencelite.util;
     exports grevend.sequence.function;
     exports grevend.sequence.iterators;
