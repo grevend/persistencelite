@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import com.sun.net.httpserver.HttpExchange;
 import grevend.common.Pair;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
@@ -33,6 +34,7 @@ import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,20 +53,18 @@ public final record EntityHandler(@NotNull Service<?>service) implements RestHan
         Float.TYPE, Float::parseFloat
     );
 
-    @Override
-    public Pair<Integer, String> handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata) throws IOException {
+    public void handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
             var props = this.extractProps(query, entityMetadata);
-            return switch (method) {
-                case GET -> this.handleGet(props, entityMetadata);
+            switch (method) {
+                case GET -> this.handleGet(props, entityMetadata, exchange);
                 case POST -> this.handlePost(props, entityMetadata);
                 case PATCH -> this.handlePatch(props, entityMetadata);
                 case DELETE -> this.handleDelete(props, entityMetadata);
-                default -> this
-                    .handleFailure(METHOD_NOT_ALLOWED, "Unexpected method " + method + ".");
+                default -> this.handleFailure(METHOD_NOT_ALLOWED, "Unexpected method " + method + ".");
             };
         } catch (Throwable throwable) {
-            return this.handleFailure(NOT_FOUND, throwable.getMessage());
+            this.handleFailure(NOT_FOUND, throwable.getMessage());
         }
     }
 
@@ -88,16 +88,32 @@ public final record EntityHandler(@NotNull Service<?>service) implements RestHan
                 (oldValue, newValue) -> newValue));
     }
 
-    @NotNull
-    private Pair<Integer, String> handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+    private void handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
-            return this.handleSuccess(OK, "{\"entities\": [" + Seq
+            var entities = this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator();
+            exchange.sendResponseHeaders(OK, CHUNKED);
+            var out = exchange.getResponseBody();
+            //TODO Add charset configuration to REST service
+            out.write("{\"entities\": [".getBytes(StandardCharsets.UTF_8));
+            while (entities.hasNext()) {
+                out.flush();
+                out.write(("{" + Seq.of(entities.next().entrySet())
+                    .map(entry -> "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"")
+                    .joining(", ") + "}" + (entities.hasNext() ? ", " : ""))
+                    .getBytes(StandardCharsets.UTF_8));
+            }
+            out.write("]}".getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            out.close();
+
+            /*return this.handleSuccess(OK, "{\"entities\": [" + Seq
                 .of(this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator()).map(
                     map -> "{" + Seq.of(map.entrySet())
                         .map(entry -> "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"")
-                        .joining(", ") + "}").joining(", ") + "]}");
+                        .joining(", ") + "}").joining(", ") + "]}");*/
         } catch (Throwable throwable) {
-            return this.handleFailure(NOT_FOUND, throwable.getMessage());
+            exchange.sendResponseHeaders(NOT_FOUND, throwable.getMessage().length());
+            //return this.handleFailure(NOT_FOUND, throwable.getMessage());
         }
     }
 

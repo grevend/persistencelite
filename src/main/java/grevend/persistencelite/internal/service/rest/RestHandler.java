@@ -24,7 +24,7 @@
 
 package grevend.persistencelite.internal.service.rest;
 
-import grevend.common.Pair;
+import com.sun.net.httpserver.HttpExchange;
 import grevend.persistencelite.entity.EntityMetadata;
 import java.io.IOException;
 import java.net.URI;
@@ -34,6 +34,8 @@ import org.jetbrains.annotations.NotNull;
 
 @FunctionalInterface
 public interface RestHandler {
+
+    int CHUNKED = 0;
 
     int OK = 200;
     int CREATED = 201;
@@ -52,6 +54,6 @@ public interface RestHandler {
     String DELETE = "DELETE";
     String PATCH = "PATCH";
 
-    Pair<Integer, String> handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata) throws IOException;
+    void handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException;
 
 }

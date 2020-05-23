@@ -40,8 +40,10 @@ import grevend.persistencelite.service.Service;
 import grevend.persistencelite.service.sql.PostgresService;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.Executors;
 import org.jetbrains.annotations.Contract;
@@ -229,21 +231,24 @@ public final class RestService implements Service<RestConfigurator> {
                     System.out.println(exchange.getRequestURI());
                     System.out.println(Utils.query(exchange.getRequestURI()));
 
-                    var res = handler.handle(exchange.getRequestURI(), exchange.getRequestMethod(),
-                        Utils.query(exchange.getRequestURI()), this.version, entity);
+                    var headers = exchange.getResponseHeaders();
+                    headers.put("Content-Type", List.of("application/pl.v0.entity+json; utf-8"));
+                    headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
+                        .format(ZonedDateTime.now(ZoneOffset.UTC))));
 
-                    System.out.println(res.first());
-                    System.out.println(res.second());
+                    handler.handle(exchange.getRequestURI(), exchange.getRequestMethod(),
+                        Utils.query(exchange.getRequestURI()), this.version, entity, exchange);
 
-                    exchange.getResponseHeaders()
-                        .put("Content-Type", List.of("application/json; utf-8"));
-                    exchange.sendResponseHeaders(res.first(), res.second().length());
+                    /*System.out.println(res.first());
+                    System.out.println(res.second());*/
+                    /*exchange.sendResponseHeaders(res.first(), res.second().length());
+
                     OutputStream os = exchange.getResponseBody();
                     os.write(res.second().getBytes());
-                    os.close();
+                    os.close();*/
                 });
         });
-        server.setExecutor(this.poolSize == -1 ? null
+        server.setExecutor(this.poolSize < 1 ? null
             : Executors.newFixedThreadPool(this.poolSize));
         server.start();
         System.out.println(server.getAddress());
