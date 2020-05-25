@@ -24,20 +24,17 @@
 
 package grevend.persistencelite.service.rest;
 
-import static grevend.persistencelite.service.rest.RestMode.SERVER;
-
 import com.sun.net.httpserver.HttpServer;
-import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.service.rest.EntityHandler;
+import grevend.persistencelite.internal.service.rest.RestConfiguration;
 import grevend.persistencelite.internal.service.rest.RestHandler;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.service.Service;
-import grevend.persistencelite.service.sql.PostgresService;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -45,6 +42,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -57,72 +55,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class RestService implements Service<RestConfigurator> {
 
-    private RestMode mode;
-    private Service<?> service;
-    private int version, poolSize;
-    private String scope;
-
-    /**
-     * @since 0.3.0
-     */
-    @Contract(pure = true)
-    public RestService() {
-        this.mode = RestMode.REQUESTER;
-        this.service = null;
-    }
-
-    public static void main(String[] args) throws IOException {
-        var postgres = PersistenceLite.configure(PostgresService.class)
-            .credentials("credentials.properties").service();
-
-        PersistenceLite.configure(RestService.class)
-            .mode(SERVER)
-            .version(2)
-            .scope("grevend.main")
-            .threadPool(10)
-            .uses(postgres)
-            .service()
-            .start();
-    }
-
-    /**
-     * @param mode
-     *
-     * @since 0.3.0
-     */
-    void setMode(@NotNull RestMode mode) {
-        this.mode = mode;
-    }
-
-    /**
-     * @param version
-     *
-     * @since 0.3.3
-     */
-    void setVersion(int version) { this.version = version; }
-
-    /**
-     * @param scope
-     *
-     * @since 0.3.3
-     */
-    void setScope(@NotNull String scope) { this.scope = scope; }
-
-    /**
-     * @param poolSize
-     *
-     * @since 0.3.3
-     */
-    void setPoolSize(int poolSize) { this.poolSize = poolSize; }
-
-    /**
-     * @param service
-     *
-     * @since 0.3.0
-     */
-    void setService(@Nullable Service<?> service) {
-        this.service = service;
-    }
+    private RestConfiguration configuration;
 
     /**
      * @return
@@ -144,7 +77,7 @@ public final class RestService implements Service<RestConfigurator> {
     @NotNull
     @Override
     public DaoFactory daoFactory() {
-        return this.service.daoFactory();
+        return Objects.requireNonNull(this.configuration.service()).daoFactory();
     }
 
     /**
@@ -155,9 +88,10 @@ public final class RestService implements Service<RestConfigurator> {
      *
      * @since 0.4.5
      */
+    @NotNull
     @Override
     @Contract(pure = true)
-    public @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
+    public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
         return null;
     }
 
@@ -168,7 +102,6 @@ public final class RestService implements Service<RestConfigurator> {
      *
      * @since 0.4.5
      */
-
     @Override
     @Contract(pure = true)
     public @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity) {
@@ -183,7 +116,7 @@ public final class RestService implements Service<RestConfigurator> {
     @NotNull
     @Override
     public TransactionFactory transactionFactory() {
-        return this.service.transactionFactory();
+        return Objects.requireNonNull(this.configuration.service()).transactionFactory();
     }
 
     /**
@@ -196,7 +129,8 @@ public final class RestService implements Service<RestConfigurator> {
      */
     @Override
     public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
-        this.service.registerTypeMarshaller(entity, from, to, marshaller);
+        Objects.requireNonNull(this.configuration.service())
+            .registerTypeMarshaller(entity, from, to, marshaller);
     }
 
     /**
@@ -215,44 +149,35 @@ public final class RestService implements Service<RestConfigurator> {
      */
     @NotNull
     public HttpServer start() throws IOException {
-        if (this.mode != RestMode.SERVER && this.scope != null) {
+        if (this.configuration.mode() != RestMode.SERVER && this.configuration.scope() != null) {
             throw new IllegalStateException();
         }
 
         var server = HttpServer.create(new InetSocketAddress(8000), 0);
-        RestHandler handler = new EntityHandler(this.service);
+        RestHandler handler = new EntityHandler(this.configuration);
 
-        EntityMetadata.entities(this.scope).forEach(entity -> {
-            server.createContext("/api/v" + this.version + "/" + entity.name().toLowerCase(),
+        EntityMetadata.entities(Objects.requireNonNull(this.configuration.scope())).forEach(
+            entity -> server.createContext(
+                "/api/v" + this.configuration.version() + "/" + entity.name().toLowerCase(),
                 exchange -> {
-                    System.out.println("Request...");
-                    System.out.println(exchange.getRequestURI());
-                    System.out.println(exchange.getRequestMethod());
-                    System.out.println(exchange.getRequestURI());
-                    System.out.println(Utils.query(exchange.getRequestURI()));
-
                     var headers = exchange.getResponseHeaders();
                     headers.put("Content-Type", List.of("application/pl.v0.entity+json; utf-8"));
                     headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
                         .format(ZonedDateTime.now(ZoneOffset.UTC))));
-
                     handler.handle(exchange.getRequestURI(), exchange.getRequestMethod(),
-                        Utils.query(exchange.getRequestURI()), this.version, entity, exchange);
-
-                    /*System.out.println(res.first());
-                    System.out.println(res.second());*/
-                    /*exchange.sendResponseHeaders(res.first(), res.second().length());
-
-                    OutputStream os = exchange.getResponseBody();
-                    os.write(res.second().getBytes());
-                    os.close();*/
-                });
-        });
-        server.setExecutor(this.poolSize < 1 ? null
-            : Executors.newFixedThreadPool(this.poolSize));
+                        Utils.query(exchange.getRequestURI()), this.configuration.version(), entity,
+                        exchange);
+                }));
+        server.setExecutor(this.configuration.poolSize() < 1 ? null
+            : Executors.newFixedThreadPool(this.configuration.poolSize()));
         server.start();
-        System.out.println(server.getAddress());
         return server;
+    }
+
+    @Contract("_ -> this")
+    RestService setConfiguration(@NotNull RestConfiguration configuration) {
+        this.configuration = configuration;
+        return this;
     }
 
 }

@@ -26,8 +26,11 @@ package grevend.persistencelite.service.rest;
 
 import static grevend.persistencelite.service.rest.RestMode.SERVER;
 
+import grevend.persistencelite.internal.service.rest.RestConfiguration;
 import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,6 +45,8 @@ public final class RestConfigurator implements Configurator<RestService> {
     private RestMode mode;
     private int version, poolSize = -1;
     private String scope;
+    private boolean cached = false;
+    private Charset charset = StandardCharsets.UTF_8;
     private Service<?> service;
 
     /**
@@ -112,10 +117,45 @@ public final class RestConfigurator implements Configurator<RestService> {
         return this;
     }
 
+    /**
+     * @param size
+     *
+     * @return
+     *
+     * @since 0.4.5
+     */
     @NotNull
     @Contract("_ -> this")
     public RestConfigurator threadPool(int size) {
         this.poolSize = size;
+        return this;
+    }
+
+    /**
+     * @param cached
+     *
+     * @return
+     *
+     * @since 0.4.6
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator cached(boolean cached) {
+        this.cached = cached;
+        return this;
+    }
+
+    /**
+     * @param charset
+     *
+     * @return
+     *
+     * @since 0.4.6
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator charset(@NotNull Charset charset) {
+        this.charset = charset;
         return this;
     }
 
@@ -130,19 +170,13 @@ public final class RestConfigurator implements Configurator<RestService> {
         if (this.mode == SERVER) {
             if (this.service == null) {
                 throw new IllegalStateException("No service defined.");
-            } else {
-                this.restService.setService(this.service);
             }
             if (this.scope == null) {
                 throw new IllegalStateException("No scope defined.");
-            } else {
-                this.restService.setScope(this.scope);
             }
-            this.restService.setPoolSize(this.poolSize);
         }
-        this.restService.setMode(this.mode);
-        this.restService.setVersion(this.version);
-        return this.restService;
+        return this.restService.setConfiguration(new RestConfiguration(this.mode, this.version,
+            this.charset, this.cached, this.poolSize, this.scope, this.service));
     }
 
 }
