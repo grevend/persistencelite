@@ -178,7 +178,8 @@ public final class RestService implements Service<RestConfigurator> {
                     var headers = exchange.getResponseHeaders();
                     headers.put("Content-Type", List.of("application/pl.v0.entity+json; utf-8"));
                     headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
-                        .format(ZonedDateTime.now(ZoneOffset.UTC))));
+                        .format(EntityHandler.lastModified
+                            .computeIfAbsent(entity, e -> ZonedDateTime.now(ZoneOffset.UTC)))));
                     handler.handle(exchange.getRequestURI(), exchange.getRequestMethod(),
                         Utils.query(exchange.getRequestURI()), this.configuration.version(), entity,
                         exchange);
