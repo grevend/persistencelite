@@ -39,8 +39,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
 
 public final record EntityHandler(@NotNull RestConfiguration configuration) implements RestHandler {
 
@@ -55,7 +55,9 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         Float.TYPE, Float::parseFloat
     );
 
-    public void handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
+    public void handle(@NotNull URI uri, @NotNull @MagicConstant(stringValues = {GET, HEAD, POST,
+        PUT, DELETE, CONNECT, OPTIONS, TRACE,
+        PATCH}) String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
         try {
             var props = this.extractProps(query, entityMetadata);
             switch (method) {
@@ -178,11 +180,14 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         }
     }
 
-    private void handleFailure(@Range(from = 400, to = 501) int code, @NotNull String reason) {
+    private void handleFailure(@MagicConstant(intValues = {BAD_REQUEST, UNAUTHORIZED, FORBIDDEN,
+        NOT_FOUND, METHOD_NOT_ALLOWED, INTERNAL_SERVER_ERROR,
+        NOT_IMPLEMENTED}) int code, @NotNull String reason) {
         new PairImpl<>(code, "{\"message\": \"" + reason + "\"}");
     }
 
-    private void handleSuccess(int code, @NotNull String json) {
+    private void handleSuccess(@MagicConstant(intValues = {OK,
+        CREATED}) int code, @NotNull String json) {
         new PairImpl<>(code, json);
     }
 
