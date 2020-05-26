@@ -63,12 +63,15 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
 
         Utils.zip(this.entityMetadata.superTypes().iterator(), entity.iterator())
             .filter(Objects::nonNull).forEach(ThrowableEscapeHatch.escapeSuper(
-            pair -> this.preparedStatementFactory.values(
-                Objects.requireNonNull(pair).first().uniqueProperties().stream()
-                    .map(EntityProperty::propertyName).collect(Collectors.toUnmodifiableList()),
-                Objects.requireNonNull(this.preparedStatementFactory
-                    .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)), pair.second())
-                .executeUpdate(), escapeHatch));
+            pair -> {
+                var statement = this.preparedStatementFactory.values(
+                    Objects.requireNonNull(pair).first().uniqueProperties().stream()
+                        .map(EntityProperty::propertyName).collect(Collectors.toUnmodifiableList()),
+                    Objects.requireNonNull(this.preparedStatementFactory
+                        .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)), pair.second());
+                statement.executeUpdate();
+                System.out.println(statement.getGeneratedKeys());
+            }, escapeHatch));
 
         escapeHatch.rethrow();
     }

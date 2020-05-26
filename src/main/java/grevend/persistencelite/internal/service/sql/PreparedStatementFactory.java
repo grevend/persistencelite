@@ -24,11 +24,14 @@
 
 package grevend.persistencelite.internal.service.sql;
 
+import static grevend.persistencelite.crud.Crud.CREATE;
+
 import grevend.persistencelite.crud.Crud;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,7 +69,8 @@ final class PreparedStatementFactory {
         try {
             var statement = cache.get(entityMetadata).get(crud);
             if (!cached) { cache.get(entityMetadata).remove(crud); }
-            return transaction.connection().prepareStatement(statement);
+            return transaction.connection().prepareStatement(statement,
+                crud == CREATE ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS);
         } catch (SQLException sqlException) {
             sqlException.printStackTrace();
             return null;
