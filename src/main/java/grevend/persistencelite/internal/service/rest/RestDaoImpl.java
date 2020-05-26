@@ -39,14 +39,18 @@ import java.util.Map;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public class RestRequesterDao implements DaoImpl<IOException> {
+/**
+ * @author David Greven
+ * @since 0.4.7
+ */
+public final class RestDaoImpl implements DaoImpl<IOException> {
 
     private final EntityMetadata<?> entityMetadata;
     private final EntitySerializer<Reader> entitySerializer;
     private final EntityDeserializer<String> entityDeserializer;
 
     @Contract(pure = true)
-    public RestRequesterDao(@NotNull EntityMetadata<?> entityMetadata) {
+    public RestDaoImpl(@NotNull EntityMetadata<?> entityMetadata) {
         this.entityMetadata = entityMetadata;
         this.entitySerializer = json -> List.of(new Gson().fromJson(json, Map.class));
         this.entityDeserializer = entity -> "";
@@ -57,8 +61,9 @@ public class RestRequesterDao implements DaoImpl<IOException> {
 
     }
 
+    @NotNull
     @Contract(" -> new")
-    private @NotNull Reader request() throws IOException {
+    private Reader request() throws IOException {
         var con = new URL("http://localhost:8000/api/v2/author").openConnection();
         con.setRequestProperty("Accept-Charset", "utf-8");
         con.setRequestProperty("Content-Type", "application/json; utf-8");

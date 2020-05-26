@@ -29,20 +29,23 @@ import grevend.common.Pair;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.dao.DaoImpl;
-import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.io.IOException;
 import java.net.URI;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
 public final record EntityHandler(@NotNull RestConfiguration configuration) implements RestHandler {
+
+    private static final ConcurrentHashMap<EntityMetadata<?>, ZonedDateTime> lastModified
+        = new ConcurrentHashMap<>(9);
 
     private static final Map<Class<?>, TypeMarshaller<String, Object>> mappers = Map.of(
         String.class, val -> val,
@@ -125,12 +128,12 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                         .getBytes(this.configuration.charset()));
                     out.flush();
 
-                    var params = Utils.zip(Seq.of(Objects.requireNonNull(current.relation())
+                    /*var params = Utils.zip(Seq.of(Objects.requireNonNull(current.relation())
                             .getTargetProperties()).iterator(),
                         Seq.of(Objects.requireNonNull(current.relation())
                             .getSelfProperties()).iterator()).iterator();
 
-                    /*while (params.hasNext()) {
+                    while (params.hasNext()) {
                         var param = params.next();
                         out.flush();
                         out.write((param.first() + "=").getBytes(StandardCharsets.UTF_8));
@@ -158,36 +161,29 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         }
     }
 
-    @NotNull
-    private Pair<Integer, String> handlePost(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
-        return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
+    private void handlePost(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+        this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
     }
 
-    @NotNull
-    private Pair<Integer, String> handlePatch(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
-        return this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
+    private void handlePatch(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+        this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
     }
 
-    @NotNull
-    private Pair<Integer, String> handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+    private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
         try {
             this.daoImpl(entityMetadata).delete(props);
-            return this.handleSuccess(OK, "Deletion successful.");
+            this.handleSuccess(OK, "Deletion successful.");
         } catch (Throwable throwable) {
-            return this.handleFailure(INTERNAL_SERVER_ERROR, "Not implemented yet.");
+            this.handleFailure(INTERNAL_SERVER_ERROR, "Not implemented yet.");
         }
     }
 
-    @NotNull
-    @Contract("_, _ -> new")
-    private Pair<Integer, String> handleFailure(@Range(from = 400, to = 501) int code, @NotNull String reason) {
-        return new PairImpl<>(code, "{\"message\": \"" + reason + "\"}");
+    private void handleFailure(@Range(from = 400, to = 501) int code, @NotNull String reason) {
+        new PairImpl<>(code, "{\"message\": \"" + reason + "\"}");
     }
 
-    @NotNull
-    @Contract("_, _ -> new")
-    private Pair<Integer, String> handleSuccess(int code, @NotNull String json) {
-        return new PairImpl<>(code, json);
+    private void handleSuccess(int code, @NotNull String json) {
+        new PairImpl<>(code, json);
     }
 
     @NotNull

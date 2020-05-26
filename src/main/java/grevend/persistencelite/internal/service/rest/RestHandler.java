@@ -52,6 +52,9 @@ public interface RestHandler {
     String POST = "POST";
     String PUT = "PUT";
     String DELETE = "DELETE";
+    String CONNECT = "CONNECT";
+    String OPTIONS = "OPTIONS";
+    String TRACE = "TRACE";
     String PATCH = "PATCH";
 
     void handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException;

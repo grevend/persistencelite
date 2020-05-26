@@ -56,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
  * @author David Greven
  * @since 0.3.3
  */
-public final class BaseDao<E, Thr extends Exception> implements Dao<E> {
+public class BaseDao<E, Thr extends Exception> implements Dao<E> {
 
     private final EntityMetadata<E> entityMetadata;
     private final DaoImpl<Thr> daoImpl;

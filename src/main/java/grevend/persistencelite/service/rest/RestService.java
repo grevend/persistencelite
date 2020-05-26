@@ -30,8 +30,11 @@ import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.dao.FailureDao;
 import grevend.persistencelite.internal.service.rest.EntityHandler;
 import grevend.persistencelite.internal.service.rest.RestConfiguration;
+import grevend.persistencelite.internal.service.rest.RestDao;
+import grevend.persistencelite.internal.service.rest.RestDaoImpl;
 import grevend.persistencelite.internal.service.rest.RestHandler;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.service.Service;
@@ -86,13 +89,19 @@ public final class RestService implements Service<RestConfigurator> {
      *
      * @return
      *
-     * @since 0.4.5
+     * @since 0.4.7
      */
     @NotNull
     @Override
     @Contract(pure = true)
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
-        return null;
+        try {
+            return new RestDao<>(EntityMetadata.of(entity),
+                new RestDaoImpl(EntityMetadata.of(entity)),
+                this.transactionFactory(), transaction, true);
+        } catch (Throwable throwable) {
+            return new FailureDao<>(() -> throwable);
+        }
     }
 
     /**
@@ -100,12 +109,18 @@ public final class RestService implements Service<RestConfigurator> {
      *
      * @return
      *
-     * @since 0.4.5
+     * @since 0.4.7
      */
     @Override
     @Contract(pure = true)
     public @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity) {
-        return null;
+        try {
+            return new RestDao<>(EntityMetadata.of(entity),
+                new RestDaoImpl(EntityMetadata.of(entity)), this.transactionFactory(),
+                this.transactionFactory().createTransaction(), true);
+        } catch (Throwable throwable) {
+            return new FailureDao<>(() -> throwable);
+        }
     }
 
     /**
