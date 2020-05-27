@@ -60,19 +60,18 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
     @Override
     public void create(@NotNull Iterable<Map<String, Object>> entity) throws SQLException {
         final var escapeHatch = new ThrowableEscapeHatch<>(SQLException.class);
-
-        Utils.zip(this.entityMetadata.superTypes().iterator(), entity.iterator())
+        Utils.zip(this.entityMetadata.types().iterator(), entity.iterator())
             .filter(Objects::nonNull).forEach(ThrowableEscapeHatch.escapeSuper(
             pair -> {
                 var statement = this.preparedStatementFactory.values(
                     Objects.requireNonNull(pair).first().uniqueProperties().stream()
                         .map(EntityProperty::propertyName).collect(Collectors.toUnmodifiableList()),
                     Objects.requireNonNull(this.preparedStatementFactory
-                        .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)), pair.second());
+                        .prepare(Crud.CREATE, pair.first(), this.transaction, true, -1)),
+                    pair.second());
                 statement.executeUpdate();
                 System.out.println(statement.getGeneratedKeys());
             }, escapeHatch));
-
         escapeHatch.rethrow();
     }
 
@@ -89,7 +88,6 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
                 : this.transaction.connection().prepareStatement(this.preparedStatementFactory
                     .prepareSelectWithAttributes(this.entityMetadata, Seq.of(keys).toList()))),
             props);
-
         var res = SqlUtils.convert(preparedStatement.executeQuery());
         for (var map : res) {
             SqlUtils.createRelationValues(this.entityMetadata, map, () -> {
@@ -100,7 +98,6 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
                 }
             });
         }
-
         return Collections.unmodifiableCollection(res);
     }
 

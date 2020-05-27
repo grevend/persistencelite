@@ -91,7 +91,9 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
             var entityComponents = this.entitySerializer.serialize(entity);
             this.daoImpl.create(entityComponents);
             var merged = this.entitySerializer.merge(entityComponents);
-            var iter = this.daoImpl.retrieve(merged.keySet(), merged).iterator();
+            var iter = this.daoImpl.retrieve(
+                Seq.of(this.entityMetadata.declaredIdentifiers()).map(EntityProperty::propertyName)
+                    .toUnmodifiableList(), merged).iterator();
             if (!iter.hasNext()) { throw new IllegalStateException(""); }
             return this.entityDeserializer.deserialize(iter.next());
         });
@@ -137,7 +139,6 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
             var iter = this.daoImpl.retrieve(
                 this.entityMetadata.declaredIdentifiers().stream().map(EntityProperty::propertyName)
                     .collect(Collectors.toUnmodifiableList()), identifiers).iterator();
-
             return iter.hasNext() ? this.entityDeserializer.deserialize(iter.next())
                 : Result.abort("Empty collection.");
         });
@@ -181,7 +182,6 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
             var iter = this.daoImpl.retrieve(
                 this.entityMetadata.declaredIdentifiers().stream().map(EntityProperty::propertyName)
                     .collect(Collectors.toUnmodifiableList()), properties).iterator();
-
             return iter.hasNext() ? this.entityDeserializer.deserialize(iter.next())
                 : Result.abort("Empty collection.");
         });
@@ -222,11 +222,12 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
             var components = this.entitySerializer.serialize(entity);
             this.daoImpl.update(components, props);
             var merged = this.entitySerializer.merge(components);
-            var iter = this.daoImpl
-                .retrieve(merged.keySet(), Stream.of(merged, props)
-                    .flatMap(map -> map.entrySet().stream()).collect(Collectors
-                        .toUnmodifiableMap(Entry::getKey, Entry::getValue,
-                            (oldEntry, newEntry) -> newEntry))).iterator();
+            var iter = this.daoImpl.retrieve(
+                Seq.of(this.entityMetadata.declaredIdentifiers()).map(EntityProperty::propertyName)
+                    .toUnmodifiableList(),
+                Stream.of(merged, props).flatMap(map -> map.entrySet().stream()).collect(Collectors
+                    .toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                        (oldEntry, newEntry) -> newEntry))).iterator();
             if (!iter.hasNext()) { throw new IllegalStateException(""); }
             return this.entityDeserializer.deserialize(iter.next());
         });

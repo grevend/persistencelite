@@ -233,6 +233,25 @@ public final class EntityMetadata<E> {
         return list;
     }
 
+
+    /**
+     * @return
+     *
+     * @see Collection
+     * @see EntityMetadata
+     * @see #declaredSuperTypes()
+     * @since 0.4.9
+     */
+    @NotNull
+    public Collection<EntityMetadata<?>> types() {
+        Collection<EntityMetadata<?>> list = this.declaredSuperTypes().stream()
+            .flatMap(superType -> superType.superTypes().stream())
+            .collect(Collectors.toList());
+        list.addAll(this.declaredSuperTypes());
+        list.add(this);
+        return list;
+    }
+
     /**
      * @return
      *
