@@ -61,6 +61,7 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public Result<E> create(@NotNull E entity) {
         return this.failure;
     }
@@ -81,6 +82,7 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public ResultCollection<E> create(@NotNull Iterable<E> entities) {
         return FailureCollection.of(this.failure);
     }
@@ -97,6 +99,7 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public Result<E> retrieveById(@NotNull Map<String, Object> identifiers) {
         return this.failure;
     }
@@ -114,8 +117,27 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public ResultCollection<E> retrieveByProps(@NotNull Map<String, Object> properties) {
         return FailureCollection.of(this.failure);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param properties The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the first entity found in the form of an {@code Result}.
+     *
+     * @see Result
+     * @see Map
+     * @since 0.4.8
+     */
+    @NotNull
+    @Override
+    @Contract(pure = true)
+    public Result<E> retrieveFirstByProps(@NotNull Map<String, Object> properties) {
+        return this.failure;
     }
 
     /**
@@ -130,6 +152,7 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public ResultCollection<E> retrieveAll() {
         return FailureCollection.of(this.failure);
     }
@@ -148,6 +171,7 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public Result<E> update(@NotNull E entity, @NotNull Map<String, Object> properties) {
         return this.failure;
     }
@@ -168,6 +192,7 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public ResultCollection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) {
         return FailureCollection.of(this.failure);
     }
@@ -179,8 +204,10 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      *
      * @since 0.2.0
      */
+    @NotNull
     @Override
-    public @NotNull Result<Void> delete(@NotNull E entity) {
+    @Contract(pure = true)
+    public Result<Void> delete(@NotNull E entity) {
         return Result.of(this.failure);
     }
 
@@ -191,8 +218,10 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      *
      * @since 0.2.0
      */
+    @NotNull
     @Override
-    public @NotNull Result<Void> delete(@NotNull Map<String, Object> identifiers) {
+    @Contract(pure = true)
+    public Result<Void> delete(@NotNull Map<String, Object> identifiers) {
         return Result.of(this.failure);
     }
 
@@ -204,8 +233,10 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      * @see Iterable
      * @since 0.2.0
      */
+    @NotNull
     @Override
-    public @NotNull Result<Void> delete(@NotNull Iterable<E> entities) {
+    @Contract(pure = true)
+    public Result<Void> delete(@NotNull Iterable<E> entities) {
         return Result.of(this.failure);
     }
 
@@ -216,6 +247,7 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
      * @since 0.3.3
      */
     @Override
+    @Contract(value = " -> fail", pure = true)
     public void close() throws Exception {
         throw new UnsupportedOperationException();
     }
