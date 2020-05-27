@@ -139,6 +139,38 @@ public interface Dao<E> extends AutoCloseable {
     }
 
     /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns the first matching
+     * entity based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param properties The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the first entity found in the form of an {@code Result}.
+     *
+     * @see Result
+     * @see Map
+     * @since 0.4.8
+     */
+    @NotNull
+    Result<E> retrieveFirstByProps(@NotNull Map<String, Object> properties);
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns the first matching
+     * entity based on the key-value pairs passed as parameters in the form of a {@code Map}.
+     *
+     * @param key   The key component.
+     * @param value The value component.
+     *
+     * @return Returns the first entity found in the form of an {@code Result}.
+     *
+     * @see Result
+     * @since 0.4.8
+     */
+    @NotNull
+    default Result<E> retrieveFirstByProps(@NotNull String key, @NotNull Object value) {
+        return this.retrieveFirstByProps(Map.of(key, value));
+    }
+
+    /**
      * An implementation of the <b>retrieve</b> CRUD operation which returns all entities the
      * current entity type.
      *
