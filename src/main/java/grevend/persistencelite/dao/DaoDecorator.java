@@ -123,6 +123,23 @@ public abstract class DaoDecorator<E> implements Dao<E> {
     /**
      * {@inheritDoc}
      *
+     * @param properties The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the first entity found in the form of an {@code Result}.
+     *
+     * @see Result
+     * @see Map
+     * @since 0.4.8
+     */
+    @NotNull
+    @Override
+    public Result<E> retrieveFirstByProps(@NotNull Map<String, Object> properties) {
+        return this.dao.retrieveFirstByProps(properties);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @return Returns the entities found in the form of a collection. The returned collection
      * should be immutable to avoid confusion about the synchronization behavior of the contained
      * entities with the data source.
