@@ -31,6 +31,7 @@ import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
 import java.sql.Date;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -51,6 +52,11 @@ import org.jetbrains.annotations.Nullable;
  * @since 0.2.0
  */
 public final class EntityFactory {
+
+    private static final Map<Class<?>, TypeMarshaller<Object, Object>> convertions = Map.of(
+        Date.class, date -> date == null ? null : ((Date) date).toLocalDate(),
+        Time.class, time -> time == null ? null : ((Time) time).toLocalTime()
+    );
 
     /**
      * @param entityMetadata
@@ -112,8 +118,7 @@ public final class EntityFactory {
         final List<Object> propertyValues = new ArrayList<>();
         for (var prop : propsMeta) {
             var name = props ? prop.propertyName() : prop.fieldName();
-            propertyValues.add(marshall(values.apply(name), prop.type(),
-                Map.of(Date.class, date -> date == null ? null : ((Date) date).toLocalDate())));
+            propertyValues.add(marshall(values.apply(name), prop.type(), convertions));
         }
         return (E) entityMetadata.constructor().invokeWithArguments(propertyValues);
     }
