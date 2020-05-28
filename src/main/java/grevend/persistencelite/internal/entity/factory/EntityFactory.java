@@ -75,9 +75,17 @@ public final class EntityFactory {
             dateTime == null ? null : Timestamp.valueOf((LocalDateTime) dateTime),
         Duration.class, duration -> {
             if (duration == null) { return null; }
-            var d = (Duration) duration;
-            return new PGInterval(0, 0, (int) d.toDays(), (int) d.toHours(),
-                (int) d.toMinutes(), d.getSeconds() + d.getNano() / 1e9);
+
+            var d = Duration.from((Duration) duration);
+            var days = (int) d.toDays();
+            d = d.minusDays(days);
+            var hours = (int) d.toHours();
+            d = d.minusHours(hours);
+            var minutes = (int) d.toMinutes();
+            d = d.minusMinutes(minutes);
+            var seconds = d.getSeconds() + d.getNano() / 1e9;
+
+            return new PGInterval(0, 0, days, hours, minutes, seconds);
         }
     );
 
