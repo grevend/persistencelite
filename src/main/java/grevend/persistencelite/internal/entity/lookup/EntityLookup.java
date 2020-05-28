@@ -134,8 +134,11 @@ public interface EntityLookup<E, C extends AnnotatedElement> {
             (component.isAnnotationPresent(Property.class) &&
                 component.getAnnotation(Property.class).copy());
 
+        var escape = component.isAnnotationPresent(Property.class) &&
+            component.getAnnotation(Property.class).escape();
+
         return new EntityProperty(this.lookupComponentType(component), getter,
-            this.lookupComponentName(component), propertyName, identifier, relation, copy);
+            this.lookupComponentName(component), propertyName, identifier, relation, copy, escape);
     }
 
     /**

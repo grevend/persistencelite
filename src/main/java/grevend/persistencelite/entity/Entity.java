@@ -46,4 +46,11 @@ public @interface Entity {
     @NotNull
     String name();
 
+    /**
+     * @return
+     *
+     * @since 0.5.0
+     */
+    boolean escape() default false;
+
 }

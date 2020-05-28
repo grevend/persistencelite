@@ -385,6 +385,15 @@ public final class EntityMetadata<E> {
     }
 
     /**
+     * @return
+     *
+     * @since 0.5.0
+     */
+    public boolean escape() {
+        return this.entityClass.getAnnotation(Entity.class).escape();
+    }
+
+    /**
      * Checks whether:
      * <ul>
      *     <li>at least one identifier has been set</li>

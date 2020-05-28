@@ -158,10 +158,12 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
     @NotNull
     @Override
     public ResultCollection<E> retrieveByProps(@NotNull Map<String, Object> props) {
-        return Result.ofTry(() -> SuccessCollection
-            .of(Seq.of(() -> this.daoImpl.retrieve(props.keySet(), props))
-                .mapThrowing(this.entityDeserializer::deserialize).mapAbort(Result::orAbort)
-                .toUnmodifiableList()));
+        return Result.ofTry(() -> SuccessCollection.of(Seq.of(() ->
+            this.daoImpl.retrieve(props.keySet(), props))
+            .mapThrowing(this.entityDeserializer::deserialize)
+            .filter(Objects::nonNull)
+            .mapAbort(Result::orAbort)
+            .toUnmodifiableList()));
     }
 
     /**
@@ -180,7 +182,8 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
     public Result<E> retrieveFirstByProps(@NotNull Map<String, Object> properties) {
         return Result.ofThrowing(() -> {
             var iter = this.daoImpl.retrieve(
-                this.entityMetadata.declaredIdentifiers().stream().map(EntityProperty::propertyName)
+                this.entityMetadata.declaredProperties().stream().filter(e -> properties
+                    .containsKey(e.fieldName())).map(EntityProperty::propertyName)
                     .collect(Collectors.toUnmodifiableList()), properties).iterator();
             return iter.hasNext() ? this.entityDeserializer.deserialize(iter.next())
                 : Result.abort("Empty collection.");
