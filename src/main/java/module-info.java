@@ -1,6 +1,7 @@
 open module grevend.persistencelite {
 
     requires java.sql;
+    requires org.postgresql.jdbc;
     requires jdk.httpserver;
     requires java.compiler;
     requires reflections;

@@ -32,6 +32,8 @@ import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
 import java.sql.Date;
 import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.postgresql.util.PGInterval;
 
 /**
  * @author David Greven
@@ -55,7 +58,11 @@ public final class EntityFactory {
 
     private static final Map<Class<?>, TypeMarshaller<Object, Object>> convertions = Map.of(
         Date.class, date -> date == null ? null : ((Date) date).toLocalDate(),
-        Time.class, time -> time == null ? null : ((Time) time).toLocalTime()
+        Time.class, time -> time == null ? null : ((Time) time).toLocalTime(),
+        Timestamp.class, timestamp ->
+            timestamp == null ? null : ((Timestamp) timestamp).toLocalDateTime(),
+        PGInterval.class, interval ->
+            interval == null ? null : Duration.ofSeconds(((PGInterval) interval).getWholeSeconds())
     );
 
     /**
