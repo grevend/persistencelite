@@ -54,6 +54,7 @@ import org.jetbrains.annotations.Nullable;
 public final class PostgresService implements Service<PostgresConfigurator> {
 
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap;
     private Properties properties;
 
     /**
@@ -62,6 +63,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Contract(pure = true)
     public PostgresService() {
         this.marshallerMap = new HashMap<>();
+        this.unmarshallerMap = new HashMap<>();
         this.properties = new Properties();
     }
 
@@ -185,16 +187,21 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @param from
      * @param to
      * @param marshaller
+     * @param unmarshaller
+     * @param customNullHandling
      *
-     * @since 0.2.0
+     * @since 0.5.2
      */
     @Override
-    @Contract(pure = true)
-    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
+    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling) {
         if (!this.marshallerMap.containsKey(entity)) {
             this.marshallerMap.put(entity, new HashMap<>());
         }
+        if (!this.unmarshallerMap.containsKey(entity)) {
+            this.unmarshallerMap.put(entity, new HashMap<>());
+        }
         this.marshallerMap.get(entity).put(from, marshaller);
+        this.unmarshallerMap.get(entity).put(to, unmarshaller);
     }
 
     /**

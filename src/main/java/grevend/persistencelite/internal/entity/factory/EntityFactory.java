@@ -34,6 +34,9 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -56,13 +59,26 @@ import org.postgresql.util.PGInterval;
  */
 public final class EntityFactory {
 
-    private static final Map<Class<?>, TypeMarshaller<Object, Object>> convertions = Map.of(
+    private static final Map<Class<?>, TypeMarshaller<Object, Object>> marshallers = Map.of(
         Date.class, date -> date == null ? null : ((Date) date).toLocalDate(),
         Time.class, time -> time == null ? null : ((Time) time).toLocalTime(),
         Timestamp.class, timestamp ->
             timestamp == null ? null : ((Timestamp) timestamp).toLocalDateTime(),
         PGInterval.class, interval ->
             interval == null ? null : Duration.ofSeconds(((PGInterval) interval).getWholeSeconds())
+    );
+
+    private static final Map<Class<?>, TypeMarshaller<Object, Object>> unmarshallers = Map.of(
+        LocalDate.class, date -> date == null ? null : Date.valueOf((LocalDate) date),
+        LocalTime.class, time -> time == null ? null : Time.valueOf((LocalTime) time),
+        LocalDateTime.class, dateTime ->
+            dateTime == null ? null : Timestamp.valueOf((LocalDateTime) dateTime),
+        Duration.class, duration -> {
+            if (duration == null) { return null; }
+            var d = (Duration) duration;
+            return new PGInterval(0, 0, (int) d.toDays(), (int) d.toHours(),
+                (int) d.toMinutes(), d.getSeconds() + d.getNano() / 1e9);
+        }
     );
 
     /**
@@ -125,7 +141,7 @@ public final class EntityFactory {
         final List<Object> propertyValues = new ArrayList<>();
         for (var prop : propsMeta) {
             var name = props ? prop.propertyName() : prop.fieldName();
-            propertyValues.add(marshall(values.apply(name), prop.type(), convertions));
+            propertyValues.add(marshall(values.apply(name), prop.type(), marshallers));
         }
         return (E) entityMetadata.constructor().invokeWithArguments(propertyValues);
     }

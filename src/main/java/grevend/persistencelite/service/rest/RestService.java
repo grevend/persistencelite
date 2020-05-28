@@ -139,13 +139,15 @@ public final class RestService implements Service<RestConfigurator> {
      * @param from
      * @param to
      * @param marshaller
+     * @param unmarshaller
+     * @param customNullHandling
      *
-     * @since 0.3.0
+     * @since 0.5.2
      */
     @Override
-    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
+    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling) {
         Objects.requireNonNull(this.configuration.service())
-            .registerTypeMarshaller(entity, from, to, marshaller);
+            .registerTypeMarshaller(entity, from, to, marshaller, unmarshaller, customNullHandling);
     }
 
     /**

@@ -93,13 +93,29 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @param from
      * @param to
      * @param marshaller
+     * @param unmarshaller
      * @param <A>
      * @param <B>
      *
-     * @since 0.2.0
+     * @since 0.5.2
      */
-    default <A, B> void registerTypeMarshaller(Class<A> from, Class<B> to, TypeMarshaller<A, B> marshaller) {
-        this.registerTypeMarshaller(null, from, to, marshaller);
+    default <A, B> void registerTypeMarshaller(@NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller) {
+        this.registerTypeMarshaller(null, from, to, marshaller, unmarshaller, false);
+    }
+
+    /**
+     * @param from
+     * @param to
+     * @param marshaller
+     * @param unmarshaller
+     * @param customNullHandling
+     * @param <A>
+     * @param <B>
+     *
+     * @since 0.5.2
+     */
+    default <A, B> void registerTypeMarshaller(@NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling) {
+        this.registerTypeMarshaller(null, from, to, marshaller, unmarshaller, customNullHandling);
     }
 
     /**
@@ -107,13 +123,31 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @param from
      * @param to
      * @param marshaller
+     * @param unmarshaller
      * @param <A>
      * @param <B>
      * @param <E>
      *
-     * @since 0.2.0
+     * @since 0.5.2
      */
-    <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller);
+    default <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller) {
+        this.registerTypeMarshaller(entity, from, to, marshaller, unmarshaller, false);
+    }
+
+    /**
+     * @param entity
+     * @param from
+     * @param to
+     * @param marshaller
+     * @param unmarshaller
+     * @param customNullHandling
+     * @param <A>
+     * @param <B>
+     * @param <E>
+     *
+     * @since 0.5.2
+     */
+    <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling);
 
     /**
      * @return
