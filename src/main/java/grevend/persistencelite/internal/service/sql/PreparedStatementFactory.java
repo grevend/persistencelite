@@ -85,23 +85,22 @@ final class PreparedStatementFactory {
 
     @NotNull
     @Contract(pure = true)
+    public String escape(@NotNull EntityMetadata<?> metadata) {
+        return metadata.escape() ? this.escape(metadata.name()) : metadata.name();
+    }
+
+    @NotNull
+    @Contract(pure = true)
     public String escape(@NotNull String text) {
         return "\"" + text + "\"";
     }
 
     @NotNull
     private String create(@NotNull EntityMetadata<?> entityMetadata) {
-        /*return "insert into " + entityMetadata.name() + " ("
-            + entityMetadata.uniqueProperties().stream().map(EntityProperty::propertyName)
-            .distinct().collect(Collectors.joining(", "))
-            + ") values ("
-            + String
-            .join(", ", Collections.nCopies(entityMetadata.uniqueProperties().size(), "?"))
-            + ")";*/
-        return "insert into " + entityMetadata.name() + " (" + entityMetadata.uniqueProperties()
-            .stream().map(this::escape).distinct().collect(Collectors.joining(", ")) + ") values ("
-            + String.join(", ", Collections.nCopies(entityMetadata.uniqueProperties().size(), "?"))
-            + ")";
+        return "insert into " + this.escape(entityMetadata) + " (" + entityMetadata
+            .uniqueProperties().stream().map(this::escape).distinct()
+            .collect(Collectors.joining(", ")) + ") values (" + String
+            .join(", ", Collections.nCopies(entityMetadata.uniqueProperties().size(), "?")) + ")";
     }
 
     @NotNull
@@ -122,23 +121,15 @@ final class PreparedStatementFactory {
 
     @NotNull
     private String retrieve(@NotNull EntityMetadata<?> entityMetadata) {
-        /*return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata
-            .declaredIdentifiers()
-            .stream().map(prop -> entityMetadata.name() + "." + prop.propertyName() + " = ?")
-            .collect(Collectors.joining(" and ")) + " limit 1";*/
         return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata
             .declaredIdentifiers().stream().map(this::escape)
-            .map(prop -> entityMetadata.name() + "." + prop + " = ?")
+            .map(prop -> this.escape(entityMetadata) + "." + prop + " = ?")
             .collect(Collectors.joining(" and ")) + " limit 1";
     }
 
     @NotNull
     private String update(@NotNull EntityMetadata<?> entityMetadata) {
-        /*return "update " + entityMetadata.name() + " set " + entityMetadata.uniqueProperties()
-            .stream().map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(", "))
-            + " where " + entityMetadata.declaredIdentifiers().stream()
-            .map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(" and "));*/
-        return "update " + entityMetadata.name() + " set " + entityMetadata.uniqueProperties()
+        return "update " + this.escape(entityMetadata) + " set " + entityMetadata.uniqueProperties()
             .stream().map(this::escape).map(prop -> prop + " = ?").collect(Collectors.joining(", "))
             + " where " + entityMetadata.declaredIdentifiers().stream().map(this::escape)
             .map(prop -> prop + " = ?").collect(Collectors.joining(" and "));
@@ -146,13 +137,9 @@ final class PreparedStatementFactory {
 
     @NotNull
     private String delete(@NotNull EntityMetadata<?> entityMetadata) {
-        /*return "delete from " + entityMetadata.name() + " where " + entityMetadata
-            .declaredIdentifiers().stream()
-            .map(prop -> entityMetadata.name() + "." + prop.propertyName() + " = ?")
-            .collect(Collectors.joining(" and "));*/
-        return "delete from " + entityMetadata.name() + " where " + entityMetadata
+        return "delete from " + this.escape(entityMetadata) + " where " + entityMetadata
             .declaredIdentifiers().stream().map(this::escape)
-            .map(prop -> entityMetadata.name() + "." + prop + " = ?")
+            .map(prop -> this.escape(entityMetadata) + "." + prop + " = ?")
             .collect(Collectors.joining(" and "));
     }
 
@@ -167,18 +154,11 @@ final class PreparedStatementFactory {
      */
     @NotNull
     String prepareSelectWithAttributes(@NotNull EntityMetadata<?> entityMetadata, @NotNull Collection<String> attributes) {
-        /*return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.properties()
-            .stream().filter(prop -> attributes.contains(prop.propertyName()) ||
-                attributes.contains(prop.fieldName()))
-            .map(prop ->
-                (prop.identifier() != null || prop.copy() ? (entityMetadata.name() + ".") : "")
-                    + prop.propertyName() + " = ?")
-            .collect(Collectors.joining(" and "));*/
         return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.properties()
             .stream().filter(prop -> attributes.contains(prop.propertyName()) || attributes
                 .contains(prop.fieldName())).map(prop ->
-                (prop.identifier() != null || prop.copy() ? (entityMetadata.name() + ".") : "")
-                    + this.escape(prop) + " = ?").collect(Collectors.joining(" and "));
+                (prop.identifier() != null || prop.copy() ? (this.escape(entityMetadata) + ".")
+                    : "") + this.escape(prop) + " = ?").collect(Collectors.joining(" and "));
     }
 
     /**
@@ -192,7 +172,7 @@ final class PreparedStatementFactory {
     @NotNull
     private String prepareSelectAll(@NotNull EntityMetadata<?> entityMetadata) {
         var builder = new StringBuilder();
-        builder.append("select distinct * from ").append(entityMetadata.name());
+        builder.append("select distinct * from ").append(this.escape(entityMetadata));
         entityMetadata.declaredSuperTypes()
             .forEach(superType -> this.prepareSelectAll(builder, entityMetadata, superType));
         return builder.toString();
@@ -224,13 +204,9 @@ final class PreparedStatementFactory {
      */
     @NotNull
     private String prepareInnerJoin(@NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
-        /*return " inner join " + child.name() + " on " + child.declaredIdentifiers()
-            .stream().map(prop -> parent.name() + "." + prop.propertyName() + " = " +
-                child.name() + "." + prop.propertyName())
-            .collect(Collectors.joining(" and "));*/
-        return " inner join " + child.name() + " on " + child.declaredIdentifiers().stream()
+        return " inner join " + this.escape(child) + " on " + child.declaredIdentifiers().stream()
             .map(this::escape)
-            .map(prop -> parent.name() + "." + prop + " = " + child.name() + "." + prop)
+            .map(prop -> this.escape(parent) + "." + prop + " = " + this.escape(child) + "." + prop)
             .collect(Collectors.joining(" and "));
     }
 
