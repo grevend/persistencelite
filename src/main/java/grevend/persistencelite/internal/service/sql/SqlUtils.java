@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.sql;
 
+import static grevend.persistencelite.internal.util.Utils.unsafeCast;
 import static grevend.sequence.function.ThrowableEscapeHatch.escape;
 
 import grevend.common.Lazy;
@@ -140,13 +141,12 @@ final class SqlUtils {
                     }
 
                     var exceptionEscapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
-                    var entities = res.stream()
-                        .map(escape(
-                            (ThrowingFunction<? super Map<String, Object>, ?>)
-                                (Map<String, Object> map) -> EntityFactory.construct(subType,
-                                    Objects.requireNonNull(map), true, marshallerMap),
-                            exceptionEscapeHatch)).filter(Objects::nonNull)
-                        .collect(Collectors.toUnmodifiableList());
+                    var entities = res.stream().map(escape(
+                        (ThrowingFunction<? super Map<String, Object>, ?>)
+                            (Map<String, Object> map) -> EntityFactory
+                                .construct(subType, Objects.requireNonNull(map), true,
+                                    unsafeCast(marshallerMap)), exceptionEscapeHatch))
+                        .filter(Objects::nonNull).collect(Collectors.toUnmodifiableList());
                     exceptionEscapeHatch.rethrow();
                     elements.addAll((List<E>) entities);
                 }

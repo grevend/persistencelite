@@ -30,13 +30,6 @@ import grevend.persistencelite.internal.entity.EntityType;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowingFunction;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,7 +41,6 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.postgresql.util.PGInterval;
 
 /**
  * @author David Greven
@@ -59,7 +51,7 @@ import org.postgresql.util.PGInterval;
  */
 public final class EntityFactory {
 
-    private static final Map<Class<?>, TypeMarshaller<Object, Object>> marshallers = Map.of(
+    /*private static final Map<Class<?>, TypeMarshaller<Object, Object>> marshallers = Map.of(
         Date.class, date -> date == null ? null : ((Date) date).toLocalDate(),
         Time.class, time -> time == null ? null : ((Time) time).toLocalTime(),
         Timestamp.class, timestamp ->
@@ -87,7 +79,7 @@ public final class EntityFactory {
 
             return new PGInterval(0, 0, days, hours, minutes, seconds);
         }
-    );
+    );*/
 
     /**
      * @param entityMetadata
@@ -103,7 +95,7 @@ public final class EntityFactory {
      * @since 0.2.3
      */
     @NotNull
-    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final Map<String, Object> properties, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) throws Throwable {
+    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final Map<String, Object> properties, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) throws Throwable {
         return switch (entityMetadata.entityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata, properties.keySet(), props,
@@ -128,9 +120,9 @@ public final class EntityFactory {
      */
     @NotNull
     @SuppressWarnings("unchecked")
-    private static <E> E constructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull Collection<String> properties, boolean props, @NotNull ThrowingFunction<String, Object> values, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) throws Throwable {
+    private static <E> E constructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull Collection<String> properties, boolean props, @NotNull ThrowingFunction<String, Object> values, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) throws Throwable {
         if (entityMetadata.constructor() == null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Missing constructor.");
         }
         final var propertyNames = entityMetadata.declaredProperties().stream()
             .map(prop -> props ? prop.propertyName() : prop.fieldName())
@@ -149,9 +141,11 @@ public final class EntityFactory {
         final List<Object> propertyValues = new ArrayList<>();
         for (var prop : propsMeta) {
             var name = props ? prop.propertyName() : prop.fieldName();
-            propertyValues.add(marshall(values.apply(name), prop.type(), marshallers));
+            propertyValues
+                .add(marshall(entityMetadata, values.apply(name), prop.type(), marshallerMap));
         }
-        return (E) entityMetadata.constructor().invokeWithArguments(propertyValues);
+        return (E) Objects.requireNonNull(entityMetadata.constructor())
+            .invokeWithArguments(propertyValues);
     }
 
     /**
@@ -163,8 +157,8 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @Nullable
-    @Contract("null, _, _ -> null")
-    private static Object marshall(@Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, TypeMarshaller<Object, Object>> marshallerMap) {
+    @Contract("_, null, _, _ -> null")
+    private static Object marshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
         if (type.isEnum() && value instanceof String) {
             try {
                 var method = type.getMethod("valueOf", String.class);
@@ -175,10 +169,19 @@ public final class EntityFactory {
                 return value;
             }
         }
-        if (value == null) {
+        /*if (value == null) {
             return null;
         } else if (marshallerMap.containsKey(value.getClass())) {
             return marshallerMap.get(value.getClass()).marshall(value);
+        }*/
+        else if(marshallerMap.containsKey(entityMetadata.entityClass())) {
+            if(marshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
+                return marshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
+            }
+        } else if(marshallerMap.containsKey(null)) {
+            if(marshallerMap.get(null).containsKey(type)) {
+                return marshallerMap.get(null).get(type).marshall(value);
+            }
         }
         return value;
     }
@@ -194,7 +197,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    public static <E> Collection<Map<String, Object>> deconstruct(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) {
+    public static <E> Collection<Map<String, Object>> deconstruct(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         return switch (entityMetadata.entityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> deconstructRecord(entityMetadata, entity, unmarshallerMap);
@@ -212,7 +215,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    private static <E> Collection<Map<String, Object>> deconstructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) {
+    private static <E> Collection<Map<String, Object>> deconstructRecord(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         Collection<Map<String, Object>> components = new ArrayList<>(
             deconstructRecordSuperTypes(entityMetadata, entity, unmarshallerMap));
         components.add(deconstructRecordComponents(entityMetadata, entity, unmarshallerMap));
@@ -230,7 +233,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    private static <E> Collection<Map<String, Object>> deconstructRecordSuperTypes(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) {
+    private static <E> Collection<Map<String, Object>> deconstructRecordSuperTypes(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         return entityMetadata.superTypes().stream()
             .map(superType -> deconstructRecordSuperType(superType, entity, unmarshallerMap))
             .collect(Collectors.toUnmodifiableList());
@@ -247,7 +250,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    private static <E> Map<String, Object> deconstructRecordSuperType(@NotNull EntityMetadata<?> superTypeMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) {
+    private static <E> Map<String, Object> deconstructRecordSuperType(@NotNull EntityMetadata<?> superTypeMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         Map<String, Object> properties = new HashMap<>();
         superTypeMetadata.declaredProperties().forEach(property -> {
             try {
@@ -271,7 +274,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    private static <E> Map<String, Object> deconstructRecordComponents(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) {
+    private static <E> Map<String, Object> deconstructRecordComponents(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         Map<String, Object> properties = new HashMap<>();
         var superPropNames = new HashSet<String>();
         entityMetadata.superTypes().forEach(metadata -> metadata.declaredProperties()

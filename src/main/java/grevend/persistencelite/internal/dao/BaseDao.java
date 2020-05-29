@@ -24,6 +24,8 @@
 
 package grevend.persistencelite.internal.dao;
 
+import static grevend.persistencelite.internal.util.Utils.unsafeCast;
+
 import grevend.common.Failure;
 import grevend.common.Pair;
 import grevend.common.Result;
@@ -72,9 +74,9 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
         this.transaction = transaction == null ?
             transactionFactory.createTransaction() : transaction;
         this.entitySerializer = entity ->
-            EntityFactory.deconstruct(entityMetadata, entity, unmarshallerMap);
+            EntityFactory.deconstruct(entityMetadata, entity, unsafeCast(unmarshallerMap));
         this.entityDeserializer = map ->
-            EntityFactory.construct(entityMetadata, map, props, marshallerMap);
+            EntityFactory.construct(entityMetadata, map, props, unsafeCast(marshallerMap));
     }
 
     /**

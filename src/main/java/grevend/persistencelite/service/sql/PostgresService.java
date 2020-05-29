@@ -204,9 +204,9 @@ public final class PostgresService implements Service<PostgresConfigurator> {
         if (!this.unmarshallerMap.containsKey(entity)) {
             this.unmarshallerMap.put(entity, new HashMap<>());
         }
-        this.marshallerMap.get(entity).put(from, customNullHandling ? marshaller
+        this.marshallerMap.get(entity).put(to, customNullHandling ? marshaller
             : (A a) -> a == null ? null : marshaller.marshall(a));
-        this.unmarshallerMap.get(entity).put(to, customNullHandling ? unmarshaller
+        this.unmarshallerMap.get(entity).put(from, customNullHandling ? unmarshaller
             : (B b) -> b == null ? null : unmarshaller.marshall(b));
     }
 

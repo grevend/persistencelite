@@ -25,6 +25,7 @@
 package grevend.persistencelite.internal.util;
 
 import grevend.common.Pair;
+import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.net.URI;
 import java.util.ArrayList;
@@ -193,6 +194,13 @@ public final class Utils {
                     .substring(param.second + 1) : null)).collect(Collectors
                 .groupingBy(Pair::first, HashMap::new,
                     Collectors.mapping(Pair::second, Collectors.toUnmodifiableList())));
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public static Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unsafeCast(@NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> map) {
+        return (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>) (Object) (map);
     }
 
 }
