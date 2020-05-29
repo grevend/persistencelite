@@ -44,6 +44,7 @@ import java.net.InetSocketAddress;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -97,8 +98,8 @@ public final class RestService implements Service<RestConfigurator> {
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
         try {
             return new RestDao<>(EntityMetadata.of(entity),
-                new RestDaoImpl(EntityMetadata.of(entity)),
-                this.transactionFactory(), transaction, true);
+                new RestDaoImpl(EntityMetadata.of(entity)), this.transactionFactory(), transaction,
+                true, new HashMap<>(), new HashMap<>());
         } catch (Throwable throwable) {
             return new FailureDao<>(() -> throwable);
         }
@@ -117,7 +118,8 @@ public final class RestService implements Service<RestConfigurator> {
         try {
             return new RestDao<>(EntityMetadata.of(entity),
                 new RestDaoImpl(EntityMetadata.of(entity)), this.transactionFactory(),
-                this.transactionFactory().createTransaction(), true);
+                this.transactionFactory().createTransaction(), true, new HashMap<>(),
+                new HashMap<>());
         } catch (Throwable throwable) {
             return new FailureDao<>(() -> throwable);
         }

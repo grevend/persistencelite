@@ -155,9 +155,13 @@ public final class PostgresService implements Service<PostgresConfigurator> {
                 if (transaction instanceof SqlTransaction sqlTransaction) {
                     EntityMetadata.inferRelationTypes(entityMetadata);
                     try {
-                        return new BaseDao<>(entityMetadata, new SqlDao<>(entityMetadata,
-                            sqlTransaction, PostgresService.this.transactionFactory()),
-                            PostgresService.this.transactionFactory(), transaction, true);
+                        return new BaseDao<>(entityMetadata,
+                            new SqlDao<>(entityMetadata, sqlTransaction,
+                                PostgresService.this.transactionFactory(),
+                                PostgresService.this.marshallerMap),
+                            PostgresService.this.transactionFactory(), transaction, true,
+                            PostgresService.this.marshallerMap,
+                            PostgresService.this.unmarshallerMap);
                     } catch (Throwable throwable) {
                         throw new IllegalStateException("Failed to construct Dao.", throwable);
                     }
@@ -200,8 +204,10 @@ public final class PostgresService implements Service<PostgresConfigurator> {
         if (!this.unmarshallerMap.containsKey(entity)) {
             this.unmarshallerMap.put(entity, new HashMap<>());
         }
-        this.marshallerMap.get(entity).put(from, marshaller);
-        this.unmarshallerMap.get(entity).put(to, unmarshaller);
+        this.marshallerMap.get(entity).put(from, customNullHandling ? marshaller
+            : (A a) -> a == null ? null : marshaller.marshall(a));
+        this.unmarshallerMap.get(entity).put(to, customNullHandling ? unmarshaller
+            : (B b) -> b == null ? null : unmarshaller.marshall(b));
     }
 
     /**

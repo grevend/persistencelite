@@ -33,6 +33,7 @@ import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.EntityRelation;
 import grevend.persistencelite.internal.entity.EntityType;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
+import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import grevend.sequence.function.ThrowingFunction;
 import java.sql.PreparedStatement;
@@ -84,13 +85,15 @@ final class SqlUtils {
      *
      * @since 0.2.4
      */
-    static void createRelationValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> map, @NotNull Supplier<Transaction> transactionSupplier) {
+    static void createRelationValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> map, @NotNull Supplier<Transaction> transactionSupplier, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) {
         entityMetadata.declaredRelations().forEach(relation -> map.put(relation.fieldName(),
             relation.type().isAssignableFrom(Collection.class) ? new SqlRelation<>(entityMetadata,
-                Objects.requireNonNull(relation.relation()), map, transactionSupplier)
-                : (relation.type().isAssignableFrom(Lazy.class) ? new Lazy<>(() -> SqlUtils
+                Objects.requireNonNull(relation.relation()), map, transactionSupplier,
+                marshallerMap) : (relation.type().isAssignableFrom(Lazy.class) ? new Lazy<>(
+                () -> SqlUtils
                     .retrieve(entityMetadata, Objects.requireNonNull(relation.relation()), map,
-                        transactionSupplier).stream().findFirst().orElse(null)) : null)));
+                        transactionSupplier, marshallerMap).stream().findFirst().orElse(null))
+                : null)));
     }
 
     /**
@@ -107,7 +110,7 @@ final class SqlUtils {
     @NotNull
     @Contract(pure = true)
     @SuppressWarnings("unchecked")
-    static <E> List<E> retrieve(@NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Map<String, Object> values, @NotNull Supplier<Transaction> transactionSupplier) {
+    static <E> List<E> retrieve(@NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Map<String, Object> values, @NotNull Supplier<Transaction> transactionSupplier, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) {
         List<E> elements = new ArrayList<>();
         PreparedStatementFactory preparedStatementFactory = new PreparedStatementFactory();
         var transaction = transactionSupplier.get();
@@ -133,14 +136,15 @@ final class SqlUtils {
 
                     var res = convert(preparedStatement.executeQuery());
                     for (var map : res) {
-                        createRelationValues(subType, map, transactionSupplier);
+                        createRelationValues(subType, map, transactionSupplier, marshallerMap);
                     }
 
                     var exceptionEscapeHatch = new ThrowableEscapeHatch<>(Throwable.class);
                     var entities = res.stream()
-                        .map(escape((ThrowingFunction<? super Map<String, Object>, ?>)
-                                (Map<String, Object> map) -> EntityFactory
-                                    .construct(subType, Objects.requireNonNull(map), true),
+                        .map(escape(
+                            (ThrowingFunction<? super Map<String, Object>, ?>)
+                                (Map<String, Object> map) -> EntityFactory.construct(subType,
+                                    Objects.requireNonNull(map), true, marshallerMap),
                             exceptionEscapeHatch)).filter(Objects::nonNull)
                         .collect(Collectors.toUnmodifiableList());
                     exceptionEscapeHatch.rethrow();

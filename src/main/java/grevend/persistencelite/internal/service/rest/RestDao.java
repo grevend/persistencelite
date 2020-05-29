@@ -29,9 +29,11 @@ import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.dao.DaoImpl;
+import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,8 +55,9 @@ public final class RestDao<E> extends BaseDao<E, IOException> {
      * @throws Throwable
      * @since 0.4.7
      */
-    public RestDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<IOException> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
-        super(entityMetadata, daoImpl, transactionFactory, transaction, props);
+    public RestDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<IOException> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) throws Throwable {
+        super(entityMetadata, daoImpl, transactionFactory, transaction, props, marshallerMap,
+            unmarshallerMap);
     }
 
     /**

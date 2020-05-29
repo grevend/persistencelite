@@ -103,7 +103,7 @@ public final class EntityFactory {
      * @since 0.2.3
      */
     @NotNull
-    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final Map<String, Object> properties, boolean props) throws Throwable {
+    public static <E> E construct(@NotNull EntityMetadata<E> entityMetadata, @NotNull final Map<String, Object> properties, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) throws Throwable {
         return switch (entityMetadata.entityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> constructRecord(entityMetadata, properties.keySet(), props,
@@ -194,7 +194,7 @@ public final class EntityFactory {
      * @since 0.2.0
      */
     @NotNull
-    public static <E> Collection<Map<String, Object>> deconstruct(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity) {
+    public static <E> Collection<Map<String, Object>> deconstruct(@NotNull EntityMetadata<E> entityMetadata, @NotNull E entity, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) {
         return switch (entityMetadata.entityType()) {
             case CLASS, INTERFACE -> throw new UnsupportedOperationException();
             case RECORD -> deconstructRecord(entityMetadata, entity);

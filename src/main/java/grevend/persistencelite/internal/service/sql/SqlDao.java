@@ -30,6 +30,7 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.util.Utils;
+import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
@@ -50,11 +51,12 @@ import org.jetbrains.annotations.UnmodifiableView;
  * @author David Greven
  * @since 0.3.3
  */
-public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull SqlTransaction transaction, @NotNull TransactionFactory transactionFactory, @NotNull PreparedStatementFactory preparedStatementFactory) implements DaoImpl<SQLException> {
+public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull SqlTransaction transaction, @NotNull TransactionFactory transactionFactory, @NotNull PreparedStatementFactory preparedStatementFactory, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>>marshallerMap) implements DaoImpl<SQLException> {
 
     @Contract(pure = true)
-    public SqlDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull SqlTransaction transaction, @NotNull TransactionFactory transactionFactory) {
-        this(entityMetadata, transaction, transactionFactory, new PreparedStatementFactory());
+    public SqlDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull SqlTransaction transaction, @NotNull TransactionFactory transactionFactory, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) {
+        this(entityMetadata, transaction, transactionFactory, new PreparedStatementFactory(),
+            marshallerMap);
     }
 
     @Override
@@ -96,7 +98,7 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
                 } catch (Throwable throwable) {
                     return null;
                 }
-            });
+            }, this.marshallerMap);
         }
         return Collections.unmodifiableCollection(res);
     }

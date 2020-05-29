@@ -28,6 +28,7 @@ import grevend.common.LazyCollection;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityRelation;
+import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +49,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class SqlRelation<E> implements LazyCollection<E> {
 
+
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
     private final EntityMetadata<?> entityMetadata;
     private final EntityRelation entityRelation;
     private final Map<String, Object> values;
@@ -55,19 +58,20 @@ public final class SqlRelation<E> implements LazyCollection<E> {
     private final List<E> elements;
 
     @Contract(pure = true)
-    SqlRelation(@NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Map<String, Object> values, @NotNull Supplier<Transaction> transactionSupplier) {
+    SqlRelation(@NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Map<String, Object> values, @NotNull Supplier<Transaction> transactionSupplier, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) {
         this.entityMetadata = entityMetadata;
         this.entityRelation = entityRelation;
         this.values = values;
         this.transactionSupplier = transactionSupplier;
         this.elements = new ArrayList<>();
+        this.marshallerMap = marshallerMap;
     }
 
     @Contract(pure = true)
     private List<E> retrieve() {
         if (this.elements.isEmpty()) {
             this.elements.addAll(SqlUtils.retrieve(this.entityMetadata, this.entityRelation,
-                this.values, this.transactionSupplier));
+                this.values, this.transactionSupplier, this.marshallerMap));
         }
         return this.elements;
     }

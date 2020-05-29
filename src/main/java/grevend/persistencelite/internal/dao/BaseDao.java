@@ -38,6 +38,7 @@ import grevend.persistencelite.internal.entity.factory.EntityFactory;
 import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
 import grevend.persistencelite.internal.entity.representation.EntitySerializer;
 import grevend.persistencelite.internal.util.Utils;
+import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.util.Collection;
 import java.util.Map;
@@ -62,16 +63,18 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
     private final DaoImpl<Thr> daoImpl;
     private final EntitySerializer<E> entitySerializer;
     private final EntityDeserializer<E> entityDeserializer;
-    private Transaction transaction = null;
+    private Transaction transaction;
 
     @Contract(pure = true)
-    public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props) throws Throwable {
+    public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) throws Throwable {
         this.entityMetadata = entityMetadata;
         this.daoImpl = daoImpl;
         this.transaction = transaction == null ?
             transactionFactory.createTransaction() : transaction;
-        this.entitySerializer = entity -> EntityFactory.deconstruct(entityMetadata, entity);
-        this.entityDeserializer = map -> EntityFactory.construct(entityMetadata, map, props);
+        this.entitySerializer = entity ->
+            EntityFactory.deconstruct(entityMetadata, entity, unmarshallerMap);
+        this.entityDeserializer = map ->
+            EntityFactory.construct(entityMetadata, map, props, marshallerMap);
     }
 
     /**
