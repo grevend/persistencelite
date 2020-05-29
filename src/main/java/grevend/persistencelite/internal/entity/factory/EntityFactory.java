@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,36 +49,6 @@ import org.jetbrains.annotations.Nullable;
  * @since 0.2.0
  */
 public final class EntityFactory {
-
-    /*private static final Map<Class<?>, TypeMarshaller<Object, Object>> marshallers = Map.of(
-        Date.class, date -> date == null ? null : ((Date) date).toLocalDate(),
-        Time.class, time -> time == null ? null : ((Time) time).toLocalTime(),
-        Timestamp.class, timestamp ->
-            timestamp == null ? null : ((Timestamp) timestamp).toLocalDateTime(),
-        PGInterval.class, interval ->
-            interval == null ? null : Duration.ofSeconds(((PGInterval) interval).getWholeSeconds())
-    );
-
-    private static final Map<Class<?>, TypeMarshaller<Object, Object>> unmarshallers = Map.of(
-        LocalDate.class, date -> date == null ? null : Date.valueOf((LocalDate) date),
-        LocalTime.class, time -> time == null ? null : Time.valueOf((LocalTime) time),
-        LocalDateTime.class, dateTime ->
-            dateTime == null ? null : Timestamp.valueOf((LocalDateTime) dateTime),
-        Duration.class, duration -> {
-            if (duration == null) { return null; }
-
-            var d = Duration.from((Duration) duration);
-            var days = (int) d.toDays();
-            d = d.minusDays(days);
-            var hours = (int) d.toHours();
-            d = d.minusHours(hours);
-            var minutes = (int) d.toMinutes();
-            d = d.minusMinutes(minutes);
-            var seconds = d.getSeconds() + d.getNano() / 1e9;
-
-            return new PGInterval(0, 0, days, hours, minutes, seconds);
-        }
-    );*/
 
     /**
      * @param entityMetadata
@@ -154,10 +123,9 @@ public final class EntityFactory {
      *
      * @return
      *
-     * @since 0.2.0
+     * @since 0.5.3
      */
     @Nullable
-    @Contract("_, null, _, _ -> null")
     private static Object marshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
         if (type.isEnum() && value instanceof String) {
             try {
@@ -168,18 +136,12 @@ public final class EntityFactory {
                 e.printStackTrace();
                 return value;
             }
-        }
-        /*if (value == null) {
-            return null;
-        } else if (marshallerMap.containsKey(value.getClass())) {
-            return marshallerMap.get(value.getClass()).marshall(value);
-        }*/
-        else if(marshallerMap.containsKey(entityMetadata.entityClass())) {
-            if(marshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
+        } else if (marshallerMap.containsKey(entityMetadata.entityClass())) {
+            if (marshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
                 return marshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
             }
-        } else if(marshallerMap.containsKey(null)) {
-            if(marshallerMap.get(null).containsKey(type)) {
+        } else if (marshallerMap.containsKey(null)) {
+            if (marshallerMap.get(null).containsKey(type)) {
                 return marshallerMap.get(null).get(type).marshall(value);
             }
         }
@@ -254,8 +216,9 @@ public final class EntityFactory {
         Map<String, Object> properties = new HashMap<>();
         superTypeMetadata.declaredProperties().forEach(property -> {
             try {
-                properties.put(property.propertyName(),
-                    unmarshall(Objects.requireNonNull(property.getter()).invoke(entity)));
+                properties.put(property.propertyName(), unmarshall(superTypeMetadata,
+                    Objects.requireNonNull(property.getter()).invoke(entity), property.type(),
+                    unmarshallerMap));
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }
@@ -284,8 +247,9 @@ public final class EntityFactory {
                 || prop.copy()).collect(Collectors.toCollection(ArrayList::new));
         props.forEach(property -> {
             try {
-                properties.put(property.propertyName(),
-                    unmarshall(Objects.requireNonNull(property.getter()).invoke(entity)));
+                properties.put(property.propertyName(), unmarshall(entityMetadata,
+                    Objects.requireNonNull(property.getter()).invoke(entity), property.type(),
+                    unmarshallerMap));
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }
@@ -298,13 +262,20 @@ public final class EntityFactory {
      *
      * @return
      *
-     * @since 0.2.0
+     * @since 0.5.3
      */
     @Nullable
-    @Contract("null -> null")
-    private static Object unmarshall(@Nullable Object value) {
+    private static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
             return value.toString().toLowerCase();
+        } else if (unmarshallerMap.containsKey(entityMetadata.entityClass())) {
+            if (unmarshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
+                return unmarshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
+            }
+        } else if (unmarshallerMap.containsKey(null)) {
+            if (unmarshallerMap.get(null).containsKey(type)) {
+                return unmarshallerMap.get(null).get(type).marshall(value);
+            }
         }
         return value;
     }
