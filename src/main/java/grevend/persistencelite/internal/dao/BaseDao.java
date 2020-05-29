@@ -99,7 +99,7 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
             var iter = this.daoImpl.retrieve(
                 Seq.of(this.entityMetadata.declaredIdentifiers()).map(EntityProperty::propertyName)
                     .toUnmodifiableList(), merged).iterator();
-            if (!iter.hasNext()) { throw new IllegalStateException(""); }
+            if (!iter.hasNext()) { throw new IllegalStateException("Unable to retrieve entity!"); }
             return this.entityDeserializer.deserialize(iter.next());
         });
     }

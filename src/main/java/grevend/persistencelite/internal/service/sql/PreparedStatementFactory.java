@@ -97,10 +97,6 @@ final class PreparedStatementFactory {
 
     @NotNull
     private String create(@NotNull EntityMetadata<?> entityMetadata) {
-        /*return "insert into " + this.escape(entityMetadata) + " (" + entityMetadata
-            .uniqueProperties().stream().map(this::escape).distinct()
-            .collect(Collectors.joining(", ")) + ") values (" + String
-            .join(", ", Collections.nCopies(entityMetadata.uniqueProperties().size(), "?")) + ")";*/
         return "insert into " + this.escape(entityMetadata) + " (" + entityMetadata
             .uniqueProperties().stream().map(this::escape).distinct()
             .collect(Collectors.joining(", ")) + ") values (" +
