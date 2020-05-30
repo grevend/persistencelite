@@ -26,6 +26,7 @@ package grevend.persistencelite.internal.service.sql;
 
 import grevend.persistencelite.dao.Transaction;
 import java.sql.Connection;
+import java.sql.SQLException;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,11 +37,21 @@ import org.jetbrains.annotations.NotNull;
 public final record SqlTransaction(@NotNull Connection connection) implements Transaction {
 
     /**
+     * @param enabled
+     *
+     * @throws SQLException
+     * @since 0.5.5
+     */
+    public void autoCommit(boolean enabled) throws SQLException {
+        this.connection.setAutoCommit(enabled);
+    }
+
+    /**
      * @throws Exception
      * @since 0.2.0
      */
     @Override
-    public void commit() throws Exception {
+    public void commit() throws SQLException {
         this.connection.commit();
     }
 
@@ -49,7 +60,7 @@ public final record SqlTransaction(@NotNull Connection connection) implements Tr
      * @since 0.2.0
      */
     @Override
-    public void rollback() throws Exception {
+    public void rollback() throws SQLException {
         this.connection.rollback();
     }
 
@@ -58,7 +69,7 @@ public final record SqlTransaction(@NotNull Connection connection) implements Tr
      * @since 0.2.0
      */
     @Override
-    public void close() throws Exception {
+    public void close() throws SQLException {
         if (!this.connection.isClosed()) {
             this.connection.close();
         }

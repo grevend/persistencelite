@@ -74,6 +74,7 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
     @Override
     public void create(@NotNull Iterable<Map<String, Object>> entity) throws SQLException {
         final var escapeHatch = new ThrowableEscapeHatch<>(SQLException.class);
+        this.transaction.autoCommit(false);
         Utils.zip(this.entityMetadata.types().iterator(), entity.iterator())
             .filter(Objects::nonNull).forEach(ThrowableEscapeHatch.escapeSuper(
             pair -> {
@@ -98,6 +99,11 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
                         .toUnmodifiableMap(Entry::getKey, Entry::getValue, (oldV, newV) -> newV)));
                 }
             }, escapeHatch));
+        this.transaction.commit();
+        if (escapeHatch.failure()) {
+            this.transaction.rollback();
+        }
+        this.transaction.autoCommit(true);
         escapeHatch.rethrow();
     }
 

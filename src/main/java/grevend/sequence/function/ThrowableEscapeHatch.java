@@ -201,6 +201,16 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         }
     }
 
+    /**
+     * @return
+     *
+     * @since 0.5.5
+     */
+    @Contract(pure = true)
+    public boolean failure() {
+        return this.throwable == null;
+    }
+
     @NotNull
     @Contract(pure = true)
     public <T> Result<T> fail() {
