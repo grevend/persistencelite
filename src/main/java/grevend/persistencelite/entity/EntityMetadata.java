@@ -80,7 +80,7 @@ public final class EntityMetadata<E> {
         this.entityClass = entityClass;
         this.superTypes = new ArrayList<>();
         this.subTypeLookup = memoize(self -> {
-            Reflections reflections = new Reflections("grevend.main");
+            Reflections reflections = new Reflections("entities");
             return reflections.getSubTypesOf(self.entityClass()).stream().map(EntityMetadata::of)
                 .collect(Collectors.toUnmodifiableSet());
         });

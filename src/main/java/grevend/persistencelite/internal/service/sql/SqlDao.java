@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -135,30 +136,41 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
 
     @Override
     public void update(@NotNull Iterable<Map<String, Object>> entity, @NotNull Map<String, Object> props) throws SQLException {
-        var superTypes = this.entityMetadata.superTypes().iterator();
+        var superTypes = Seq.of(this.entityMetadata.types()).concat(Seq.of(this.entityMetadata)).toUnmodifiableList().iterator();
 
+        // Fix merge (field vs prop)
         var mergedProps = Stream.concat(StreamSupport.stream(entity.spliterator(), false)
             .flatMap(map -> map.entrySet().stream())
             .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2))
             .entrySet().stream(), props.entrySet().stream()).collect(Collectors
             .toUnmodifiableMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2));
 
-        for (var component : entity) {
-            if (component.keySet().stream().anyMatch(props::containsKey)) {
-                var superType = superTypes.next();
-                this.preparedStatementFactory.values(Stream
-                    .concat(superType.uniqueProperties().stream(),
-                        superType.declaredIdentifiers().stream()).map(EntityProperty::propertyName)
-                    .collect(Collectors.toUnmodifiableList()), Objects.requireNonNull(
-                    this.preparedStatementFactory
-                        .prepare(Crud.UPDATE, superType, this.transaction, true, -1)), mergedProps)
-                    .executeUpdate();
-            } else {
-                if (superTypes.hasNext()) {
-                    superTypes.next();
+        this.transaction.autoCommit(false);
+        try {
+            for (var component : entity) {
+                if (component.keySet().stream().anyMatch(props::containsKey) && superTypes
+                    .hasNext()) {
+                    var superType = superTypes.next();
+                    this.preparedStatementFactory.values(Stream
+                            .concat(superType.uniqueProperties().stream(),
+                                superType.declaredIdentifiers().stream())
+                            .map(EntityProperty::propertyName)
+                            .collect(Collectors.toUnmodifiableList()), Objects.requireNonNull(
+                        this.preparedStatementFactory
+                            .prepare(Crud.UPDATE, superType, this.transaction, true, -1)),
+                        mergedProps)
+                        .executeUpdate();
+                } else {
+                    if (superTypes.hasNext()) {
+                        superTypes.next();
+                    }
                 }
             }
+        } catch (SQLException sqlException) {
+            this.transaction.rollback();
+            throw sqlException;
         }
+        this.transaction.autoCommit(true);
     }
 
     @Override
