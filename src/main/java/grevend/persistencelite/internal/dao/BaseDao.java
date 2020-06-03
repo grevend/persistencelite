@@ -43,6 +43,7 @@ import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -147,6 +148,39 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
             return iter.hasNext() ? this.entityDeserializer.deserialize(iter.next())
                 : Result.abort("Empty collection.");
         });
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param identifiers - The key components.
+     * @param values      - The {@link Iterable} of values represented by a nested {@link
+     *                    Iterable}.
+     *
+     * @return Returns the entities found in the form of a Collection.
+     *
+     * @see ResultCollection
+     * @since 0.5.7
+     */
+    @NotNull
+    @Override
+    public ResultCollection<E> retrieveByIds(@NotNull Iterable<String> identifiers, @NotNull Iterable<Iterable<Object>> values) {
+        record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
+
+        return Result.ofTry(() -> SuccessCollection
+            .of(Seq.of(values).map(vals -> new PairImpl<>(identifiers, vals)).mapThrowing(
+                pair -> Seq.of(() -> this.daoImpl.retrieve(
+                    this.entityMetadata.declaredIdentifiers().stream()
+                        .map(EntityProperty::propertyName)
+                        .collect(Collectors.toUnmodifiableList()),
+                    Utils.zip(pair.first.iterator(), pair.second.iterator())
+                        .collect(Collectors.toMap(Pair::first, Pair::second))))
+                    .mapThrowing(this.entityDeserializer::deserialize)
+                    .filter(Objects::nonNull)
+                    .mapAbort(Result::orAbort)
+                    .toUnmodifiableList())
+                .flatMap(res -> Seq.of(res.or(Collections.emptyList())))
+                .toUnmodifiableList()));
     }
 
     /**

@@ -28,7 +28,9 @@ import grevend.common.Result;
 import grevend.common.ResultCollection;
 import grevend.common.SuccessCollection;
 import grevend.sequence.Seq;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -103,6 +105,75 @@ public interface Dao<E> extends AutoCloseable {
     @NotNull
     default Result<E> retrieveById(@NotNull String key, @NotNull Object value) {
         return this.retrieveById(Map.of(key, value));
+    }
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the given values.
+     *
+     * @param identifiers - The key components.
+     * @param values      - The {@link Iterable} of values represented by a nested {@link
+     *                    Iterable}.
+     *
+     * @return Returns the entities found in the form of a Collection.
+     *
+     * @see ResultCollection
+     * @since 0.5.7
+     */
+    @NotNull
+    ResultCollection<E> retrieveByIds(@NotNull Iterable<String> identifiers, @NotNull Iterable<Iterable<Object>> values);
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the given values.
+     *
+     * @param key    - The key component.
+     * @param values - The {@link Iterable} of values represented by a nested {@link Iterable}.
+     *
+     * @return Returns the entities found in the form of a Collection.
+     *
+     * @see ResultCollection
+     * @since 0.5.7
+     */
+    @NotNull
+    default ResultCollection<E> retrieveByIds(@NotNull String key, @NotNull Iterable<Iterable<Object>> values) {
+        return this.retrieveByIds(Collections.singleton(key), values);
+    }
+
+    /**
+     * An implementation of the <b>retrieve</b> CRUD operation which returns all matching entities
+     * based on the given values.
+     *
+     * @param key    - The key component.
+     * @param values - The {@link Iterable} of values.
+     *
+     * @return Returns the entities found in the form of a Collection.
+     *
+     * @see ResultCollection
+     * @since 0.5.7
+     */
+    @NotNull
+    default ResultCollection<E> retrieveByIdSingletons(@NotNull String key, @NotNull Iterable<Object> values) {
+        return this.retrieveByIdSingletonsUnsafe(Collections.singleton(key),
+            Seq.of(values).map(Collections::singleton).toUnmodifiableList());
+    }
+
+    /**
+     * Internal method to fix uncastable types.
+     *
+     * @param identifiers - The key components.
+     * @param values      - The {@link Iterable} of values represented by a nested {@link
+     *                    Iterable}.
+     *
+     * @return Returns the entities found in the form of a Collection.
+     *
+     * @see ResultCollection
+     * @since 0.5.7
+     */
+    @NotNull
+    @SuppressWarnings("unchecked")
+    private ResultCollection<E> retrieveByIdSingletonsUnsafe(@NotNull Iterable<String> identifiers, @NotNull Iterable<Set<Object>> values) {
+        return this.retrieveByIds(identifiers, (Iterable<Iterable<Object>>) ((Iterable<?>) values));
     }
 
     /**

@@ -107,6 +107,25 @@ public final class FailureDao<E> implements Dao<E>, Failure<Dao<E>> {
     /**
      * {@inheritDoc}
      *
+     * @param identifiers - The key components.
+     * @param values      - The {@link Iterable} of values represented by a nested {@link
+     *                    Iterable}.
+     *
+     * @return Returns the entities found in the form of a Collection.
+     *
+     * @see ResultCollection
+     * @since 0.5.7
+     */
+    @NotNull
+    @Override
+    @Contract(pure = true)
+    public ResultCollection<E> retrieveByIds(@NotNull Iterable<String> identifiers, @NotNull Iterable<Iterable<Object>> values) {
+        return FailureCollection.of(this.failure);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @param properties The key-value pairs in the form of a {@code Map}.
      *
      * @return Returns the entities found in the form of an {@code Collection}.
