@@ -36,6 +36,8 @@ import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import grevend.sequence.function.ThrowableEscapeHatch;
 import java.sql.SQLException;
+import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -138,10 +140,16 @@ public final record SqlDao<E>(@NotNull EntityMetadata<E>entityMetadata, @NotNull
     public void update(@NotNull Iterable<Map<String, Object>> entity, @NotNull Map<String, Object> props) throws SQLException {
         var superTypes = Seq.of(this.entityMetadata.types()).concat(Seq.of(this.entityMetadata)).toUnmodifiableList().iterator();
 
-        // Fix merge (field vs prop)
+        var propNames = this.entityMetadata.properties().stream()
+            .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.propertyName()))
+            .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                (entry1, entry2) -> entry2));
+
         var mergedProps = Stream.concat(StreamSupport.stream(entity.spliterator(), false)
             .flatMap(map -> map.entrySet().stream())
-            .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2))
+            .collect(Collectors.toMap(entry -> propNames.containsKey(entry.getKey()) ?
+                propNames.get(entry.getKey()) : entry.getKey(),
+                Entry::getValue, (entry1, entry2) -> entry2))
             .entrySet().stream(), props.entrySet().stream()).collect(Collectors
             .toUnmodifiableMap(Entry::getKey, Entry::getValue, (entry1, entry2) -> entry2));
 
