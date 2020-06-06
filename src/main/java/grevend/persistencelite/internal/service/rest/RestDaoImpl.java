@@ -34,8 +34,13 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,9 +69,9 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     @NotNull
     @Contract(" -> new")
     private Reader request() throws IOException {
-        var con = new URL("http://localhost:8000/api/v2/author").openConnection();
+        var con = new URL("http://localhost:8000/api/v2/country").openConnection();
         con.setRequestProperty("Accept-Charset", "utf-8");
-        con.setRequestProperty("Content-Type", "application/json; utf-8");
+        con.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
         return new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8);
     }
 
@@ -74,7 +79,36 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     @Override
     public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws IOException {
         try {
-            return this.entitySerializer.serialize(this.request());
+            /*var reader = new BufferedReader(this.request());
+
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }*/
+
+            var response = new Gson().fromJson(this.request(), EntityRequestResponse.class);
+
+            //response.entities.stream().map(entity -> entity.props).collect(Collectors.toUnmodifiableList());
+
+            //System.out.println();
+
+            var types = Map.<Class<?>, Function<String, ?>>of(
+                Integer.TYPE, Integer::valueOf,
+                Integer.class, Integer::valueOf,
+                String.class, s -> s
+            );
+
+            //return this.entitySerializer.serialize(this.request());
+            //return this.entitySerializer.serialize(new StringReader("{}"));
+            return response.entities.stream().map(
+                entity -> this.entityMetadata.uniqueProperties().stream().map(
+                    prop -> new SimpleEntry<String, Object>(prop.fieldName(), types.get(prop.type())
+                        .apply(entity.props.containsKey(prop.fieldName()) ? entity.props
+                            .get(prop.fieldName())
+                            : (entity.props.getOrDefault(prop.propertyName(), null)))))
+                    .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                        (olvV, newV) -> newV)))
+                .collect(Collectors.toUnmodifiableList());
         } catch (Throwable throwable) {
             throwable.printStackTrace();
             return List.of();
@@ -89,6 +123,36 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     @Override
     public void delete(@NotNull Map<String, Object> props) throws IOException {
 
+    }
+
+    public static class EntityRequestResponse {
+
+        public Map<String, String> types;
+        public Collection<ResponseEntity> entities;
+
+        @Override
+        public String toString() {
+            return "EntityRequestResponse{" +
+                "types=" + types +
+                ", entities=" + entities +
+                '}';
+        }
+    }
+
+    public static class ResponseEntity {
+
+        public int type;
+        public Map<String, String> props;
+        public Map<String, String> rels;
+
+        @Override
+        public String toString() {
+            return "ResponseEntity{" +
+                "type=" + type +
+                ", props=" + props +
+                ", rels=" + rels +
+                '}';
+        }
     }
 
 }

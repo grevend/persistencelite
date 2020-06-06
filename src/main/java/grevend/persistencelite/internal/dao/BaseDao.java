@@ -202,6 +202,7 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
             .mapThrowing(this.entityDeserializer::deserialize)
             .filter(Objects::nonNull)
             .mapAbort(Result::orAbort)
+            .filter(Objects::nonNull)
             .toUnmodifiableList()));
     }
 

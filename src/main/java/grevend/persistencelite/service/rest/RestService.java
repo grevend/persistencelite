@@ -25,6 +25,7 @@
 package grevend.persistencelite.service.rest;
 
 import com.sun.net.httpserver.HttpServer;
+import grevend.common.Failure;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
@@ -80,8 +81,22 @@ public final class RestService implements Service<RestConfigurator> {
      */
     @NotNull
     @Override
+    @Contract(value = " -> new", pure = true)
     public DaoFactory daoFactory() {
-        return Objects.requireNonNull(this.configuration.service()).daoFactory();
+        return new DaoFactory() {
+            @NotNull
+            @Override
+            public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
+                try {
+                    return new RestDao<E>(entityMetadata, new RestDaoImpl(entityMetadata),
+                        RestService.this.transactionFactory(), RestService.this.transactionFactory()
+                        .createTransaction(), true, new HashMap<>(),
+                        new HashMap<>());
+                } catch (Throwable throwable) {
+                    return new FailureDao<>(() -> throwable);
+                }
+            }
+        };
     }
 
     /**
@@ -96,13 +111,14 @@ public final class RestService implements Service<RestConfigurator> {
     @Override
     @Contract(pure = true)
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
-        try {
+        /*try {
             return new RestDao<>(EntityMetadata.of(entity),
                 new RestDaoImpl(EntityMetadata.of(entity)), this.transactionFactory(), transaction,
                 true, new HashMap<>(), new HashMap<>());
         } catch (Throwable throwable) {
             return new FailureDao<>(() -> throwable);
-        }
+        }*/
+        return this.daoFactory().createDao(EntityMetadata.of(entity), transaction);
     }
 
     /**
@@ -112,16 +128,22 @@ public final class RestService implements Service<RestConfigurator> {
      *
      * @since 0.4.7
      */
+    @NotNull
     @Override
     @Contract(pure = true)
-    public @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity) {
-        try {
+    public <E> Dao<E> createDao(@NotNull Class<E> entity) {
+        /*try {
             return new RestDao<>(EntityMetadata.of(entity),
                 new RestDaoImpl(EntityMetadata.of(entity)), this.transactionFactory(),
                 this.transactionFactory().createTransaction(), true, new HashMap<>(),
                 new HashMap<>());
         } catch (Throwable throwable) {
             return new FailureDao<>(() -> throwable);
+        }*/
+        try {
+            return this.createDao(entity, this.transactionFactory().createTransaction());
+        } catch (Throwable throwable) {
+            return new FailureDao<>((Failure<?>) () -> throwable);
         }
     }
 
@@ -132,8 +154,26 @@ public final class RestService implements Service<RestConfigurator> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public TransactionFactory transactionFactory() {
-        return Objects.requireNonNull(this.configuration.service()).transactionFactory();
+        return () -> new Transaction() {
+
+            @Override
+            public void commit() throws Exception {
+
+            }
+
+            @Override
+            public void rollback() throws Exception {
+
+            }
+
+            @Override
+            public void close() throws Exception {
+
+            }
+
+        };
     }
 
     /**
