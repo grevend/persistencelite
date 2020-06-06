@@ -224,8 +224,19 @@ public final class PostgresService implements Service<PostgresConfigurator> {
             throw new IllegalStateException("No credentials provided.");
         }
 
-        return DriverManager
-            .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
+        if (this.notEmpty("host") && this.notEmpty("port")) {
+            return DriverManager
+                .getConnection("jdbc:postgresql://" + this.properties.getProperty("host") + ":"
+                    + this.properties.getProperty("port") + "/" + "postgres", this.properties);
+        } else {
+            return DriverManager
+                .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
+        }
+    }
+
+    private boolean notEmpty(@NotNull String property) {
+        var res = this.properties.getProperty(property);
+        return res != null && !(res.equals(""));
     }
 
     /**
