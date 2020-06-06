@@ -29,6 +29,7 @@ import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
 import grevend.persistencelite.internal.entity.representation.EntitySerializer;
+import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -39,10 +40,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
@@ -51,14 +54,14 @@ import org.jetbrains.annotations.NotNull;
 public final class RestDaoImpl implements DaoImpl<IOException> {
 
     private final EntityMetadata<?> entityMetadata;
-    private final EntitySerializer<Reader> entitySerializer;
-    private final EntityDeserializer<String> entityDeserializer;
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap;
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap;
 
     @Contract(pure = true)
-    public RestDaoImpl(@NotNull EntityMetadata<?> entityMetadata) {
+    public RestDaoImpl(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         this.entityMetadata = entityMetadata;
-        this.entitySerializer = json -> List.of(new Gson().fromJson(json, Map.class));
-        this.entityDeserializer = entity -> "";
+        this.marshallerMap = marshallerMap;
+        this.unmarshallerMap = unmarshallerMap;
     }
 
     @Override
@@ -79,33 +82,13 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     @Override
     public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws IOException {
         try {
-            /*var reader = new BufferedReader(this.request());
-
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-            }*/
-
-            var response = new Gson().fromJson(this.request(), EntityRequestResponse.class);
-
-            //response.entities.stream().map(entity -> entity.props).collect(Collectors.toUnmodifiableList());
-
-            //System.out.println();
-
-            var types = Map.<Class<?>, Function<String, ?>>of(
-                Integer.TYPE, Integer::valueOf,
-                Integer.class, Integer::valueOf,
-                String.class, s -> s
-            );
-
-            //return this.entitySerializer.serialize(this.request());
-            //return this.entitySerializer.serialize(new StringReader("{}"));
-            return response.entities.stream().map(
-                entity -> this.entityMetadata.uniqueProperties().stream().map(
-                    prop -> new SimpleEntry<String, Object>(prop.fieldName(), types.get(prop.type())
-                        .apply(entity.props.containsKey(prop.fieldName()) ? entity.props
+            return new Gson().fromJson(this.request(), EntityRequestResponse.class).entities
+                .stream().map(entity -> this.entityMetadata.uniqueProperties().stream().map(
+                    prop -> new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
+                        entity.props.containsKey(prop.fieldName()) ? entity.props
                             .get(prop.fieldName())
-                            : (entity.props.getOrDefault(prop.propertyName(), null)))))
+                            : (entity.props.getOrDefault(prop.propertyName(), null)),
+                        prop.type(), this.unmarshallerMap)))
                     .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                         (olvV, newV) -> newV)))
                 .collect(Collectors.toUnmodifiableList());
@@ -125,6 +108,22 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
 
     }
 
+    @Nullable
+    private static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
+        if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
+            return value.toString().toLowerCase();
+        } else if (unmarshallerMap.containsKey(entityMetadata.entityClass())) {
+            if (unmarshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
+                return unmarshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
+            }
+        } else if (unmarshallerMap.containsKey(null)) {
+            if (unmarshallerMap.get(null).containsKey(type)) {
+                return unmarshallerMap.get(null).get(type).marshall(value);
+            }
+        }
+        return value;
+    }
+
     public static class EntityRequestResponse {
 
         public Map<String, String> types;
@@ -137,6 +136,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
                 ", entities=" + entities +
                 '}';
         }
+        
     }
 
     public static class ResponseEntity {
@@ -153,6 +153,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
                 ", rels=" + rels +
                 '}';
         }
+
     }
 
 }

@@ -47,6 +47,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import org.jetbrains.annotations.Contract;
@@ -60,7 +61,14 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class RestService implements Service<RestConfigurator> {
 
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap;
     private RestConfiguration configuration;
+
+    public RestService() {
+        this.marshallerMap = new HashMap<>();
+        this.unmarshallerMap = new HashMap<>();
+    }
 
     /**
      * @return
@@ -86,9 +94,14 @@ public final class RestService implements Service<RestConfigurator> {
         return new DaoFactory() {
             @NotNull
             @Override
+            @SuppressWarnings("unchecked")
             public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
                 try {
-                    return new RestDao<E>(entityMetadata, new RestDaoImpl(entityMetadata),
+                    return new RestDao<>(entityMetadata, new RestDaoImpl(entityMetadata,
+                        (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
+                            (Object) RestService.this.marshallerMap,
+                        (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
+                            (Object) RestService.this.unmarshallerMap),
                         RestService.this.transactionFactory(), RestService.this.transactionFactory()
                         .createTransaction(), true, new HashMap<>(),
                         new HashMap<>());
@@ -111,13 +124,6 @@ public final class RestService implements Service<RestConfigurator> {
     @Override
     @Contract(pure = true)
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
-        /*try {
-            return new RestDao<>(EntityMetadata.of(entity),
-                new RestDaoImpl(EntityMetadata.of(entity)), this.transactionFactory(), transaction,
-                true, new HashMap<>(), new HashMap<>());
-        } catch (Throwable throwable) {
-            return new FailureDao<>(() -> throwable);
-        }*/
         return this.daoFactory().createDao(EntityMetadata.of(entity), transaction);
     }
 
@@ -132,14 +138,6 @@ public final class RestService implements Service<RestConfigurator> {
     @Override
     @Contract(pure = true)
     public <E> Dao<E> createDao(@NotNull Class<E> entity) {
-        /*try {
-            return new RestDao<>(EntityMetadata.of(entity),
-                new RestDaoImpl(EntityMetadata.of(entity)), this.transactionFactory(),
-                this.transactionFactory().createTransaction(), true, new HashMap<>(),
-                new HashMap<>());
-        } catch (Throwable throwable) {
-            return new FailureDao<>(() -> throwable);
-        }*/
         try {
             return this.createDao(entity, this.transactionFactory().createTransaction());
         } catch (Throwable throwable) {
@@ -159,19 +157,13 @@ public final class RestService implements Service<RestConfigurator> {
         return () -> new Transaction() {
 
             @Override
-            public void commit() throws Exception {
-
-            }
+            public void commit() throws Exception {}
 
             @Override
-            public void rollback() throws Exception {
-
-            }
+            public void rollback() throws Exception {}
 
             @Override
-            public void close() throws Exception {
-
-            }
+            public void close() throws Exception {}
 
         };
     }
@@ -188,8 +180,39 @@ public final class RestService implements Service<RestConfigurator> {
      */
     @Override
     public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling) {
-        Objects.requireNonNull(this.configuration.service())
-            .registerTypeMarshaller(entity, from, to, marshaller, unmarshaller, customNullHandling);
+        if (!this.marshallerMap.containsKey(entity)) {
+            this.marshallerMap.put(entity, new HashMap<>());
+        }
+        if (!this.unmarshallerMap.containsKey(entity)) {
+            this.unmarshallerMap.put(entity, new HashMap<>());
+        }
+        this.marshallerMap.get(entity).put(from, customNullHandling ? marshaller
+            : (A a) -> a == null ? null : marshaller.marshall(a));
+        this.unmarshallerMap.get(entity).put(from, customNullHandling ? unmarshaller
+            : (B b) -> b == null ? null : unmarshaller.marshall(b));
+    }
+
+    /**
+     * @param from
+     * @param marshaller
+     * @param unmarshaller
+     * @param <A>
+     *
+     * @since 0.6.1
+     */
+    public <A> void registerTypeMarshaller(@NotNull Class<A> from, @NotNull TypeMarshaller<A, String> marshaller, @NotNull TypeMarshaller<String, A> unmarshaller) {
+        this.registerTypeMarshaller(from, String.class, marshaller, unmarshaller);
+    }
+
+    /**
+     * @param from
+     * @param unmarshaller
+     * @param <A>
+     *
+     * @since 0.6.1
+     */
+    public <A> void registerTypeMarshaller(@NotNull Class<A> from, @NotNull TypeMarshaller<String, A> unmarshaller) {
+        this.registerTypeMarshaller(from, Object::toString, unmarshaller);
     }
 
     /**
