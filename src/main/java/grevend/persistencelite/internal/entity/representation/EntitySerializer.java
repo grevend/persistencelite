@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.entity.representation;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -42,9 +43,8 @@ public interface EntitySerializer<T> {
     @NotNull
     default Map<String, Object> merge(@NotNull Iterable<Map<String, Object>> components) {
         return StreamSupport.stream(components.spliterator(), false)
-            .flatMap(map -> map.entrySet().stream()).collect(Collectors
-                .toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue,
-                    (oldEntry, newEntry) -> newEntry));
+            .flatMap(map -> map.entrySet().stream())
+            .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
     }
 
 }

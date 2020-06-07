@@ -28,6 +28,7 @@ import grevend.sequence.Seq;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
@@ -47,7 +48,8 @@ public final class SuccessCollection<E> implements ResultCollection<E>, Success<
         if (collection.stream().anyMatch(Result::failure)) {
             throw new IllegalArgumentException();
         }
-        this.collection = collection.stream().map(res -> res.or(null))
+        this.collection = collection.stream()
+            .map(res -> res.or(null))
             .collect(Collectors.toUnmodifiableList());
     }
 

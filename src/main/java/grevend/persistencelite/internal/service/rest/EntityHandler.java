@@ -56,15 +56,17 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     );
 
     public void handle(@NotNull URI uri, @NotNull @MagicConstant(stringValues = {GET, HEAD, POST,
-        PUT, DELETE, CONNECT, OPTIONS, TRACE,
-        PATCH}) String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
+        PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH}) String method,
+        @NotNull Map<String, List<String>> query, int version,
+        @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
         try {
             var props = this.extractProps(query, entityMetadata);
             switch (method) {
                 case GET -> this.handleGet(props, entityMetadata, exchange);
-                case POST -> this.handlePost(props, entityMetadata);
-                case PATCH -> this.handlePatch(props, entityMetadata);
-                case DELETE -> this.handleDelete(props, entityMetadata);
+                case POST -> this.handlePost(props, entityMetadata, exchange);
+                case PUT -> this.handlePost(props, entityMetadata, exchange);
+                case PATCH -> this.handlePatch(props, entityMetadata, exchange);
+                case DELETE -> this.handleDelete(props, entityMetadata, exchange);
                 default -> this
                     .handleFailure(METHOD_NOT_ALLOWED, "Unexpected method " + method + ".");
             }
@@ -79,9 +81,9 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
         Map<String, String> props = Seq.of(query.entrySet())
             .filter(param -> !param.getValue().isEmpty())
-            .map(param -> new PairImpl<>(param.getKey(), param.getValue().get(0))).collect(
-                Collectors.toUnmodifiableMap(Pair::first, Pair::second,
-                    (oldValue, newValue) -> newValue));
+            .map(param -> new PairImpl<>(param.getKey(), param.getValue().get(0)))
+            .collect(Collectors.toUnmodifiableMap(Pair::first, Pair::second,
+                (oldValue, newValue) -> newValue));
 
         return Seq.of(properties)
             .filter(prop -> props.containsKey(prop.fieldName()))
@@ -163,18 +165,21 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         }
     }
 
-    private void handlePost(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+    private void handlePost(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
+        exchange.sendResponseHeaders(NOT_IMPLEMENTED, CHUNKED);
     }
 
-    private void handlePatch(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+    private void handlePatch(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
+        exchange.sendResponseHeaders(NOT_IMPLEMENTED, CHUNKED);
     }
 
-    private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata) {
+    private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
             this.daoImpl(entityMetadata).delete(props);
             this.handleSuccess(OK, "Deletion successful.");
+            exchange.sendResponseHeaders(OK, CHUNKED);
         } catch (Throwable throwable) {
             this.handleFailure(INTERNAL_SERVER_ERROR, "Not implemented yet.");
         }

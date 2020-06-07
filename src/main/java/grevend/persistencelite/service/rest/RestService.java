@@ -40,7 +40,10 @@ import grevend.persistencelite.internal.service.rest.RestHandler;
 import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -91,6 +94,9 @@ public final class RestService implements Service<RestConfigurator> {
     @Override
     @Contract(value = " -> new", pure = true)
     public DaoFactory daoFactory() {
+        if (this.configuration.mode() == RestMode.SERVER) {
+            throw new IllegalStateException();
+        }
         return new DaoFactory() {
             @NotNull
             @Override
@@ -98,6 +104,8 @@ public final class RestService implements Service<RestConfigurator> {
             public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
                 try {
                     return new RestDao<>(entityMetadata, new RestDaoImpl(entityMetadata,
+                        "http://localhost:8000/api/v" + RestService.this.configuration.
+                            version() + "/",
                         (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
                             (Object) RestService.this.marshallerMap,
                         (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
@@ -242,11 +250,28 @@ public final class RestService implements Service<RestConfigurator> {
             entity -> server.createContext(
                 "/api/v" + this.configuration.version() + "/" + entity.name().toLowerCase(),
                 exchange -> {
+                    System.out.println("!!!");
                     var headers = exchange.getResponseHeaders();
                     headers.put("Content-Type", List.of("application/pl.v0.entity+json; utf-8"));
                     headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
                         .format(EntityHandler.lastModified
                             .computeIfAbsent(entity, e -> ZonedDateTime.now(ZoneOffset.UTC)))));
+
+                    var buffer = new BufferedReader(new InputStreamReader(exchange.getRequestBody()));
+
+                    System.out.println(exchange.getRequestURI());
+                    System.out.println(exchange.getRequestMethod());
+                    exchange.getRequestHeaders().entrySet().forEach(System.out::println);
+
+                    System.out.println("-----");
+
+                    String line;
+                    while ((line = buffer.readLine()) != null) {
+                        System.out.println(line);
+                    }
+
+                    System.out.println("-----");
+
                     handler.handle(exchange.getRequestURI(), exchange.getRequestMethod(),
                         Utils.query(exchange.getRequestURI()), this.configuration.version(), entity,
                         exchange);
