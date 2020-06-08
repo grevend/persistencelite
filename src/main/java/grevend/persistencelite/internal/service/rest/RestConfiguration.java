@@ -27,6 +27,7 @@ package grevend.persistencelite.internal.service.rest;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.service.rest.RestMode;
 import java.nio.charset.Charset;
+import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,4 +35,4 @@ import org.jetbrains.annotations.Nullable;
  * @author David Greven
  * @since 0.4.6
  */
-public record RestConfiguration(@NotNull RestMode mode, int version, @NotNull Charset charset, boolean cached, int poolSize, int backlog, @Nullable String scope, @Nullable Service<?>service) {}
+public record RestConfiguration(@NotNull RestMode mode, int version, @NotNull Charset charset, boolean cached, int poolSize, int backlog, @Nullable String scope, @Nullable Service<?>service, @Nullable Properties properties) {}

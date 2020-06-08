@@ -37,13 +37,9 @@ import grevend.persistencelite.internal.service.rest.RestConfiguration;
 import grevend.persistencelite.internal.service.rest.RestDao;
 import grevend.persistencelite.internal.service.rest.RestDaoImpl;
 import grevend.persistencelite.internal.service.rest.RestHandler;
-import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -243,24 +239,50 @@ public final class RestService implements Service<RestConfigurator> {
             throw new IllegalStateException();
         }
 
-        var server = HttpServer.create(new InetSocketAddress(8000), 0);
+        HttpServer server = null;
+
+        if (this.notEmpty("restHost") && this.notEmpty("restPort")) {
+            try {
+                server = HttpServer.create(new InetSocketAddress(Objects.requireNonNull(
+                    this.configuration.properties()).getProperty("restHost"),
+                        Integer.parseInt(Objects.requireNonNull(this.configuration.properties()).
+                            getProperty("restPort"))),
+                    this.configuration.backlog());
+            } catch (NumberFormatException | NullPointerException exception) {
+                server = HttpServer.create(new InetSocketAddress(8000),
+                    this.configuration.backlog());
+            }
+        } else {
+            server = HttpServer.create(new InetSocketAddress(8000),
+                this.configuration.backlog());
+        }
+
         RestHandler handler = new EntityHandler(this.configuration);
+        HttpServer finalServer = server;
 
         EntityMetadata.entities(Objects.requireNonNull(this.configuration.scope())).forEach(
-            entity -> server.createContext("/api/v" + this.configuration.version() + "/" +
+            entity -> finalServer.createContext("/api/v" + this.configuration.version() + "/" +
                 entity.name().toLowerCase(), exchange -> {
-                    var headers = exchange.getResponseHeaders();
-                    headers.put("Content-Type", List.of("application/pl.v0.entity+json; utf-8"));
-                    headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
-                        .format(EntityHandler.lastModified
-                            .computeIfAbsent(entity, e -> ZonedDateTime.now(ZoneOffset.UTC)))));
+                var headers = exchange.getResponseHeaders();
+                headers.put("Content-Type", List.of("application/pl.v0.entity+json; utf-8"));
+                headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
+                    .format(EntityHandler.lastModified
+                        .computeIfAbsent(entity, e -> ZonedDateTime.now(ZoneOffset.UTC)))));
 
-                    handler.handle(this.configuration.version(), entity, exchange);
-                }));
+                handler.handle(this.configuration.version(), entity, exchange);
+            }));
         server.setExecutor(this.configuration.poolSize() < 1 ? null
             : Executors.newFixedThreadPool(this.configuration.poolSize()));
         server.start();
         return server;
+    }
+
+    private boolean notEmpty(@NotNull String property) {
+        if (this.configuration.properties() != null) {
+            var res = this.configuration.properties().getProperty(property);
+            return res != null && !(res.equals(""));
+        }
+        return false;
     }
 
     @Contract("_ -> this")

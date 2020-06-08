@@ -29,9 +29,10 @@ import static grevend.persistencelite.service.rest.RestMode.SERVER;
 import grevend.persistencelite.internal.service.rest.RestConfiguration;
 import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
+import java.io.FileNotFoundException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import org.intellij.lang.annotations.MagicConstant;
+import java.util.Properties;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
@@ -50,6 +51,7 @@ public final class RestConfigurator implements Configurator<RestService> {
     private boolean cached = false;
     private Charset charset = StandardCharsets.UTF_8;
     private Service<?> service;
+    private Properties properties;
 
     /**
      * @param restService
@@ -177,6 +179,37 @@ public final class RestConfigurator implements Configurator<RestService> {
     }
 
     /**
+     * @param propertiesFile
+     *
+     * @return
+     *
+     * @since 0.6.4
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator address(@NotNull String propertiesFile) {
+        Properties props = new Properties();
+
+        try (var stream = this.getClass().getClassLoader().getResourceAsStream(propertiesFile)) {
+            if (stream != null) {
+                props.load(stream);
+            } else {
+                throw new FileNotFoundException(
+                    "Properties file '" + propertiesFile + "' not found.");
+            }
+        } catch (Exception exception) {
+            if (exception instanceof FileNotFoundException fileNotFoundException) {
+                throw new IllegalStateException("", fileNotFoundException);
+            } else {
+                exception.printStackTrace();
+            }
+        }
+
+        this.properties = props;
+        return this;
+    }
+
+    /**
      * @return
      *
      * @since 0.3.3
@@ -193,7 +226,8 @@ public final class RestConfigurator implements Configurator<RestService> {
             }
         }
         return this.restService.setConfiguration(new RestConfiguration(this.mode, this.version,
-            this.charset, this.cached, this.poolSize, this.backlog, this.scope, this.service));
+            this.charset, this.cached, this.poolSize, this.backlog, this.scope, this.service,
+            this.properties));
     }
 
 }
