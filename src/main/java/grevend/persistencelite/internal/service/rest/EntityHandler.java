@@ -61,7 +61,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
         try {
             var props = this.extractProps(query, entityMetadata);
-            switch (method) {
+            switch (exchange.getRequestHeaders().containsKey("X-http-method-override") ? (exchange
+                .getRequestHeaders().getFirst("X-http-method-override").toUpperCase()) : method) {
                 case GET -> this.handleGet(props, entityMetadata, exchange);
                 case POST -> this.handlePost(props, entityMetadata, exchange);
                 case PUT -> this.handlePost(props, entityMetadata, exchange);
