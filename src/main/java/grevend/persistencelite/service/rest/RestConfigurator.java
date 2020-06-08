@@ -31,8 +31,10 @@ import grevend.persistencelite.service.Configurator;
 import grevend.persistencelite.service.Service;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 /**
  * @author David Greven
@@ -43,7 +45,7 @@ public final class RestConfigurator implements Configurator<RestService> {
 
     private final RestService restService;
     private RestMode mode;
-    private int version, poolSize = -1;
+    private int version, poolSize = -1, backlog = -1;
     private String scope;
     private boolean cached = false;
     private Charset charset = StandardCharsets.UTF_8;
@@ -82,7 +84,7 @@ public final class RestConfigurator implements Configurator<RestService> {
      */
     @NotNull
     @Contract("_ -> this")
-    public RestConfigurator version(int version) {
+    public RestConfigurator version(@Range(from = 0, to = Integer.MAX_VALUE) int version) {
         this.version = version;
         return this;
     }
@@ -97,7 +99,7 @@ public final class RestConfigurator implements Configurator<RestService> {
     @NotNull
     @Contract("_ -> this")
     public RestConfigurator uses(@NotNull Service<?> service) {
-        if (this.mode != SERVER) { throw new IllegalStateException(); }
+        if (this.mode != SERVER) { throw new IllegalStateException("Mode should be server."); }
         this.service = service;
         return this;
     }
@@ -112,8 +114,23 @@ public final class RestConfigurator implements Configurator<RestService> {
     @NotNull
     @Contract("_ -> this")
     public RestConfigurator scope(@NotNull String packageScope) {
-        if (this.mode != SERVER) { throw new IllegalStateException(); }
+        if (this.mode != SERVER) { throw new IllegalStateException("Mode should be server."); }
         this.scope = packageScope;
+        return this;
+    }
+
+    /**
+     * @param backlog
+     *
+     * @return
+     *
+     * @since 0.6.4
+     */
+    @NotNull
+    @Contract("_ -> this")
+    public RestConfigurator backlog(@Range(from = 1, to = Integer.MAX_VALUE) int backlog) {
+        if (this.mode != SERVER) { throw new IllegalStateException("Mode should be server."); }
+        this.backlog = backlog;
         return this;
     }
 
@@ -126,7 +143,7 @@ public final class RestConfigurator implements Configurator<RestService> {
      */
     @NotNull
     @Contract("_ -> this")
-    public RestConfigurator threadPool(int size) {
+    public RestConfigurator threadPool(@Range(from = 1, to = Integer.MAX_VALUE) int size) {
         this.poolSize = size;
         return this;
     }
@@ -176,7 +193,7 @@ public final class RestConfigurator implements Configurator<RestService> {
             }
         }
         return this.restService.setConfiguration(new RestConfiguration(this.mode, this.version,
-            this.charset, this.cached, this.poolSize, this.scope, this.service));
+            this.charset, this.cached, this.poolSize, this.backlog, this.scope, this.service));
     }
 
 }

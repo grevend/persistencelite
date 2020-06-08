@@ -34,4 +34,4 @@ import org.jetbrains.annotations.Nullable;
  * @author David Greven
  * @since 0.4.6
  */
-public record RestConfiguration(@NotNull RestMode mode, int version, @NotNull Charset charset, boolean cached, int poolSize, @Nullable String scope, @Nullable Service<?>service) {}
+public record RestConfiguration(@NotNull RestMode mode, int version, @NotNull Charset charset, boolean cached, int poolSize, int backlog, @Nullable String scope, @Nullable Service<?>service) {}
