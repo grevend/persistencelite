@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import grevend.common.Pair;
 import grevend.persistencelite.entity.EntityMetadata;
@@ -32,12 +33,16 @@ import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.time.ZonedDateTime;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.NotNull;
@@ -98,10 +103,37 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     private void handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
+            var types = entityMetadata.properties().stream()
+                .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
+                .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                    (oldV, newV) -> newV));
+
             var proprietary = exchange.getRequestHeaders().containsKey("X-http-method-override") &&
                 exchange.getRequestHeaders().containsKey("User-Agent") &&
                 exchange.getRequestHeaders().getFirst("X-http-method-override").equals("GET") &&
                 exchange.getRequestHeaders().getFirst("User-Agent").contains("PersistenceLite");
+
+            Map<Class<?>, Function<String, Object>> marshallers = Map.of(
+                Integer.TYPE, Integer::valueOf,
+                Integer.class, Integer::valueOf,
+                String.class, s -> s
+            );
+
+            if (proprietary) {
+                props = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
+                    Props.class).props.entrySet().stream().map(prop -> {
+                    try {
+                        return new SimpleEntry<>(prop.getKey(),
+                            marshallers.get(types.get(prop.getKey())).apply(prop.getValue()));
+                    } catch (Throwable throwable) {
+                        return null;
+                    }
+                }).filter(Objects::nonNull)
+                    .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                        (oldV, newV) -> newV));
+
+                System.out.println("Props: " + props);
+            }
 
             var relations = entityMetadata.declaredRelations();
             var entities = this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator();
@@ -211,6 +243,11 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         } else {
             throw new IllegalStateException("Failed to construct a DaoImpl.");
         }
+    }
+
+    private static final class Props {
+
+        public Map<String, String> props;
     }
 
     private record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
