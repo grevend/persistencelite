@@ -48,8 +48,7 @@ import org.jetbrains.annotations.NotNull;
 
 public final record EntityHandler(@NotNull RestConfiguration configuration) implements RestHandler {
 
-    public static final ConcurrentHashMap<EntityMetadata<?>, ZonedDateTime> lastModified
-        = new ConcurrentHashMap<>(9);
+    public static final ConcurrentHashMap<EntityMetadata<?>, ZonedDateTime> lastModified = new ConcurrentHashMap<>();
 
     private static final Map<Class<?>, TypeMarshaller<String, Object>> mappers = Map.of(
         String.class, val -> val,
