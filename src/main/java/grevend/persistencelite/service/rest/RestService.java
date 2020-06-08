@@ -279,7 +279,7 @@ public final class RestService implements Service<RestConfigurator> {
 
     private boolean notEmpty(@NotNull String property) {
         if (this.configuration.properties() != null) {
-            var res = this.configuration.properties().getProperty(property);
+            var res = Objects.requireNonNull(this.configuration.properties()).getProperty(property);
             return res != null && !(res.equals(""));
         }
         return false;
