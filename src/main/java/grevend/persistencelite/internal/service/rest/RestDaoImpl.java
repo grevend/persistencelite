@@ -141,7 +141,8 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         writer.write("]}");
         writer.flush();
         writer.close();
-        if (request.connection.getResponseCode() != RestHandler.OK) {
+        if (request.connection.getResponseCode() != RestHandler.OK &&
+            request.connection.getResponseCode() != RestHandler.CREATED) {
             throw new IllegalStateException("Server responded with error code <" +
                 request.connection.getResponseCode() + ">.");
         }

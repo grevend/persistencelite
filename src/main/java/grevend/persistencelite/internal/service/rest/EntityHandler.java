@@ -73,11 +73,17 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 case PUT -> this.handlePost(props, entityMetadata, exchange);
                 case PATCH -> this.handlePatch(props, entityMetadata, exchange);
                 case DELETE -> this.handleDelete(props, entityMetadata, exchange);
-                default -> this
-                    .handleFailure(METHOD_NOT_ALLOWED, "Unexpected method " + method + ".");
+                default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             }
         } catch (Throwable throwable) {
-            this.handleFailure(NOT_FOUND, throwable.getMessage());
+            try {
+                System.out.println("NOT_FOUND: ");
+                throwable.printStackTrace();
+                exchange.sendResponseHeaders(NOT_FOUND, 0);
+            } catch (IOException exception) {
+                System.out.println("NOT_FOUND-IOException: ");
+                exception.printStackTrace();
+            }
         }
     }
 
@@ -204,34 +210,20 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     }
 
     private void handlePost(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
-        this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
-        exchange.sendResponseHeaders(NOT_IMPLEMENTED, CHUNKED);
+        exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
     private void handlePatch(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
-        this.handleFailure(NOT_IMPLEMENTED, "Not implemented yet.");
-        exchange.sendResponseHeaders(NOT_IMPLEMENTED, CHUNKED);
+        exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
     private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
             this.daoImpl(entityMetadata).delete(props);
-            this.handleSuccess(OK, "Deletion successful.");
-            exchange.sendResponseHeaders(OK, CHUNKED);
+            exchange.sendResponseHeaders(OK, 0);
         } catch (Throwable throwable) {
-            this.handleFailure(INTERNAL_SERVER_ERROR, "Not implemented yet.");
+            exchange.sendResponseHeaders(BAD_REQUEST, 0);
         }
-    }
-
-    private void handleFailure(@MagicConstant(intValues = {BAD_REQUEST, UNAUTHORIZED, FORBIDDEN,
-        NOT_FOUND, METHOD_NOT_ALLOWED, INTERNAL_SERVER_ERROR,
-        NOT_IMPLEMENTED}) int code, @NotNull String reason) {
-        new PairImpl<>(code, "{\"message\": \"" + reason + "\"}");
-    }
-
-    private void handleSuccess(@MagicConstant(intValues = {OK,
-        CREATED}) int code, @NotNull String json) {
-        new PairImpl<>(code, json);
     }
 
     @NotNull
