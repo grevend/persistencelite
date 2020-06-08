@@ -83,39 +83,6 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         return value;
     }
 
-    @Override
-    public void create(@NotNull Iterable<Map<String, Object>> entity) throws IOException {
-        var request = this.requestWithBody(RestHandler.PUT);
-        var writer = request.writer;
-        var entityIter = entity.iterator();
-        writer.write("{\"entity\": [");
-        while (entityIter.hasNext()) {
-            writer.flush();
-            var next = entityIter.next();
-            writer.write("{");
-            var entries = next.entrySet().iterator();
-            while (entries.hasNext()) {
-                var entry = entries.next();
-                writer.flush();
-                writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
-                    "\"" + (entries.hasNext() ? " ," : ""));
-            }
-            writer.write("}" + (entityIter.hasNext() ? ", " : ""));
-        }
-        writer.write("]}");
-        writer.flush();
-        writer.close();
-        if (request.connection.getResponseCode() != RestHandler.OK) {
-            throw new IllegalStateException("Server responded with error code <" +
-                request.connection.getResponseCode() + ">.");
-        }
-    }
-
-    private HttpURLConnection connection() throws IOException {
-        return (HttpURLConnection) new URL(this.baseUrl +
-            this.entityMetadata.name().toLowerCase()).openConnection();
-    }
-
     @NotNull
     @Contract(" -> new")
     private HttpURLConnection request() throws IOException {
@@ -152,19 +119,46 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         return new RequestUnidirectional(new OutputStreamWriter(con.getOutputStream(), UTF_8), con);
     }
 
+    @Override
+    public void create(@NotNull Iterable<Map<String, Object>> entity) throws IOException {
+        var request = this.requestWithBody(RestHandler.PUT);
+        var writer = request.writer;
+        var entityIter = entity.iterator();
+        writer.write("{\"entity\": [");
+        while (entityIter.hasNext()) {
+            writer.flush();
+            var next = entityIter.next();
+            writer.write("{");
+            var entries = next.entrySet().iterator();
+            while (entries.hasNext()) {
+                var entry = entries.next();
+                writer.flush();
+                writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
+                    "\"" + (entries.hasNext() ? " ," : ""));
+            }
+            writer.write("}" + (entityIter.hasNext() ? ", " : ""));
+        }
+        writer.write("]}");
+        writer.flush();
+        writer.close();
+        if (request.connection.getResponseCode() != RestHandler.OK) {
+            throw new IllegalStateException("Server responded with error code <" +
+                request.connection.getResponseCode() + ">.");
+        }
+    }
+
+    private HttpURLConnection connection() throws IOException {
+        return (HttpURLConnection) new URL(this.baseUrl +
+            this.entityMetadata.name().toLowerCase()).openConnection();
+    }
+
     @NotNull
     @Override
     public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws IOException {
         try {
             var request = this.request();
             var writer = new OutputStreamWriter(request.getOutputStream(), UTF_8);
-            var keyIter = keys.iterator();
-            writer.write("{\"keys\": [");
-            while (keyIter.hasNext()) {
-                writer.flush();
-                writer.write("\"" + keyIter.next() + "\"" + (keyIter.hasNext() ? ", " : ""));
-            }
-            writer.write("], \"props\": {");
+            writer.write("{\"props\": {");
             var propIter = props.entrySet().iterator();
             while (propIter.hasNext()) {
                 writer.flush();
