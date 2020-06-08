@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import static grevend.persistencelite.internal.service.rest.RestUtils.unmarshall;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.gson.Gson;
@@ -68,22 +69,6 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         this.marshallerMap = marshallerMap;
         this.unmarshallerMap = unmarshallerMap;
         HttpURLConnection.setFollowRedirects(false);
-    }
-
-    @Nullable
-    private static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
-        if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
-            return value.toString().toLowerCase();
-        } else if (unmarshallerMap.containsKey(entityMetadata.entityClass())) {
-            if (unmarshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
-                return unmarshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
-            }
-        } else if (unmarshallerMap.containsKey(null)) {
-            if (unmarshallerMap.get(null).containsKey(type)) {
-                return unmarshallerMap.get(null).get(type).marshall(value);
-            }
-        }
-        return value;
     }
 
     HttpURLConnection connection() throws IOException {
