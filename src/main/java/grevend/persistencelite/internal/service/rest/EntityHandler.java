@@ -98,6 +98,11 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     private void handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
+            var proprietary = exchange.getRequestHeaders().containsKey("X-http-method-override") &&
+                exchange.getRequestHeaders().containsKey("User-Agent") &&
+                exchange.getRequestHeaders().getFirst("X-http-method-override").equals("GET") &&
+                exchange.getRequestHeaders().getFirst("User-Agent").contains("PersistenceLite");
+
             var relations = entityMetadata.declaredRelations();
             var entities = this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator();
             exchange.sendResponseHeaders(OK, CHUNKED);
