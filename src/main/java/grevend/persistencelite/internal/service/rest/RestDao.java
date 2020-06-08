@@ -28,11 +28,11 @@ import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
-import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.Map;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class RestDao<E> extends BaseDao<E, IOException> {
 
+    private final RestDaoImpl daoImpl;
     private final EntityMetadata<E> entityMetadata;
 
     /**
@@ -56,9 +57,10 @@ public final class RestDao<E> extends BaseDao<E, IOException> {
      * @throws Throwable
      * @since 0.4.7
      */
-    public RestDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<IOException> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) throws Throwable {
+    public RestDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull RestDaoImpl daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) throws Throwable {
         super(entityMetadata, daoImpl, transactionFactory, transaction, props, marshallerMap,
             unmarshallerMap);
+        this.daoImpl = daoImpl;
         this.entityMetadata = entityMetadata;
     }
 
@@ -75,8 +77,9 @@ public final class RestDao<E> extends BaseDao<E, IOException> {
      * @since 0.4.7
      */
     @Nullable
+    @Contract(pure = true)
     public ZonedDateTime lastModified(boolean head) {
-        return EntityHandler.lastModified.getOrDefault(this.entityMetadata, null);
+        return this.daoImpl.getLastModified();
     }
 
     /**

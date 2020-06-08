@@ -37,6 +37,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Map;
@@ -57,6 +59,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     private final String baseUrl;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap;
+    private ZonedDateTime lastModified;
 
     @Contract(pure = true)
     public RestDaoImpl(@NotNull EntityMetadata<?> entityMetadata, @NotNull String baseUrl, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
@@ -145,6 +148,11 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             request.connection.getResponseCode() != RestHandler.CREATED) {
             throw new IllegalStateException("Server responded with error code <" +
                 request.connection.getResponseCode() + ">.");
+        } else {
+            /*
+            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
+                DateTimeFormatter.RFC_1123_DATE_TIME);
+             */
         }
     }
 
@@ -170,7 +178,10 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             writer.write("}}");
             writer.flush();
             writer.close();
-            System.out.println(request.getResponseCode());
+
+            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
+                DateTimeFormatter.RFC_1123_DATE_TIME);
+
             return new Gson().fromJson(new InputStreamReader(request.getInputStream(), UTF_8),
                 EntityRequestResponse.class).entities.stream().map(entity ->
                 this.entityMetadata.uniqueProperties().stream().map(prop ->
@@ -220,6 +231,11 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         if (request.connection.getResponseCode() != RestHandler.OK) {
             throw new IllegalStateException("Server responded with error code <" +
                 request.connection.getResponseCode() + ">.");
+        } else {
+            /*
+            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
+                DateTimeFormatter.RFC_1123_DATE_TIME);
+             */
         }
     }
 
@@ -241,7 +257,18 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         if (request.connection.getResponseCode() != RestHandler.OK) {
             throw new IllegalStateException("Server responded with error code <" +
                 request.connection.getResponseCode() + ">.");
+        } else {
+            /*
+            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
+                DateTimeFormatter.RFC_1123_DATE_TIME);
+             */
         }
+    }
+
+    @Nullable
+    @Contract(pure = true)
+    ZonedDateTime getLastModified() {
+        return this.lastModified;
     }
 
     private record RequestUnidirectional(Writer writer, HttpURLConnection connection) {}
