@@ -64,6 +64,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             var props = this.extractProps(Utils.query(exchange.getRequestURI()), entityMetadata);
             switch (exchange.getRequestHeaders().containsKey("X-http-method-override") ? (exchange
                 .getRequestHeaders().getFirst("X-http-method-override").toUpperCase()) : method) {
+                case HEAD -> this.handleHead(exchange);
                 case GET -> this.handleGet(props, entityMetadata, exchange);
                 case POST, PUT -> this.handlePost(props, entityMetadata, exchange);
                 case PATCH -> this.handlePatch(props, entityMetadata, exchange);
@@ -100,6 +101,10 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableMap(Pair::first, Pair::second,
                 (oldValue, newValue) -> newValue));
+    }
+
+    private void handleHead(@NotNull HttpExchange exchange) throws IOException {
+        exchange.sendResponseHeaders(OK, 0);
     }
 
     private void handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
