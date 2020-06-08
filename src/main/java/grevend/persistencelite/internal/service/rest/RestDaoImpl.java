@@ -28,32 +28,24 @@ import com.google.gson.Gson;
 import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
-import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
-import grevend.persistencelite.internal.entity.representation.EntitySerializer;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.postgresql.core.ResultHandler;
 
 /**
  * @author David Greven
@@ -75,14 +67,53 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         HttpURLConnection.setFollowRedirects(false);
     }
 
+    @Nullable
+    private static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
+        if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
+            return value.toString().toLowerCase();
+        } else if (unmarshallerMap.containsKey(entityMetadata.entityClass())) {
+            if (unmarshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
+                return unmarshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
+            }
+        } else if (unmarshallerMap.containsKey(null)) {
+            if (unmarshallerMap.get(null).containsKey(type)) {
+                return unmarshallerMap.get(null).get(type).marshall(value);
+            }
+        }
+        return value;
+    }
+
     @Override
     public void create(@NotNull Iterable<Map<String, Object>> entity) throws IOException {
-
+        var request = this.requestWithBody(RestHandler.PUT);
+        var writer = request.writer;
+        var entityIter = entity.iterator();
+        writer.write("{\"entity\": [");
+        while (entityIter.hasNext()) {
+            writer.flush();
+            var next = entityIter.next();
+            writer.write("{");
+            var entries = next.entrySet().iterator();
+            while (entries.hasNext()) {
+                var entry = entries.next();
+                writer.flush();
+                writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
+                    "\"" + (entries.hasNext() ? " ," : ""));
+            }
+            writer.write("}" + (entityIter.hasNext() ? ", " : ""));
+        }
+        writer.write("]}");
+        writer.flush();
+        writer.close();
+        if (request.connection.getResponseCode() != RestHandler.OK) {
+            throw new IllegalStateException("Server responded with error code <" +
+                request.connection.getResponseCode() + ">.");
+        }
     }
 
     private HttpURLConnection connection() throws IOException {
-        return (HttpURLConnection) new URL(this.baseUrl + this.entityMetadata.name().toLowerCase())
-            .openConnection();
+        return (HttpURLConnection) new URL(this.baseUrl +
+            this.entityMetadata.name().toLowerCase()).openConnection();
     }
 
     @NotNull
@@ -99,13 +130,11 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         return new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8);
     }
 
-    record Res(Writer writer, HttpURLConnection connection) {}
-
     @NotNull
     @Contract("_ -> new")
     private Res requestWithBody(@NotNull String method) throws IOException {
         var con = this.connection();
-        if(method.equals(RestHandler.PATCH)) {
+        if (method.equals(RestHandler.PATCH)) {
             con.setRequestProperty("X-HTTP-Method-Override", RestHandler.PATCH);
             con.setRequestMethod(RestHandler.POST);
         } else {
@@ -136,8 +165,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
                         (olvV, newV) -> newV)))
                 .collect(Collectors.toUnmodifiableList());
         } catch (Throwable throwable) {
-            throwable.printStackTrace();
-            return List.of();
+            throw new IllegalStateException("Request to server failed.", throwable);
         }
     }
 
@@ -152,7 +180,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             var next = entityIter.next();
             writer.write("{");
             var entries = next.entrySet().iterator();
-            while(entries.hasNext()) {
+            while (entries.hasNext()) {
                 var entry = entries.next();
                 writer.flush();
                 writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
@@ -160,37 +188,45 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             }
             writer.write("}" + (entityIter.hasNext() ? ", " : ""));
         }
-        writer.flush();
         writer.write("], \"props\": {");
-        //TODO
+        var propIter = props.entrySet().iterator();
+        while (propIter.hasNext()) {
+            writer.flush();
+            var entry = propIter.next();
+            writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
+                "\"" + (propIter.hasNext() ? " ," : ""));
+        }
         writer.write("}}");
         writer.flush();
         writer.close();
-        System.out.println(request.connection.getResponseCode());
+        if (request.connection.getResponseCode() != RestHandler.OK) {
+            throw new IllegalStateException("Server responded with error code <" +
+                request.connection.getResponseCode() + ">.");
+        }
     }
 
     @Override
     public void delete(@NotNull Map<String, Object> props) throws IOException {
-        var writer = this.requestWithBody(RestHandler.DELETE).writer;
+        var request = this.requestWithBody(RestHandler.DELETE);
+        var writer = request.writer;
+        writer.write("{\"props\": {");
+        var propIter = props.entrySet().iterator();
+        while (propIter.hasNext()) {
+            writer.flush();
+            var entry = propIter.next();
+            writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
+                "\"" + (propIter.hasNext() ? " ," : ""));
+        }
+        writer.write("}}");
         writer.flush();
         writer.close();
+        if (request.connection.getResponseCode() != RestHandler.OK) {
+            throw new IllegalStateException("Server responded with error code <" +
+                request.connection.getResponseCode() + ">.");
+        }
     }
 
-    @Nullable
-    private static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
-        if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
-            return value.toString().toLowerCase();
-        } else if (unmarshallerMap.containsKey(entityMetadata.entityClass())) {
-            if (unmarshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
-                return unmarshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
-            }
-        } else if (unmarshallerMap.containsKey(null)) {
-            if (unmarshallerMap.get(null).containsKey(type)) {
-                return unmarshallerMap.get(null).get(type).marshall(value);
-            }
-        }
-        return value;
-    }
+    private record Res(Writer writer, HttpURLConnection connection) {}
 
     public static class EntityRequestResponse {
 
@@ -200,8 +236,8 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         @Override
         public String toString() {
             return "EntityRequestResponse{" +
-                "types=" + types +
-                ", entities=" + entities +
+                "types=" + this.types +
+                ", entities=" + this.entities +
                 '}';
         }
 
@@ -216,9 +252,9 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         @Override
         public String toString() {
             return "ResponseEntity{" +
-                "type=" + type +
-                ", props=" + props +
-                ", rels=" + rels +
+                "type=" + this.type +
+                ", props=" + this.props +
+                ", rels=" + this.rels +
                 '}';
         }
 
