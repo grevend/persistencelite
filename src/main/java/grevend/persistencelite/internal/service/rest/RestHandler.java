@@ -57,6 +57,6 @@ public interface RestHandler {
     String TRACE = "TRACE";
     String PATCH = "PATCH";
 
-    void handle(@NotNull URI uri, @NotNull String method, @NotNull Map<String, List<String>> query, int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException;
+    void handle(int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException;
 
 }

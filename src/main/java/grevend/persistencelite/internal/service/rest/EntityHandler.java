@@ -30,11 +30,11 @@ import grevend.common.Pair;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.internal.dao.DaoImpl;
+import grevend.persistencelite.internal.util.Utils;
 import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -44,7 +44,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.NotNull;
 
 public final record EntityHandler(@NotNull RestConfiguration configuration) implements RestHandler {
@@ -60,28 +59,23 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         Float.TYPE, Float::parseFloat
     );
 
-    public void handle(@NotNull URI uri, @NotNull @MagicConstant(stringValues = {GET, HEAD, POST,
-        PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH}) String method,
-        @NotNull Map<String, List<String>> query, int version,
-        @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
+    public void handle(int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
         try {
-            var props = this.extractProps(query, entityMetadata);
+            var method = exchange.getRequestMethod();
+            var props = this.extractProps(Utils.query(exchange.getRequestURI()), entityMetadata);
             switch (exchange.getRequestHeaders().containsKey("X-http-method-override") ? (exchange
                 .getRequestHeaders().getFirst("X-http-method-override").toUpperCase()) : method) {
                 case GET -> this.handleGet(props, entityMetadata, exchange);
-                case POST -> this.handlePost(props, entityMetadata, exchange);
-                case PUT -> this.handlePost(props, entityMetadata, exchange);
+                case POST, PUT -> this.handlePost(props, entityMetadata, exchange);
                 case PATCH -> this.handlePatch(props, entityMetadata, exchange);
                 case DELETE -> this.handleDelete(props, entityMetadata, exchange);
                 default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             }
         } catch (Throwable throwable) {
             try {
-                System.out.println("NOT_FOUND: ");
                 throwable.printStackTrace();
                 exchange.sendResponseHeaders(NOT_FOUND, 0);
             } catch (IOException exception) {
-                System.out.println("NOT_FOUND-IOException: ");
                 exception.printStackTrace();
             }
         }
@@ -89,6 +83,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     @NotNull
     private Map<String, Object> extractProps(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
+        record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
+
         var properties = entityMetadata.declaredProperties();
 
         Map<String, String> props = Seq.of(query.entrySet())
@@ -137,8 +133,6 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 }).filter(Objects::nonNull)
                     .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                         (oldV, newV) -> newV));
-
-                System.out.println("Props: " + props);
             }
 
             var relations = entityMetadata.declaredRelations();
@@ -240,8 +234,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     private static final class Props {
 
         public Map<String, String> props;
-    }
 
-    private record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
+    }
 
 }
