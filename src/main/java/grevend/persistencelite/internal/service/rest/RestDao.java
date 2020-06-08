@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
@@ -31,6 +32,7 @@ import grevend.persistencelite.internal.dao.BaseDao;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -79,7 +81,20 @@ public final class RestDao<E> extends BaseDao<E, IOException> {
     @Nullable
     @Contract(pure = true)
     public ZonedDateTime lastModified(boolean head) {
-        return this.daoImpl.getLastModified();
+        if (head) {
+            try {
+                var conn = this.daoImpl.connection();
+                conn.setRequestProperty("Accept-Charset", "utf-8");
+                conn.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
+                    " (Java/" + Runtime.version() + ") Cache/v0");
+                this.daoImpl.lastModified = ZonedDateTime
+                    .parse(conn.getHeaderField("Last-Modified"),
+                        DateTimeFormatter.RFC_1123_DATE_TIME);
+            } catch (IOException exception) {
+                exception.printStackTrace();
+            }
+        }
+        return this.daoImpl.lastModified;
     }
 
     /**
@@ -92,6 +107,7 @@ public final class RestDao<E> extends BaseDao<E, IOException> {
      * @see ZonedDateTime
      * @since 0.6.4
      */
+    @Contract(pure = true)
     @Nullable
     @SuppressWarnings("unused")
     public ZonedDateTime lastModified() {

@@ -59,7 +59,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     private final String baseUrl;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap;
-    private ZonedDateTime lastModified;
+    ZonedDateTime lastModified;
 
     @Contract(pure = true)
     public RestDaoImpl(@NotNull EntityMetadata<?> entityMetadata, @NotNull String baseUrl, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
@@ -86,40 +86,46 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         return value;
     }
 
+    HttpURLConnection connection() throws IOException {
+        return (HttpURLConnection) new URL(this.baseUrl +
+            this.entityMetadata.name().toLowerCase()).openConnection();
+    }
+
     @NotNull
     @Contract(" -> new")
     private HttpURLConnection request() throws IOException {
-        var con = this.connection();
-        con.setRequestProperty("X-HTTP-Method-Override", RestHandler.GET);
-        con.setRequestMethod(RestHandler.POST);
-        con.setRequestProperty("Accept-Charset", "utf-8");
-        con.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
-        con.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
+        var conn = this.connection();
+        conn.setRequestProperty("X-HTTP-Method-Override", RestHandler.GET);
+        conn.setRequestMethod(RestHandler.POST);
+        conn.setRequestProperty("Accept-Charset", "utf-8");
+        conn.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
+        conn.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
             " (Java/" + Runtime.version() + ")");
-        con.setRequestProperty("Transfer-Encoding", "chunked");
-        con.setDoOutput(true);
-        con.setDoInput(true);
-        return con;
+        conn.setRequestProperty("Transfer-Encoding", "chunked");
+        conn.setDoOutput(true);
+        conn.setDoInput(true);
+        return conn;
     }
 
     @NotNull
     @Contract("_ -> new")
     private RequestUnidirectional requestWithBody(@NotNull String method) throws IOException {
-        var con = this.connection();
+        var conn = this.connection();
         if (method.equals(RestHandler.PATCH)) {
-            con.setRequestProperty("X-HTTP-Method-Override", RestHandler.PATCH);
-            con.setRequestMethod(RestHandler.POST);
+            conn.setRequestProperty("X-HTTP-Method-Override", RestHandler.PATCH);
+            conn.setRequestMethod(RestHandler.POST);
         } else {
-            con.setRequestMethod(method);
+            conn.setRequestMethod(method);
         }
-        con.setRequestProperty("Accept-Charset", "utf-8");
-        con.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
-        con.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
+        conn.setRequestProperty("Accept-Charset", "utf-8");
+        conn.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
+        conn.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
             " (Java/" + Runtime.version() + ")");
-        con.setRequestProperty("Transfer-Encoding", "chunked");
-        con.setDoOutput(true);
-        con.setDoInput(true);
-        return new RequestUnidirectional(new OutputStreamWriter(con.getOutputStream(), UTF_8), con);
+        conn.setRequestProperty("Transfer-Encoding", "chunked");
+        conn.setDoOutput(true);
+        conn.setDoInput(true);
+        return new RequestUnidirectional(new OutputStreamWriter(conn.getOutputStream(), UTF_8),
+            conn);
     }
 
     @Override
@@ -154,11 +160,6 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
                 DateTimeFormatter.RFC_1123_DATE_TIME);
              */
         }
-    }
-
-    private HttpURLConnection connection() throws IOException {
-        return (HttpURLConnection) new URL(this.baseUrl +
-            this.entityMetadata.name().toLowerCase()).openConnection();
     }
 
     @NotNull
@@ -263,12 +264,6 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
                 DateTimeFormatter.RFC_1123_DATE_TIME);
              */
         }
-    }
-
-    @Nullable
-    @Contract(pure = true)
-    ZonedDateTime getLastModified() {
-        return this.lastModified;
     }
 
     private record RequestUnidirectional(Writer writer, HttpURLConnection connection) {}
