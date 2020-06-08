@@ -24,6 +24,8 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.gson.Gson;
 import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.entity.EntityMetadata;
@@ -32,11 +34,9 @@ import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Map;
@@ -118,21 +118,23 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
 
     @NotNull
     @Contract(" -> new")
-    private Reader request() throws IOException {
+    private HttpURLConnection request() throws IOException {
         var con = this.connection();
-        con.setRequestMethod("GET");
-        con.setDoOutput(false);
+        con.setRequestProperty("X-HTTP-Method-Override", RestHandler.GET);
+        con.setRequestMethod(RestHandler.POST);
         con.setRequestProperty("Accept-Charset", "utf-8");
         con.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
-        con.setRequestProperty("User-Agent", "Java/" + Runtime.version().feature() +
-            " PersistenceLite/" + PersistenceLite.VERSION);
+        con.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
+            " (Java/" + Runtime.version() + ")");
         con.setRequestProperty("Transfer-Encoding", "chunked");
-        return new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8);
+        con.setDoOutput(true);
+        con.setDoInput(true);
+        return con;
     }
 
     @NotNull
     @Contract("_ -> new")
-    private Res requestWithBody(@NotNull String method) throws IOException {
+    private RequestUnidirectional requestWithBody(@NotNull String method) throws IOException {
         var con = this.connection();
         if (method.equals(RestHandler.PATCH)) {
             con.setRequestProperty("X-HTTP-Method-Override", RestHandler.PATCH);
@@ -142,21 +144,42 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         }
         con.setRequestProperty("Accept-Charset", "utf-8");
         con.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
-        con.setRequestProperty("User-Agent", "Java/" + Runtime.version().feature() +
-            " PersistenceLite/" + PersistenceLite.VERSION);
+        con.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
+            " (Java/" + Runtime.version() + ")");
         con.setRequestProperty("Transfer-Encoding", "chunked");
         con.setDoOutput(true);
         con.setDoInput(true);
-        return new Res(new OutputStreamWriter(con.getOutputStream(), StandardCharsets.UTF_8), con);
+        return new RequestUnidirectional(new OutputStreamWriter(con.getOutputStream(), UTF_8), con);
     }
 
     @NotNull
     @Override
     public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws IOException {
         try {
-            return new Gson().fromJson(this.request(), EntityRequestResponse.class).entities
-                .stream().map(entity -> this.entityMetadata.uniqueProperties().stream().map(
-                    prop -> new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
+            var request = this.request();
+            var writer = new OutputStreamWriter(request.getOutputStream(), UTF_8);
+            var keyIter = keys.iterator();
+            writer.write("{\"keys\": [");
+            while (keyIter.hasNext()) {
+                writer.flush();
+                writer.write("\"" + keyIter.next() + "\"" + (keyIter.hasNext() ? ", " : ""));
+            }
+            writer.write("], \"props\": {");
+            var propIter = props.entrySet().iterator();
+            while (propIter.hasNext()) {
+                writer.flush();
+                var entry = propIter.next();
+                writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
+                    "\"" + (propIter.hasNext() ? " ," : ""));
+            }
+            writer.write("}}");
+            writer.flush();
+            writer.close();
+            System.out.println(request.getResponseCode());
+            return new Gson().fromJson(new InputStreamReader(request.getInputStream(), UTF_8),
+                EntityRequestResponse.class).entities.stream().map(entity ->
+                this.entityMetadata.uniqueProperties().stream().map(prop ->
+                    new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
                         entity.props.containsKey(prop.fieldName()) ? entity.props
                             .get(prop.fieldName())
                             : (entity.props.getOrDefault(prop.propertyName(), null)),
@@ -226,7 +249,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         }
     }
 
-    private record Res(Writer writer, HttpURLConnection connection) {}
+    private record RequestUnidirectional(Writer writer, HttpURLConnection connection) {}
 
     public static class EntityRequestResponse {
 
