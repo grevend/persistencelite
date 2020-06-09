@@ -67,7 +67,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                     unmarshallerMap, exchange);
                 case POST, PUT -> this.handlePut(entityMetadata, exchange);
                 case PATCH -> this.handlePatch(entityMetadata, exchange, unmarshallerMap);
-                case DELETE -> this.handleDelete(props, entityMetadata, exchange);
+                case DELETE -> this.handleDelete(props, entityMetadata, exchange, unmarshallerMap);
                 default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             }
         } catch (Throwable throwable) {
@@ -102,10 +102,11 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     }
 
     private boolean isProprietary(@NotNull HttpExchange exchange) {
-        return exchange.getRequestHeaders().containsKey("X-http-method-override") &&
-            exchange.getRequestHeaders().containsKey("User-Agent") &&
-            exchange.getRequestHeaders().getFirst("X-http-method-override").equals("GET") &&
-            exchange.getRequestHeaders().getFirst("User-Agent").contains("PersistenceLite");
+        return exchange.getRequestHeaders().containsKey("User-Agent") &&
+            exchange.getRequestHeaders().getFirst("User-Agent")
+                .contains("PersistenceLite") &&
+            exchange.getRequestHeaders().getFirst("User-Agent")
+                .contains("MagicNumber/32204d61722032303230");
     }
 
     private Map<String, Class<?>> getTypes(@NotNull EntityMetadata<?> entityMetadata) {
@@ -210,7 +211,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     private void handlePut(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         System.out.println("PUT: " + new Gson().fromJson(new InputStreamReader(
             exchange.getRequestBody()), Entity.class));
-
+        EntityHandler.lastModified.put(entityMetadata, ZonedDateTime.now());
         exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
@@ -239,6 +240,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                     this.unmarshallMap(input, entityMetadata, unmarshallerMap))
                     .collect(Collectors.toList()),
                 this.unmarshallMap(request.props, entityMetadata, unmarshallerMap));
+            EntityHandler.lastModified.put(entityMetadata, ZonedDateTime.now());
             exchange.sendResponseHeaders(OK, 0);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
@@ -246,17 +248,19 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         }
     }
 
-    private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
+    private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata,
+        @NotNull HttpExchange exchange, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) throws IOException {
         try {
             if (this.isProprietary(exchange)) {
-                System.out.println("DELETE: " + new Gson().fromJson(new InputStreamReader(
-                    exchange.getRequestBody()), Props.class));
-
-                exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
+                var request = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
+                    Props.class);
+                this.daoImpl(entityMetadata).delete(this.unmarshallMap(request.props,
+                    entityMetadata, unmarshallerMap));
             } else {
                 this.daoImpl(entityMetadata).delete(props);
-                exchange.sendResponseHeaders(OK, 0);
             }
+            EntityHandler.lastModified.put(entityMetadata, ZonedDateTime.now());
+            exchange.sendResponseHeaders(OK, 0);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
             exchange.sendResponseHeaders(BAD_REQUEST, 0);
