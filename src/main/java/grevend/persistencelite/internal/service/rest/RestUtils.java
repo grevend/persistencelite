@@ -37,6 +37,16 @@ import org.jetbrains.annotations.Nullable;
  */
 final class RestUtils {
 
+    /**
+     * @param entityMetadata
+     * @param value
+     * @param type
+     * @param unmarshallerMap
+     *
+     * @return
+     *
+     * @since 0.6.4
+     */
     @Nullable
     static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
@@ -53,8 +63,18 @@ final class RestUtils {
         return value;
     }
 
+    /**
+     * @param entityMetadata
+     * @param value
+     * @param type
+     * @param marshallerMap
+     *
+     * @return
+     *
+     * @since 0.6.4
+     */
     @Nullable
-    private static Object marshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
+    static Object marshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
         if (type.isEnum() && value instanceof String) {
             try {
                 var method = type.getMethod("valueOf", String.class);

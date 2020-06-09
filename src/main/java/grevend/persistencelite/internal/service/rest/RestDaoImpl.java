@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import static grevend.persistencelite.internal.service.rest.RestUtils.marshall;
 import static grevend.persistencelite.internal.service.rest.RestUtils.unmarshall;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -44,11 +45,9 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
@@ -60,6 +59,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     private final String baseUrl;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap;
+    private final Map<String, Class<?>> entityTypes;
     ZonedDateTime lastModified;
 
     @Contract(pure = true)
@@ -69,6 +69,11 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         this.marshallerMap = marshallerMap;
         this.unmarshallerMap = unmarshallerMap;
         HttpURLConnection.setFollowRedirects(false);
+
+        this.entityTypes = this.entityMetadata.properties().stream()
+            .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
+            .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                (oldV, newV) -> newV));
     }
 
     HttpURLConnection connection() throws IOException {
@@ -127,8 +132,10 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             while (entries.hasNext()) {
                 var entry = entries.next();
                 writer.flush();
-                writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
-                    "\"" + (entries.hasNext() ? " ," : ""));
+                writer.write("\"" + entry.getKey() + "\": \"" +
+                    (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
+                        entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                        : null) + "\"" + (entries.hasNext() ? ", " : ""));
             }
             writer.write("}" + (entityIter.hasNext() ? ", " : ""));
         }
@@ -158,8 +165,10 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             while (propIter.hasNext()) {
                 writer.flush();
                 var entry = propIter.next();
-                writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
-                    "\"" + (propIter.hasNext() ? " ," : ""));
+                writer.write("\"" + entry.getKey() + "\": \"" +
+                    (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
+                        entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                        : null) + "\"" + (propIter.hasNext() ? ", " : ""));
             }
             writer.write("}}");
             writer.flush();
@@ -196,10 +205,12 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             writer.write("{");
             var entries = next.entrySet().iterator();
             while (entries.hasNext()) {
-                var entry = entries.next();
                 writer.flush();
-                writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
-                    "\"" + (entries.hasNext() ? " ," : ""));
+                var entry = entries.next();
+                writer.write("\"" + entry.getKey() + "\": \"" +
+                    (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
+                        entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                        : null) + "\"" + (entries.hasNext() ? " ," : ""));
             }
             writer.write("}" + (entityIter.hasNext() ? ", " : ""));
         }
@@ -208,8 +219,10 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         while (propIter.hasNext()) {
             writer.flush();
             var entry = propIter.next();
-            writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
-                "\"" + (propIter.hasNext() ? " ," : ""));
+            writer.write("\"" + entry.getKey() + "\": \"" +
+                (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
+                    entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                    : null) + "\"" + (propIter.hasNext() ? ", " : ""));
         }
         writer.write("}}");
         writer.flush();
@@ -234,8 +247,10 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         while (propIter.hasNext()) {
             writer.flush();
             var entry = propIter.next();
-            writer.write("\"" + entry.getKey() + "\": \"" + entry.getValue() +
-                "\"" + (propIter.hasNext() ? " ," : ""));
+            writer.write("\"" + entry.getKey() + "\": \"" +
+                (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
+                    entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                    : null) + "\"" + (propIter.hasNext() ? ", " : ""));
         }
         writer.write("}}");
         writer.flush();
