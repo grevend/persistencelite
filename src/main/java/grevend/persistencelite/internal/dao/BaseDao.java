@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -273,7 +274,9 @@ public class BaseDao<E, Thr extends Exception> implements Dao<E> {
                     .flatMap(map -> map.entrySet().stream()).
                     collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()),
                         HashMap::putAll)).iterator();
-            if (!iter.hasNext()) { throw new IllegalStateException(""); }
+            if (!iter.hasNext()) {
+                throw new NoSuchElementException("No entity found for " + props + ".");
+            }
             return this.entityDeserializer.deserialize(iter.next());
         });
     }

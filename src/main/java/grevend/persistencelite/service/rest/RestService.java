@@ -269,7 +269,6 @@ public final class RestService implements Service<RestConfigurator> {
                 headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
                     .format(EntityHandler.lastModified
                         .computeIfAbsent(entity, e -> ZonedDateTime.now(ZoneOffset.UTC)))));
-
                 handler.handle(this.configuration.version(), entity,
                     (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
                         (Object) this.marshallerMap,
