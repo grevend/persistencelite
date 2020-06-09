@@ -149,10 +149,8 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             throw new IllegalStateException("Server responded with error code <" +
                 request.connection.getResponseCode() + ">.");
         } else {
-            /*
-            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
-                DateTimeFormatter.RFC_1123_DATE_TIME);
-             */
+            this.lastModified = ZonedDateTime.parse(request.connection
+                .getHeaderField("Last-Modified"), DateTimeFormatter.RFC_1123_DATE_TIME);
         }
     }
 
@@ -239,10 +237,8 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             throw new IllegalStateException("Server responded with error code <" +
                 request.connection.getResponseCode() + ">.");
         } else {
-            /*
-            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
-                DateTimeFormatter.RFC_1123_DATE_TIME);
-             */
+            this.lastModified = ZonedDateTime.parse(request.connection
+                .getHeaderField("Last-Modified"), DateTimeFormatter.RFC_1123_DATE_TIME);
         }
     }
 
@@ -267,10 +263,8 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             throw new IllegalStateException("Server responded with error code <" +
                 request.connection.getResponseCode() + ">.");
         } else {
-            /*
-            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
-                DateTimeFormatter.RFC_1123_DATE_TIME);
-             */
+            this.lastModified = ZonedDateTime.parse(request.connection
+                .getHeaderField("Last-Modified"), DateTimeFormatter.RFC_1123_DATE_TIME);
         }
     }
 
