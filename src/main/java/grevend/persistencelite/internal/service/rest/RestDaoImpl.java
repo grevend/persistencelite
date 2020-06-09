@@ -92,7 +92,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         conn.setRequestProperty("Accept-Charset", "utf-8");
         conn.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
         conn.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
-            " (Java/" + Runtime.version() + ")");
+            " (Java/" + Runtime.version() + " MagicNumber/32204d61722032303230)");
         conn.setRequestProperty("Transfer-Encoding", "chunked");
         conn.setDoOutput(true);
         conn.setDoInput(true);
@@ -112,7 +112,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         conn.setRequestProperty("Accept-Charset", "utf-8");
         conn.setRequestProperty("Content-Type", "application/pl.v0.entity+json; utf-8");
         conn.setRequestProperty("User-Agent", "PersistenceLite/" + PersistenceLite.VERSION +
-            " (Java/" + Runtime.version() + ")");
+            " (Java/" + Runtime.version() + " MagicNumber/32204d61722032303230)");
         conn.setRequestProperty("Transfer-Encoding", "chunked");
         conn.setDoOutput(true);
         conn.setDoInput(true);
