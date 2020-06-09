@@ -33,6 +33,7 @@ import grevend.persistencelite.PersistenceLite;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.dao.DaoImpl;
 import grevend.persistencelite.util.TypeMarshaller;
+import grevend.sequence.Seq;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -45,6 +46,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -165,19 +167,20 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
             while (propIter.hasNext()) {
                 writer.flush();
                 var entry = propIter.next();
-                writer.write("\"" + entry.getKey() + "\": \"" +
-                    (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
-                        entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
-                        : null) + "\"" + (propIter.hasNext() ? ", " : ""));
+                if (Seq.of(keys).anyMatch(key -> Objects.equals(key, entry.getKey()))) {
+                    writer.write("\"" + entry.getKey() + "\": \"" +
+                        (this.entityTypes.containsKey(entry.getKey()) ?
+                            marshall(this.entityMetadata, entry.getValue(),
+                                this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                            : null) + "\"" + (propIter.hasNext() ? ", " : ""));
+                }
+
             }
             writer.write("}}");
             writer.flush();
             writer.close();
 
-            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
-                DateTimeFormatter.RFC_1123_DATE_TIME);
-
-            return new Gson().fromJson(new InputStreamReader(request.getInputStream(), UTF_8),
+            var res = new Gson().fromJson(new InputStreamReader(request.getInputStream(), UTF_8),
                 EntityRequestResponse.class).entities.stream().map(entity ->
                 this.entityMetadata.uniqueProperties().stream().map(prop ->
                     new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
@@ -188,6 +191,11 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
                     .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                         (olvV, newV) -> newV)))
                 .collect(Collectors.toUnmodifiableList());
+
+            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
+                DateTimeFormatter.RFC_1123_DATE_TIME);
+
+            return res;
         } catch (Throwable throwable) {
             throw new IllegalStateException("Request to server failed.", throwable);
         }
