@@ -38,6 +38,7 @@ import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.time.ZonedDateTime;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
@@ -259,12 +260,12 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     private static final class Entity {
 
-        public Collection<Map<String, String>> entities;
+        public Collection<Map<String, String>> entity;
 
         @Override
         public String toString() {
             return "Entity{" +
-                "entities=" + this.entities +
+                "entity=" + this.entity +
                 '}';
         }
 
@@ -272,13 +273,13 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     private static final class EntityProps {
 
-        public Collection<Map<String, String>> entities;
+        public Collection<Map<String, String>> entity;
         public Map<String, String> props;
 
         @Override
         public String toString() {
             return "EntityProps{" +
-                "entities=" + this.entities +
+                "entity=" + this.entity +
                 ", props=" + this.props +
                 '}';
         }
