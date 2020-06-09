@@ -25,6 +25,7 @@
 package grevend.persistencelite.internal.service.rest;
 
 import static grevend.persistencelite.internal.service.rest.RestUtils.marshall;
+import static grevend.persistencelite.internal.service.rest.RestUtils.unmarshall;
 
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
@@ -62,7 +63,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             switch (exchange.getRequestHeaders().containsKey("X-http-method-override") ? (exchange
                 .getRequestHeaders().getFirst("X-http-method-override").toUpperCase()) : method) {
                 case HEAD -> this.handleHead(exchange);
-                case GET -> this.handleGet(version, props, entityMetadata, marshallerMap, exchange);
+                case GET -> this.handleGet(version, props, entityMetadata, marshallerMap,
+                    unmarshallerMap, exchange);
                 case POST, PUT -> this.handlePut(entityMetadata, exchange);
                 case PATCH -> this.handlePatch(entityMetadata, exchange);
                 case DELETE -> this.handleDelete(props, entityMetadata, exchange);
@@ -111,22 +113,20 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     }
 
     private void handleGet(int version, @NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata,
-        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull HttpExchange exchange) throws IOException {
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap, @NotNull HttpExchange exchange) throws IOException {
         try {
             var types = entityMetadata.properties().stream()
                 .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
                 .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                     (oldV, newV) -> newV));
 
-            System.out.println("Types: " + types);
-
             if (this.isProprietary(exchange)) {
                 props = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
                     Props.class).props.entrySet().stream().map(prop -> {
                     try {
-                        return new SimpleEntry<>(prop.getKey(),
-                            marshall(entityMetadata, prop.getValue(), types.get(prop.getKey()),
-                                marshallerMap));
+                        return new SimpleEntry<>(prop.getKey(), unmarshall(entityMetadata,
+                            prop.getValue(), types.get(prop.getKey()), unmarshallerMap));
                     } catch (Throwable throwable) {
                         return null;
                     }
@@ -134,7 +134,6 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                     .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                         (oldV, newV) -> newV));
             }
-            System.out.println("Props: " + props);
 
             var relations = entityMetadata.declaredRelations();
             var entities = this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator();
@@ -199,7 +198,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             out.flush();
             out.close();
         } catch (Throwable throwable) {
-            exchange.sendResponseHeaders(NOT_FOUND, throwable.getMessage().length());
+            exchange.sendResponseHeaders(NOT_FOUND, 0);
+            throwable.printStackTrace();
         }
     }
 
