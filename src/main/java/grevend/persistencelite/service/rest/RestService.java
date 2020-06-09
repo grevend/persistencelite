@@ -234,6 +234,7 @@ public final class RestService implements Service<RestConfigurator> {
      * @since 0.3.3
      */
     @NotNull
+    @SuppressWarnings("unchecked")
     public HttpServer start() throws IOException {
         if (this.configuration.mode() != RestMode.SERVER && this.configuration.scope() != null) {
             throw new IllegalStateException();
@@ -269,7 +270,11 @@ public final class RestService implements Service<RestConfigurator> {
                     .format(EntityHandler.lastModified
                         .computeIfAbsent(entity, e -> ZonedDateTime.now(ZoneOffset.UTC)))));
 
-                handler.handle(this.configuration.version(), entity, exchange);
+                handler.handle(this.configuration.version(), entity,
+                    (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
+                        (Object) this.marshallerMap,
+                    (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
+                        (Object) this.unmarshallerMap, exchange);
             }));
         server.setExecutor(this.configuration.poolSize() < 1 ? null
             : Executors.newFixedThreadPool(this.configuration.poolSize()));

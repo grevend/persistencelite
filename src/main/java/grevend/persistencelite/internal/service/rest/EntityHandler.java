@@ -24,6 +24,8 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import static grevend.persistencelite.internal.service.rest.RestUtils.marshall;
+
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import grevend.common.Pair;
@@ -42,7 +44,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,23 +51,18 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     public static final ConcurrentHashMap<EntityMetadata<?>, ZonedDateTime> lastModified = new ConcurrentHashMap<>();
 
-    private static final Map<Class<?>, TypeMarshaller<String, Object>> mappers = Map.of(
-        String.class, val -> val,
-        Integer.class, Integer::parseInt,
-        Integer.TYPE, Integer::parseInt,
-        Float.class, Float::parseFloat,
-        Float.TYPE, Float::parseFloat
-    );
-
-    public void handle(int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) {
+    public void handle(int version, @NotNull EntityMetadata<?> entityMetadata,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap, @NotNull HttpExchange exchange) {
         try {
             var method = exchange.getRequestMethod();
-            var props = this.extractProps(Utils.query(exchange.getRequestURI()), entityMetadata);
+            var props = this.extractProps(Utils.query(exchange.getRequestURI()), entityMetadata,
+                marshallerMap);
             switch (exchange.getRequestHeaders().containsKey("X-http-method-override") ? (exchange
                 .getRequestHeaders().getFirst("X-http-method-override").toUpperCase()) : method) {
                 case HEAD -> this.handleHead(exchange);
-                case GET -> this.handleGet(props, entityMetadata, exchange);
-                case POST, PUT -> this.handlePost(props, entityMetadata, exchange);
+                case GET -> this.handleGet(props, entityMetadata, marshallerMap, exchange);
+                case POST, PUT -> this.handlePut(props, entityMetadata, exchange);
                 case PATCH -> this.handlePatch(props, entityMetadata, exchange);
                 case DELETE -> this.handleDelete(props, entityMetadata, exchange);
                 default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
@@ -82,7 +78,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     }
 
     @NotNull
-    private Map<String, Object> extractProps(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata) {
+    private Map<String, Object> extractProps(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
         record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
 
         var properties = entityMetadata.declaredProperties();
@@ -95,42 +92,38 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
         return Seq.of(properties)
             .filter(prop -> props.containsKey(prop.fieldName()))
-            .map(prop -> mappers.get(prop.type()) == null ? null
-                : new PairImpl<>(prop.fieldName(),
-                    mappers.get(prop.type()).marshall(props.get(prop.fieldName()))))
-            .filter(Objects::nonNull)
+            .map(prop -> new PairImpl<>(prop.fieldName(),
+                marshall(entityMetadata, props.get(prop.fieldName()), prop.type(), marshallerMap)))
             .collect(Collectors.toUnmodifiableMap(Pair::first, Pair::second,
                 (oldValue, newValue) -> newValue));
+    }
+
+    private boolean isProprietary(@NotNull HttpExchange exchange) {
+        return exchange.getRequestHeaders().containsKey("X-http-method-override") &&
+            exchange.getRequestHeaders().containsKey("User-Agent") &&
+            exchange.getRequestHeaders().getFirst("X-http-method-override").equals("GET") &&
+            exchange.getRequestHeaders().getFirst("User-Agent").contains("PersistenceLite");
     }
 
     private void handleHead(@NotNull HttpExchange exchange) throws IOException {
         exchange.sendResponseHeaders(OK, 0);
     }
 
-    private void handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
+    private void handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull HttpExchange exchange) throws IOException {
         try {
             var types = entityMetadata.properties().stream()
                 .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
                 .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                     (oldV, newV) -> newV));
 
-            var proprietary = exchange.getRequestHeaders().containsKey("X-http-method-override") &&
-                exchange.getRequestHeaders().containsKey("User-Agent") &&
-                exchange.getRequestHeaders().getFirst("X-http-method-override").equals("GET") &&
-                exchange.getRequestHeaders().getFirst("User-Agent").contains("PersistenceLite");
-
-            Map<Class<?>, Function<String, Object>> marshallers = Map.of(
-                Integer.TYPE, Integer::valueOf,
-                Integer.class, Integer::valueOf,
-                String.class, s -> s
-            );
-
-            if (proprietary) {
+            if (this.isProprietary(exchange)) {
                 props = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
                     Props.class).props.entrySet().stream().map(prop -> {
                     try {
                         return new SimpleEntry<>(prop.getKey(),
-                            marshallers.get(types.get(prop.getKey())).apply(prop.getValue()));
+                            marshall(entityMetadata, prop.getValue(), types.get(prop.getKey()),
+                                marshallerMap));
                     } catch (Throwable throwable) {
                         return null;
                     }
@@ -143,7 +136,6 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             var entities = this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator();
             exchange.sendResponseHeaders(OK, CHUNKED);
             var out = exchange.getResponseBody();
-            //TODO Add charset configuration to REST service
             out.write(("{\"types\": {\"0\": \"" + entityMetadata.name() + "\"}, \"entities\": [")
                 .getBytes(this.configuration.charset()));
             while (entities.hasNext()) {
@@ -207,7 +199,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         }
     }
 
-    private void handlePost(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
+    private void handlePut(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
@@ -217,8 +209,12 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
-            this.daoImpl(entityMetadata).delete(props);
-            exchange.sendResponseHeaders(OK, 0);
+            if (this.isProprietary(exchange)) {
+                exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
+            } else {
+                this.daoImpl(entityMetadata).delete(props);
+                exchange.sendResponseHeaders(OK, 0);
+            }
         } catch (Throwable throwable) {
             exchange.sendResponseHeaders(BAD_REQUEST, 0);
         }

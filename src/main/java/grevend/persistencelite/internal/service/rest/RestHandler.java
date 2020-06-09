@@ -26,6 +26,7 @@ package grevend.persistencelite.internal.service.rest;
 
 import com.sun.net.httpserver.HttpExchange;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -57,6 +58,6 @@ public interface RestHandler {
     String TRACE = "TRACE";
     String PATCH = "PATCH";
 
-    void handle(int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException;
+    void handle(int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap, @NotNull HttpExchange exchange) throws IOException;
 
 }
