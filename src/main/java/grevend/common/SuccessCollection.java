@@ -43,6 +43,7 @@ public final class SuccessCollection<E> implements ResultCollection<E>, Success<
         this.collection = collection;
     }
 
+    @Deprecated
     @Contract(pure = true)
     public SuccessCollection(@NotNull Collection<Result<E>> collection, boolean dummy) {
         if (collection.stream().anyMatch(Result::failure)) {
