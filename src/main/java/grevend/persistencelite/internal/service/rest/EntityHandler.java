@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.ZonedDateTime;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,9 +62,9 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             switch (exchange.getRequestHeaders().containsKey("X-http-method-override") ? (exchange
                 .getRequestHeaders().getFirst("X-http-method-override").toUpperCase()) : method) {
                 case HEAD -> this.handleHead(exchange);
-                case GET -> this.handleGet(props, entityMetadata, marshallerMap, exchange);
-                case POST, PUT -> this.handlePut(props, entityMetadata, exchange);
-                case PATCH -> this.handlePatch(props, entityMetadata, exchange);
+                case GET -> this.handleGet(version, props, entityMetadata, marshallerMap, exchange);
+                case POST, PUT -> this.handlePut(entityMetadata, exchange);
+                case PATCH -> this.handlePatch(entityMetadata, exchange);
                 case DELETE -> this.handleDelete(props, entityMetadata, exchange);
                 default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             }
@@ -109,13 +110,15 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         exchange.sendResponseHeaders(OK, 0);
     }
 
-    private void handleGet(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata,
+    private void handleGet(int version, @NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata,
         @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull HttpExchange exchange) throws IOException {
         try {
             var types = entityMetadata.properties().stream()
                 .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
                 .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                     (oldV, newV) -> newV));
+
+            System.out.println("Types: " + types);
 
             if (this.isProprietary(exchange)) {
                 props = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
@@ -131,6 +134,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                     .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                         (oldV, newV) -> newV));
             }
+            System.out.println("Props: " + props);
 
             var relations = entityMetadata.declaredRelations();
             var entities = this.daoImpl(entityMetadata).retrieve(props.keySet(), props).iterator();
@@ -160,9 +164,9 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
                 for (var current : relations) {
                     out.flush();
-                    out.write(("\"" + current.propertyName() + "\": \"http://localhost:8000/api/v0/"
-                        + Objects.requireNonNull(current.relation()).getTargetEntity()
-                        .getSimpleName().toLowerCase() + "?")
+                    out.write(("\"" + current.propertyName() + "\": \"http://localhost:8000/api/v"
+                        + version + "/" + Objects.requireNonNull(current.relation())
+                        .getTargetEntity().getSimpleName().toLowerCase() + "?")
                         .getBytes(this.configuration.charset()));
                     out.flush();
 
@@ -199,17 +203,26 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         }
     }
 
-    private void handlePut(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
+    private void handlePut(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
+        /*System.out.println("PUT: " + new Gson().fromJson(new InputStreamReader(
+            exchange.getRequestBody()), Entity.class));*/
+
         exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
-    private void handlePatch(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
+    private void handlePatch(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
+        /*System.out.println("PATCH: " + new Gson().fromJson(new InputStreamReader(
+            exchange.getRequestBody()), EntityProps.class));*/
+
         exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
     private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
             if (this.isProprietary(exchange)) {
+                /*System.out.println("DELETE: " + new Gson().fromJson(new InputStreamReader(
+                    exchange.getRequestBody()), Props.class));*/
+
                 exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             } else {
                 this.daoImpl(entityMetadata).delete(props);
@@ -233,6 +246,19 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     private static final class Props {
 
+        public Map<String, String> props;
+
+    }
+
+    private static final class Entity {
+
+        public Collection<Map<String, String>> entities;
+
+    }
+
+    private static final class EntityProps {
+
+        public Collection<Map<String, String>> entities;
         public Map<String, String> props;
 
     }
