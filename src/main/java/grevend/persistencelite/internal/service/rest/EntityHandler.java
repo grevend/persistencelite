@@ -95,8 +95,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
         return Seq.of(properties)
             .filter(prop -> props.containsKey(prop.fieldName()))
-            .map(prop -> new PairImpl<>(prop.fieldName(), marshall(entityMetadata,
-                props.get(prop.fieldName()), prop.type(), marshallerMap)))
+            .map(prop -> new PairImpl<>(prop.fieldName(),
+                marshall(entityMetadata, props.get(prop.fieldName()), prop.type(), marshallerMap)))
             .collect(Collectors.toUnmodifiableMap(Pair::first, Pair::second,
                 (oldValue, newValue) -> newValue));
     }
@@ -148,9 +148,9 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 var properties = Seq.of(entities.next().entrySet())
                     .filter(entry -> relations.stream()
                         .noneMatch(rel -> rel.propertyName().equals(entry.getKey())))
-                    .map(entry -> "\"" + entry.getKey() + "\": \"" + marshall(entityMetadata,
-                        entry.getValue(), types.get(entry.getKey()), marshallerMap) + "\"")
-                    .iterator();
+                    .map(entry -> "\"" + entry.getKey() + "\": " + (
+                        entry.getValue() instanceof Number num ? num
+                            : ("\"" + entry.getValue() + "\""))).iterator();
 
                 while (properties.hasNext()) {
                     out.flush();
@@ -204,15 +204,15 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     }
 
     private void handlePut(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
-        System.out.println("PUT: " + new Gson().fromJson(new InputStreamReader(
-            exchange.getRequestBody()), Entity.class));
+        /*System.out.println("PUT: " + new Gson().fromJson(new InputStreamReader(
+            exchange.getRequestBody()), Entity.class));*/
 
         exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
     private void handlePatch(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
-        System.out.println("PATCH: " + new Gson().fromJson(new InputStreamReader(
-            exchange.getRequestBody()), EntityProps.class));
+        /*System.out.println("PATCH: " + new Gson().fromJson(new InputStreamReader(
+            exchange.getRequestBody()), EntityProps.class));*/
 
         exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
@@ -220,8 +220,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
         try {
             if (this.isProprietary(exchange)) {
-                System.out.println("DELETE: " + new Gson().fromJson(new InputStreamReader(
-                    exchange.getRequestBody()), Props.class));
+                /*System.out.println("DELETE: " + new Gson().fromJson(new InputStreamReader(
+                    exchange.getRequestBody()), Props.class));*/
 
                 exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             } else {
@@ -248,25 +248,11 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
         public Map<String, String> props;
 
-        @Override
-        public String toString() {
-            return "Props{" +
-                "props=" + this.props +
-                '}';
-        }
-
     }
 
     private static final class Entity {
 
         public Collection<Map<String, String>> entities;
-
-        @Override
-        public String toString() {
-            return "Entity{" +
-                "entities=" + this.entities +
-                '}';
-        }
 
     }
 
@@ -274,14 +260,6 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
         public Collection<Map<String, String>> entities;
         public Map<String, String> props;
-
-        @Override
-        public String toString() {
-            return "EntityProps{" +
-                "entities=" + this.entities +
-                ", props=" + this.props +
-                '}';
-        }
 
     }
 
