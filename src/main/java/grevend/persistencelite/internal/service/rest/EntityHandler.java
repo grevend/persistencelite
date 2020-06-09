@@ -38,7 +38,6 @@ import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.time.ZonedDateTime;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
@@ -67,7 +66,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 case GET -> this.handleGet(version, props, entityMetadata, marshallerMap,
                     unmarshallerMap, exchange);
                 case POST, PUT -> this.handlePut(entityMetadata, exchange);
-                case PATCH -> this.handlePatch(entityMetadata, exchange);
+                case PATCH -> this.handlePatch(entityMetadata, exchange, unmarshallerMap);
                 case DELETE -> this.handleDelete(props, entityMetadata, exchange);
                 default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             }
@@ -109,6 +108,13 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             exchange.getRequestHeaders().getFirst("User-Agent").contains("PersistenceLite");
     }
 
+    private Map<String, Class<?>> getTypes(@NotNull EntityMetadata<?> entityMetadata) {
+        return entityMetadata.properties().stream()
+            .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
+            .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                (oldV, newV) -> newV));
+    }
+
     private void handleHead(@NotNull HttpExchange exchange) throws IOException {
         exchange.sendResponseHeaders(OK, 0);
     }
@@ -117,10 +123,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap,
         @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap, @NotNull HttpExchange exchange) throws IOException {
         try {
-            var types = entityMetadata.properties().stream()
-                .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
-                .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
-                    (oldV, newV) -> newV));
+            var types = this.getTypes(entityMetadata);
 
             if (this.isProprietary(exchange)) {
                 props = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
@@ -211,11 +214,36 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
     }
 
-    private void handlePatch(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
-        System.out.println("PATCH: " + new Gson().fromJson(new InputStreamReader(
-            exchange.getRequestBody()), EntityProps.class));
+    @NotNull
+    private Map<String, Object> unmarshallMap(@NotNull Map<String, String> input, @NotNull EntityMetadata<?> entityMetadata,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
+        var types = this.getTypes(entityMetadata);
+        return input.entrySet().stream().map(entry -> {
+            try {
+                return new SimpleEntry<>(entry.getKey(), unmarshall(entityMetadata,
+                    entry.getValue(), types.get(entry.getKey()), unmarshallerMap));
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toUnmodifiableMap(Entry::getKey,
+            Entry::getValue, (oldV, newV) -> newV));
+    }
 
-        exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
+    private void handlePatch(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) throws IOException {
+        try {
+            var request = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
+                EntityProps.class);
+            this.daoImpl(entityMetadata).update(request.entity.stream().map(input ->
+                    this.unmarshallMap(input, entityMetadata, unmarshallerMap))
+                    .collect(Collectors.toList()),
+                this.unmarshallMap(request.props, entityMetadata, unmarshallerMap));
+            exchange.sendResponseHeaders(OK, 0);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            exchange.sendResponseHeaders(BAD_REQUEST, 0);
+        }
     }
 
     private void handleDelete(@NotNull Map<String, Object> props, @NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
@@ -230,6 +258,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 exchange.sendResponseHeaders(OK, 0);
             }
         } catch (Throwable throwable) {
+            throwable.printStackTrace();
             exchange.sendResponseHeaders(BAD_REQUEST, 0);
         }
     }
