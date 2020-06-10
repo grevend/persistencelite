@@ -97,7 +97,7 @@ public interface Result<T> {
 
     @Contract("_ -> fail")
     static <T> T abort(@NotNull String reason) throws AbortOnFailure {
-        throw new AbortOnFailure(new Throwable(reason));
+        throw new AbortOnFailure(new Throwable("Reason: '" + reason + "'"));
     }
 
     boolean success();
