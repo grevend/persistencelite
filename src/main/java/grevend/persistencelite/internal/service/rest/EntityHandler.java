@@ -167,7 +167,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 out.flush();
                 out.write("}, \"rels\": {".getBytes(this.configuration.charset()));
 
-                for (var current : relations) {
+                /*for (var current : relations) {
                     out.flush();
                     out.write(("\"" + current.propertyName() + "\": \"http://localhost:8000/api/v"
                         + version + "/" + Objects.requireNonNull(current.relation())
@@ -175,7 +175,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                         .getBytes(this.configuration.charset()));
                     out.flush();
 
-                    /*var params = Utils.zip(Seq.of(Objects.requireNonNull(current.relation())
+                    var params = Utils.zip(Seq.of(Objects.requireNonNull(current.relation())
                             .getTargetProperties()).iterator(),
                         Seq.of(Objects.requireNonNull(current.relation())
                             .getSelfProperties()).iterator()).iterator();
@@ -189,11 +189,11 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                             (params.hasNext() ? "&" : "")).getBytes(StandardCharsets.UTF_8));
                         out.write((param.first() + "=" + props.get(param.second()).toString() +
                             (params.hasNext() ? "&" : "")).getBytes(StandardCharsets.UTF_8));
-                    }*/
+                    }
 
                     out.flush();
                     out.write("\"".getBytes(this.configuration.charset()));
-                }
+                }*/
 
                 out.flush();
                 out.write(("}}" + (entities.hasNext() ? ", " : ""))
