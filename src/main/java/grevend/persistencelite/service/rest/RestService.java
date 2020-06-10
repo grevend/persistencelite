@@ -37,6 +37,7 @@ import grevend.persistencelite.internal.service.rest.RestConfiguration;
 import grevend.persistencelite.internal.service.rest.RestDao;
 import grevend.persistencelite.internal.service.rest.RestDaoImpl;
 import grevend.persistencelite.internal.service.rest.RestHandler;
+import grevend.persistencelite.internal.service.rest.RestUtils;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.io.IOException;
@@ -67,6 +68,7 @@ public final class RestService implements Service<RestConfigurator> {
     public RestService() {
         this.marshallerMap = new HashMap<>();
         this.unmarshallerMap = new HashMap<>();
+        RestUtils.initTypeMarshalling(this);
     }
 
     /**

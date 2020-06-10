@@ -25,7 +25,15 @@
 package grevend.persistencelite.internal.service.rest;
 
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.service.rest.RestService;
 import grevend.persistencelite.util.TypeMarshaller;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +43,36 @@ import org.jetbrains.annotations.Nullable;
  * @author David Greven
  * @since 0.6.4
  */
-final class RestUtils {
+public final class RestUtils {
+
+    public static void initTypeMarshalling(@NotNull RestService service) {
+        service.registerTypeMarshaller(Byte.TYPE, Byte::valueOf);
+        service.registerTypeMarshaller(Byte.class, Byte::valueOf);
+        service.registerTypeMarshaller(Short.TYPE, Short::valueOf);
+        service.registerTypeMarshaller(Short.class, Short::valueOf);
+        service.registerTypeMarshaller(Integer.TYPE, Integer::valueOf);
+        service.registerTypeMarshaller(Integer.class, Integer::valueOf);
+        service.registerTypeMarshaller(Long.TYPE, Long::valueOf);
+        service.registerTypeMarshaller(Long.class, Long::valueOf);
+        service.registerTypeMarshaller(Float.TYPE, Float::valueOf);
+        service.registerTypeMarshaller(Float.class, Float::valueOf);
+        service.registerTypeMarshaller(Double.TYPE, Double::valueOf);
+        service.registerTypeMarshaller(Double.class, Double::valueOf);
+        service.registerTypeMarshaller(Character.TYPE, val -> val != null ?
+            (val.length() == 1 ? val.charAt(0) : null) : null);
+        service.registerTypeMarshaller(Character.class, val -> val != null ?
+            (val.length() == 1 ? val.charAt(0) : null) : null);
+        service.registerTypeMarshaller(Boolean.TYPE, Boolean::valueOf);
+        service.registerTypeMarshaller(Boolean.class, Boolean::valueOf);
+        service.registerTypeMarshaller(BigInteger.class, BigInteger::new);
+        service.registerTypeMarshaller(BigDecimal.class, BigDecimal::new);
+        service.registerTypeMarshaller(Duration.class, Duration::parse);
+        service.registerTypeMarshaller(LocalTime.class, LocalTime::parse);
+        service.registerTypeMarshaller(LocalDate.class, LocalDate::parse);
+        service.registerTypeMarshaller(LocalDateTime.class, LocalDateTime::parse);
+        service.registerTypeMarshaller(ZonedDateTime.class, ZonedDateTime::parse);
+        service.registerTypeMarshaller(String.class, s -> Objects.equals(s, "null") ? null : s);
+    }
 
     /**
      * @param entityMetadata
