@@ -267,11 +267,6 @@ public final class RestService implements Service<RestConfigurator> {
             entity -> finalServer.createContext("/api/v" + this.configuration.version() + "/" +
                 entity.name().toLowerCase(), exchange -> {
 
-                if(exchange.getRequestHeaders().containsKey("User-Agent")) {
-                    System.out.println("Request from: " + exchange.getRequestHeaders()
-                        .getFirst("User-Agent"));
-                }
-
                 var headers = exchange.getResponseHeaders();
                 headers.put("Content-Type", List.of("application/pl.v0.entity+json; utf-8"));
                 headers.put("Last-Modified", List.of(DateTimeFormatter.RFC_1123_DATE_TIME
