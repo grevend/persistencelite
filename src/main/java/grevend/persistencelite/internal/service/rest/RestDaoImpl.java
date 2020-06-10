@@ -151,6 +151,23 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
         } else {
             this.lastModified = ZonedDateTime.parse(request.connection
                 .getHeaderField("Last-Modified"), DateTimeFormatter.RFC_1123_DATE_TIME);
+
+            var res = new Gson().fromJson(new InputStreamReader(request.connection.getInputStream(),
+                UTF_8), CreatedEntity.class).entity.stream().map(e ->
+                this.entityMetadata.uniqueProperties().stream().map(prop ->
+                    new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
+                        e.containsKey(prop.fieldName()) ? e.get(prop.fieldName())
+                            : (e.getOrDefault(prop.propertyName(), null)),
+                        prop.type(), this.unmarshallerMap)))
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
+                        (olvV, newV) -> newV)))
+                .collect(Collectors.toUnmodifiableList());
+
+            entityIter = entity.iterator();
+            var resIter = res.iterator();
+            while (entityIter.hasNext() && resIter.hasNext()) {
+                entityIter.next().putAll(resIter.next());
+            }
         }
     }
 
@@ -297,6 +314,19 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
                 "type=" + this.type +
                 ", props=" + this.props +
                 ", rels=" + this.rels +
+                '}';
+        }
+
+    }
+
+    private static final class CreatedEntity {
+
+        public Collection<Map<String, String>> entity;
+
+        @Override
+        public String toString() {
+            return "Entity{" +
+                "entity=" + this.entity +
                 '}';
         }
 

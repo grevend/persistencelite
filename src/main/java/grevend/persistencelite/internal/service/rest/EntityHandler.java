@@ -65,7 +65,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 case HEAD -> this.handleHead(exchange);
                 case GET -> this.handleGet(version, props, entityMetadata, marshallerMap,
                     unmarshallerMap, exchange);
-                case POST, PUT -> this.handlePut(entityMetadata, exchange);
+                case POST, PUT -> this.handlePut(entityMetadata, exchange, marshallerMap,
+                    unmarshallerMap);
                 case PATCH -> this.handlePatch(entityMetadata, exchange, unmarshallerMap);
                 case DELETE -> this.handleDelete(props, entityMetadata, exchange, unmarshallerMap);
                 default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
@@ -208,11 +209,54 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         }
     }
 
-    private void handlePut(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange) throws IOException {
-        System.out.println("PUT: " + new Gson().fromJson(new InputStreamReader(
-            exchange.getRequestBody()), Entity.class));
-        EntityHandler.lastModified.put(entityMetadata, ZonedDateTime.now());
-        exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
+    private void handlePut(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap,
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) throws IOException {
+        try {
+            var request = new Gson().fromJson(new InputStreamReader(exchange.getRequestBody()),
+                Entity.class);
+            var res = request.entity.stream().map(input ->
+                this.unmarshallMap(input, entityMetadata, unmarshallerMap))
+                .collect(Collectors.toList());
+            this.daoImpl(entityMetadata).create(res);
+
+            EntityHandler.lastModified.put(entityMetadata, ZonedDateTime.now());
+
+            var resIter = res.iterator();
+            var types = this.getTypes(entityMetadata);
+
+            exchange.sendResponseHeaders(CREATED, CHUNKED);
+
+            var out = exchange.getResponseBody();
+            out.write("{\"entity\": [".getBytes(this.configuration.charset()));
+            while (resIter.hasNext()) {
+                out.flush();
+                out.write("{".getBytes(this.configuration.charset()));
+
+                var props = resIter.next();
+                var entryIter = props.entrySet().iterator();
+
+                while (entryIter.hasNext()) {
+                    out.flush();
+                    var entry = entryIter.next();
+                    out.write(("\"" + entry.getKey() + "\": \"" + marshall(entityMetadata,
+                        entry.getValue(), types.get(entry.getKey()), marshallerMap) + "\"")
+                        .getBytes(this.configuration.charset()));
+                    if (entryIter.hasNext()) {
+                        out.write(", ".getBytes(this.configuration.charset()));
+                    }
+                }
+
+                out.write(("}" + (resIter.hasNext() ? ", " : ""))
+                    .getBytes(this.configuration.charset()));
+            }
+            out.write("]}".getBytes(this.configuration.charset()));
+            out.flush();
+            out.close();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            exchange.sendResponseHeaders(BAD_REQUEST, 0);
+        }
     }
 
     @NotNull
@@ -227,8 +271,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 throwable.printStackTrace();
                 return null;
             }
-        }).filter(Objects::nonNull).collect(Collectors.toUnmodifiableMap(Entry::getKey,
-            Entry::getValue, (oldV, newV) -> newV));
+        }).filter(Objects::nonNull).collect(Collectors.toMap(Entry::getKey, Entry::getValue,
+            (oldV, newV) -> newV));
     }
 
     private void handlePatch(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange,
