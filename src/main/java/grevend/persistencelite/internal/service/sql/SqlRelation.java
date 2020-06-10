@@ -389,7 +389,7 @@ public final class SqlRelation<E> implements LazyCollection<E> {
     @NotNull
     @Override
     public String toString() {
-        return "SqlRelation" + this.elements.toString();
+        return "SqlRelation" + this.retrieve().toString();
     }
 
     @NotNull

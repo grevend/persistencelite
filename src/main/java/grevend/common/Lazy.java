@@ -130,7 +130,7 @@ public class Lazy<E> {
     @NotNull
     @Override
     public String toString() {
-        return "Lazy{element=" + this.element + '}';
+        return "Lazy{element=" + this.get() + '}';
     }
 
 }
