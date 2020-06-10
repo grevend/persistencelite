@@ -146,6 +146,7 @@ public final class RestConfigurator implements Configurator<RestService> {
     @NotNull
     @Contract("_ -> this")
     public RestConfigurator threadPool(@Range(from = 1, to = Integer.MAX_VALUE) int size) {
+        if (this.mode != SERVER) { throw new IllegalStateException("Mode should be server."); }
         this.poolSize = size;
         return this;
     }
