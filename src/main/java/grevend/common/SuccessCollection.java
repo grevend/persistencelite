@@ -28,9 +28,7 @@ import grevend.sequence.Seq;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,17 +39,6 @@ public final class SuccessCollection<E> implements ResultCollection<E>, Success<
     @Contract(pure = true)
     private SuccessCollection(@NotNull Collection<E> collection) {
         this.collection = collection;
-    }
-
-    @Deprecated
-    @Contract(pure = true)
-    public SuccessCollection(@NotNull Collection<Result<E>> collection, boolean dummy) {
-        if (collection.stream().anyMatch(Result::failure)) {
-            throw new IllegalArgumentException();
-        }
-        this.collection = collection.stream()
-            .map(res -> res.or(null))
-            .collect(Collectors.toUnmodifiableList());
     }
 
     @Contract(pure = true)

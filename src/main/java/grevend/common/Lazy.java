@@ -46,9 +46,8 @@ public class Lazy<E> {
      *
      * @since 0.2.0
      */
-    @Deprecated
     @Contract(pure = true)
-    public Lazy(@NotNull final Supplier<E> supplier) {
+    private Lazy(@NotNull final Supplier<E> supplier) {
         this.supplier = supplier;
     }
 

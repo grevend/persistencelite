@@ -47,7 +47,6 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    @Deprecated
     C configurator();
 
     /**
@@ -56,7 +55,6 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    @Deprecated
     DaoFactory daoFactory();
 
     /**
@@ -86,7 +84,6 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    @Deprecated
     TransactionFactory transactionFactory();
 
     /**
