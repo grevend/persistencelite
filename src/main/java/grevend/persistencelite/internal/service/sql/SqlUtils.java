@@ -90,7 +90,7 @@ final class SqlUtils {
         entityMetadata.declaredRelations().forEach(relation -> map.put(relation.fieldName(),
             relation.type().isAssignableFrom(Collection.class) ? new SqlRelation<>(entityMetadata,
                 Objects.requireNonNull(relation.relation()), map, transactionSupplier,
-                marshallerMap) : (relation.type().isAssignableFrom(Lazy.class) ? new Lazy<>(
+                marshallerMap) : (relation.type().isAssignableFrom(Lazy.class) ? Lazy.of(
                 () -> SqlUtils
                     .retrieve(entityMetadata, Objects.requireNonNull(relation.relation()), map,
                         transactionSupplier, marshallerMap).stream().findFirst().orElse(null))
