@@ -202,7 +202,7 @@ public final class RestDaoImpl implements DaoImpl<Throwable> {
                         .get(prop.fieldName())
                         : (entity.props.getOrDefault(prop.propertyName(), null)),
                     prop.type(), this.unmarshallerMap)))
-                .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                     (olvV, newV) -> newV)))
             .collect(Collectors.toUnmodifiableList());
 
