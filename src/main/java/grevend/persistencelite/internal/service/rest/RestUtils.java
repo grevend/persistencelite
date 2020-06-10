@@ -24,6 +24,7 @@
 
 package grevend.persistencelite.internal.service.rest;
 
+import grevend.common.Lazy;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.service.rest.RestService;
 import grevend.persistencelite.util.TypeMarshaller;
@@ -34,6 +35,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +48,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class RestUtils {
 
+    /**
+     * @param service
+     *
+     * @since 0.6.5
+     */
     public static void initTypeMarshalling(@NotNull RestService service) {
         service.registerTypeMarshaller(Byte.TYPE, Byte::valueOf);
         service.registerTypeMarshaller(Byte.class, Byte::valueOf);
@@ -72,6 +80,17 @@ public final class RestUtils {
         service.registerTypeMarshaller(LocalDateTime.class, LocalDateTime::parse);
         service.registerTypeMarshaller(ZonedDateTime.class, ZonedDateTime::parse);
         service.registerTypeMarshaller(String.class, s -> Objects.equals(s, "null") ? null : s);
+    }
+
+    /**
+     * @param entityMetadata
+     * @param map
+     *
+     * @since 0.6.6
+     */
+    static void createRelationValues(@NotNull EntityMetadata<?> entityMetadata, @NotNull Map<String, Object> map) {
+        entityMetadata.declaredRelations().forEach(relation -> map.put(relation.fieldName(),
+            relation.type().isAssignableFrom(Collection.class) ? List.of() : Lazy.of(() -> null)));
     }
 
     /**

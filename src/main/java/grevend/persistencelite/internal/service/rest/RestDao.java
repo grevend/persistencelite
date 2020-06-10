@@ -44,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
  * @author David Greven
  * @since 0.4.7
  */
-public final class RestDao<E> extends BaseDao<E, IOException> {
+public final class RestDao<E> extends BaseDao<E, Throwable> {
 
     private final RestDaoImpl daoImpl;
     private final EntityMetadata<E> entityMetadata;

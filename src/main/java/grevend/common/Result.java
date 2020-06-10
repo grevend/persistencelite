@@ -195,11 +195,11 @@ public interface Result<T> {
 
     }
 
-    final class AbortOnFailure extends Throwable {
+    final class AbortOnFailure extends RuntimeException {
 
         private final Throwable failure;
 
-        private AbortOnFailure(@NotNull Throwable failure) {
+        public AbortOnFailure(@NotNull Throwable failure) {
             this.failure = failure;
         }
 

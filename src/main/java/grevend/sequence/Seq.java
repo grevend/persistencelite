@@ -211,11 +211,9 @@ public class Seq<T, S extends Seq<T, S>> implements Iterable<T> {
     @SuppressWarnings("unchecked")
     public @NotNull <R, U extends Seq<R, U>> U mapAbort(
         @NotNull Result.AbortableFunction<? super T, ? extends R> function) throws AbortOnFailure {
-        var escapeHatch = new ThrowableEscapeHatch<>(AbortOnFailure.class);
-        var res = (U) Seq.<R, U>of(
-            new MapIterator<>(this.iterator, ThrowableEscapeHatch.escape(function, escapeHatch)));
-        escapeHatch.rethrow();
-        return res;
+        var escapeHatch = new ThrowableEscapeHatch<>(AbortOnFailure.class, true);
+        return (U) Seq.<R, U>of(new MapIterator<>(this.iterator,
+            ThrowableEscapeHatch.escapeUnsafe(function, escapeHatch)));
     }
 
     @SuppressWarnings("unchecked")

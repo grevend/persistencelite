@@ -55,7 +55,7 @@ import org.jetbrains.annotations.NotNull;
  * @author David Greven
  * @since 0.4.7
  */
-public final class RestDaoImpl implements DaoImpl<IOException> {
+public final class RestDaoImpl implements DaoImpl<Throwable> {
 
     private final EntityMetadata<?> entityMetadata;
     private final String baseUrl;
@@ -121,7 +121,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     }
 
     @Override
-    public void create(@NotNull Iterable<Map<String, Object>> entity) throws IOException {
+    public void create(@NotNull Iterable<Map<String, Object>> entity) throws Throwable {
         var request = this.requestWithBody(RestHandler.PUT);
         var writer = request.writer;
         var entityIter = entity.iterator();
@@ -173,51 +173,59 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
 
     @NotNull
     @Override
-    public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws IOException {
-        try {
-            var request = this.request();
-            var writer = new OutputStreamWriter(request.getOutputStream(), UTF_8);
-            writer.write("{\"props\": {");
-            var propIter = props.entrySet().iterator();
-            while (propIter.hasNext()) {
-                writer.flush();
-                var entry = propIter.next();
-                if (Seq.of(keys).anyMatch(key -> Objects.equals(key, entry.getKey()))) {
-                    writer.write("\"" + entry.getKey() + "\": \"" +
-                        (this.entityTypes.containsKey(entry.getKey()) ?
-                            marshall(this.entityMetadata, entry.getValue(),
-                                this.entityTypes.get(entry.getKey()), this.marshallerMap)
-                            : null) + "\"" + (propIter.hasNext() ? ", " : ""));
-                }
-
-            }
-            writer.write("}}");
+    public Iterable<Map<String, Object>> retrieve(@NotNull Iterable<String> keys, @NotNull Map<String, Object> props) throws Throwable {
+        var request = this.request();
+        var writer = new OutputStreamWriter(request.getOutputStream(), UTF_8);
+        writer.write("{\"props\": {");
+        var propIter = props.entrySet().iterator();
+        while (propIter.hasNext()) {
             writer.flush();
-            writer.close();
+            var entry = propIter.next();
+            if (Seq.of(keys).anyMatch(key -> Objects.equals(key, entry.getKey()))) {
+                writer.write("\"" + entry.getKey() + "\": \"" +
+                    (this.entityTypes.containsKey(entry.getKey()) ?
+                        marshall(this.entityMetadata, entry.getValue(),
+                            this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                        : null) + "\"" + (propIter.hasNext() ? ", " : ""));
+            }
 
-            var res = new Gson().fromJson(new InputStreamReader(request.getInputStream(), UTF_8),
-                EntityRequestResponse.class).entities.stream().map(entity ->
-                this.entityMetadata.uniqueProperties().stream().map(prop ->
-                    new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
-                        entity.props.containsKey(prop.fieldName()) ? entity.props
-                            .get(prop.fieldName())
-                            : (entity.props.getOrDefault(prop.propertyName(), null)),
-                        prop.type(), this.unmarshallerMap)))
-                    .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
-                        (olvV, newV) -> newV)))
-                .collect(Collectors.toUnmodifiableList());
-
-            this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
-                DateTimeFormatter.RFC_1123_DATE_TIME);
-
-            return res;
-        } catch (Throwable throwable) {
-            throw new IllegalStateException("Request to server failed.", throwable);
         }
+        writer.write("}}");
+        writer.flush();
+        writer.close();
+
+        var res = new Gson().fromJson(new InputStreamReader(request.getInputStream(), UTF_8),
+            EntityRequestResponse.class).entities.stream().map(entity ->
+            this.entityMetadata.uniqueProperties().stream().map(prop ->
+                new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
+                    entity.props.containsKey(prop.fieldName()) ? entity.props
+                        .get(prop.fieldName())
+                        : (entity.props.getOrDefault(prop.propertyName(), null)),
+                    prop.type(), this.unmarshallerMap)))
+                .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+                    (olvV, newV) -> newV)))
+            .collect(Collectors.toUnmodifiableList());
+
+        this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
+            DateTimeFormatter.RFC_1123_DATE_TIME);
+
+        if (request.getResponseCode() != RestHandler.OK) {
+            throw new IllegalStateException("Server responded with error code <" +
+                request.getResponseCode() + ">.");
+        } else {
+            this.lastModified = ZonedDateTime.parse(request
+                .getHeaderField("Last-Modified"), DateTimeFormatter.RFC_1123_DATE_TIME);
+        }
+
+        for(var map : res) {
+            RestUtils.createRelationValues(this.entityMetadata, map);
+        }
+
+        return res;
     }
 
     @Override
-    public void update(@NotNull Iterable<Map<String, Object>> entity, @NotNull Map<String, Object> props) throws IOException {
+    public void update(@NotNull Iterable<Map<String, Object>> entity, @NotNull Map<String, Object> props) throws Throwable {
         var request = this.requestWithBody(RestHandler.PATCH);
         var writer = request.writer;
         var entityIter = entity.iterator();
@@ -260,7 +268,7 @@ public final class RestDaoImpl implements DaoImpl<IOException> {
     }
 
     @Override
-    public void delete(@NotNull Map<String, Object> props) throws IOException {
+    public void delete(@NotNull Map<String, Object> props) throws Throwable {
         var request = this.requestWithBody(RestHandler.DELETE);
         var writer = request.writer;
         writer.write("{\"props\": {");

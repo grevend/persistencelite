@@ -26,6 +26,7 @@ package grevend.sequence.function;
 
 import grevend.common.Failure;
 import grevend.common.Result;
+import grevend.common.Result.AbortOnFailure;
 import grevend.common.Success;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -46,6 +47,11 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
 
     @Contract(pure = true)
     public ThrowableEscapeHatch(@NotNull Class<Thr> clazz) {
+        this.clazz = clazz;
+    }
+
+    @Contract(pure = true)
+    public ThrowableEscapeHatch(@NotNull Class<Thr> clazz, boolean dummy) throws AbortOnFailure {
         this.clazz = clazz;
     }
 
@@ -92,6 +98,17 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
                     escapeHatch.escape((Thr) throwable);
                     return null;
                 }
+            }
+        };
+    }
+
+    public static <T, R, Thr extends Throwable> Function<T, R> escapeUnsafe(@NotNull Result.AbortableFunction<T, R> function, @NotNull ThrowableEscapeHatch<Thr> escapeHatch) {
+        return arg -> {
+            try {
+                return function.apply(arg);
+            } catch (AbortOnFailure throwable) {
+                escapeHatch.escapeUnsafe(throwable);
+                return null;
             }
         };
     }
@@ -188,6 +205,11 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         if (this.throwable == null) {
             this.throwable = throwable;
         }
+    }
+
+    @Contract(value = "_ -> fail", pure = true)
+    private void escapeUnsafe(@NotNull AbortOnFailure abortOnFailure) {
+        throw abortOnFailure;
     }
 
     /**
