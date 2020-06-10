@@ -59,7 +59,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
         try {
             var method = exchange.getRequestMethod();
             var props = this.extractProps(Utils.query(exchange.getRequestURI()), entityMetadata,
-                marshallerMap);
+                unmarshallerMap);
             switch (exchange.getRequestHeaders().containsKey("X-http-method-override") ? (exchange
                 .getRequestHeaders().getFirst("X-http-method-override").toUpperCase()) : method) {
                 case HEAD -> this.handleHead(exchange);
@@ -82,7 +82,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     @NotNull
     private Map<String, Object> extractProps(@NotNull Map<String, List<String>> query, @NotNull EntityMetadata<?> entityMetadata,
-        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
+        @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
         record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
 
         var properties = entityMetadata.declaredProperties();
@@ -95,8 +95,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
         return Seq.of(properties)
             .filter(prop -> props.containsKey(prop.fieldName()))
-            .map(prop -> new PairImpl<>(prop.fieldName(), marshall(entityMetadata,
-                props.get(prop.fieldName()), prop.type(), marshallerMap)))
+            .map(prop -> new PairImpl<>(prop.fieldName(), unmarshall(entityMetadata,
+                props.get(prop.fieldName()), prop.type(), unmarshallerMap)))
             .collect(Collectors.toUnmodifiableMap(Pair::first, Pair::second,
                 (oldValue, newValue) -> newValue));
     }
