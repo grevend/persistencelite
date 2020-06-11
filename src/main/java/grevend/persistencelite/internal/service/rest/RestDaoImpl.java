@@ -44,6 +44,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -196,14 +197,14 @@ public final class RestDaoImpl implements DaoImpl<Throwable> {
 
         var res = new Gson().fromJson(new InputStreamReader(request.getInputStream(), UTF_8),
             EntityRequestResponse.class).entities.stream().map(entity ->
-            this.entityMetadata.uniqueProperties().stream().map(prop ->
+            this.entityMetadata.properties().stream().map(prop ->
                 new SimpleEntry<>(prop.fieldName(), unmarshall(this.entityMetadata,
                     entity.props.containsKey(prop.fieldName()) ? entity.props
                         .get(prop.fieldName())
                         : (entity.props.getOrDefault(prop.propertyName(), null)),
                     prop.type(), this.unmarshallerMap)))
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
-                    (olvV, newV) -> newV)))
+                .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()),
+                    HashMap::putAll))
             .collect(Collectors.toUnmodifiableList());
 
         this.lastModified = ZonedDateTime.parse(request.getHeaderField("Last-Modified"),
@@ -218,10 +219,10 @@ public final class RestDaoImpl implements DaoImpl<Throwable> {
         }
 
         for(var map : res) {
-            RestUtils.createRelationValues(this.entityMetadata, map);
+            RestUtils.createRelationValues(this.entityMetadata, (Map<String, Object>) (Object) map);
         }
 
-        return res;
+        return (Collection<Map<String, Object>>) (Object) res;
     }
 
     @Override

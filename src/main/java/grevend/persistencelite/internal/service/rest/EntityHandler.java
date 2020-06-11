@@ -72,12 +72,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 default -> exchange.sendResponseHeaders(NOT_IMPLEMENTED, 0);
             }
         } catch (Throwable throwable) {
-            try {
-                throwable.printStackTrace();
-                exchange.sendResponseHeaders(NOT_FOUND, 0);
-            } catch (IOException exception) {
-                exception.printStackTrace();
-            }
+            throwable.printStackTrace();
         }
     }
 
@@ -112,7 +107,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
 
     private Map<String, Class<?>> getTypes(@NotNull EntityMetadata<?> entityMetadata) {
         return entityMetadata.properties().stream()
-            .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
+            .map(prop -> new SimpleEntry<>(prop.propertyName(), prop.type()))
             .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
                 (oldV, newV) -> newV));
     }
@@ -204,7 +199,7 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
             out.flush();
             out.close();
         } catch (Throwable throwable) {
-            exchange.sendResponseHeaders(NOT_FOUND, 0);
+            exchange.close();
             throwable.printStackTrace();
         }
     }

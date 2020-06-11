@@ -109,7 +109,7 @@ public final class RestService implements Service<RestConfigurator> {
                         (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
                             (Object) RestService.this.unmarshallerMap),
                         RestService.this.transactionFactory(), RestService.this.transactionFactory()
-                        .createTransaction(), true, new HashMap<>(),
+                        .createTransaction(), false, new HashMap<>(),
                         new HashMap<>());
                 } catch (Throwable throwable) {
                     return new FailureDao<>(() -> throwable);

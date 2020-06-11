@@ -104,16 +104,28 @@ public final class RestUtils {
      * @since 0.6.4
      */
     @Nullable
-    static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
-        if (value != null && Objects.requireNonNull(value).getClass().isEnum()) {
+    static Object unmarshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @Nullable Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap) {
+        if (value != null && (Objects.requireNonNull(value).getClass().isEnum() || (type != null && type.isEnum() && value instanceof String))) {
             return value.toString().toLowerCase();
         } else if (unmarshallerMap.containsKey(entityMetadata.entityClass())) {
             if (unmarshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
                 return unmarshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
+            } else {
+                if((!(value instanceof Lazy)) && (!(value instanceof Collection)) && (type != null
+                    && (!type.isAssignableFrom(Lazy.class)) && (!type.isAssignableFrom(Collection.class)))) {
+                    System.err.println("Scoped type unmarshaller might be missing for " +
+                        value + " :: " + type + ".\n");
+                }
             }
         } else if (unmarshallerMap.containsKey(null)) {
             if (unmarshallerMap.get(null).containsKey(type)) {
                 return unmarshallerMap.get(null).get(type).marshall(value);
+            } else {
+                if((!(value instanceof Lazy)) && (!(value instanceof Collection)) && (type != null
+                    && (!type.isAssignableFrom(Lazy.class)) && (!type.isAssignableFrom(Collection.class)))) {
+                    System.err.println("Type unmarshaller might be missing for " +
+                        value + " :: " + type + ".\n");
+                }
             }
         }
         return value;
@@ -130,8 +142,8 @@ public final class RestUtils {
      * @since 0.6.4
      */
     @Nullable
-    static Object marshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @NotNull Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
-        if (type.isEnum() && value instanceof String) {
+    static Object marshall(@NotNull EntityMetadata<?> entityMetadata, @Nullable Object value, @Nullable Class<?> type, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap) {
+        if (type != null && type.isEnum() && value instanceof String) {
             try {
                 var method = type.getMethod("valueOf", String.class);
                 method.setAccessible(true);
@@ -143,10 +155,16 @@ public final class RestUtils {
         } else if (marshallerMap.containsKey(entityMetadata.entityClass())) {
             if (marshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
                 return marshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
+            } else {
+                System.err.println("Scoped type marshaller might be missing for " +
+                    value + " :: " + type + ".\n");
             }
         } else if (marshallerMap.containsKey(null)) {
             if (marshallerMap.get(null).containsKey(type)) {
                 return marshallerMap.get(null).get(type).marshall(value);
+            } else {
+                System.err.println("Type marshaller might be missing for " +
+                    value + " :: " + type + ".\n");
             }
         }
         return value;
