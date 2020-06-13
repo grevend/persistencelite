@@ -41,6 +41,7 @@ import java.io.InputStreamReader;
 import java.time.ZonedDateTime;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -106,10 +107,14 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
     }
 
     private Map<String, Class<?>> getTypes(@NotNull EntityMetadata<?> entityMetadata) {
-        return entityMetadata.properties().stream()
-            .map(prop -> new SimpleEntry<>(prop.propertyName(), prop.type()))
-            .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
-                (oldV, newV) -> newV));
+        Map<String, Class<?>> map = new HashMap<>();
+
+        entityMetadata.properties().forEach(prop -> {
+            map.put(prop.fieldName(), prop.type());
+            map.put(prop.propertyName(), prop.type());
+        });
+
+        return map;
     }
 
     private void handleHead(@NotNull HttpExchange exchange) throws IOException {
@@ -266,8 +271,8 @@ public final record EntityHandler(@NotNull RestConfiguration configuration) impl
                 throwable.printStackTrace();
                 return null;
             }
-        }).filter(Objects::nonNull).collect(Collectors.toMap(Entry::getKey, Entry::getValue,
-            (oldV, newV) -> newV));
+        }).filter(Objects::nonNull).collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()),
+            HashMap::putAll);
     }
 
     private void handlePatch(@NotNull EntityMetadata<?> entityMetadata, @NotNull HttpExchange exchange,

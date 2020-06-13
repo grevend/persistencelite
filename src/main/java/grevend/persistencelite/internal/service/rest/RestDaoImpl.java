@@ -75,8 +75,10 @@ public final class RestDaoImpl implements DaoImpl<Throwable> {
 
         this.entityTypes = this.entityMetadata.properties().stream()
             .map(prop -> new SimpleEntry<>(prop.fieldName(), prop.type()))
-            .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue,
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                 (oldV, newV) -> newV));
+        this.entityMetadata.properties()
+            .forEach(prop -> this.entityTypes.put(prop.propertyName(), prop.type()));
     }
 
     HttpURLConnection connection() throws IOException {
@@ -179,17 +181,22 @@ public final class RestDaoImpl implements DaoImpl<Throwable> {
         var writer = new OutputStreamWriter(request.getOutputStream(), UTF_8);
         writer.write("{\"props\": {");
         var propIter = props.entrySet().iterator();
+        boolean first = true;
         while (propIter.hasNext()) {
             writer.flush();
             var entry = propIter.next();
             if (Seq.of(keys).anyMatch(key -> Objects.equals(key, entry.getKey()))) {
+                if(!first) {
+                    writer.write(propIter.hasNext() ? ", " : "");
+                } else {
+                    first = false;
+                }
                 writer.write("\"" + entry.getKey() + "\": \"" +
                     (this.entityTypes.containsKey(entry.getKey()) ?
                         marshall(this.entityMetadata, entry.getValue(),
                             this.entityTypes.get(entry.getKey()), this.marshallerMap)
-                        : null) + "\"" + (propIter.hasNext() ? ", " : ""));
+                        : null) + "\"");
             }
-
         }
         writer.write("}}");
         writer.flush();
@@ -239,10 +246,11 @@ public final class RestDaoImpl implements DaoImpl<Throwable> {
             while (entries.hasNext()) {
                 writer.flush();
                 var entry = entries.next();
-                writer.write("\"" + entry.getKey() + "\": \"" +
-                    (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
-                        entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
-                        : null) + "\"" + (entries.hasNext() ? " ," : ""));
+                var res = (this.entityTypes.containsKey(entry.getKey()) ? marshall(this.entityMetadata,
+                    entry.getValue(), this.entityTypes.get(entry.getKey()), this.marshallerMap)
+                    : null);
+                writer.write("\"" + entry.getKey() + "\": \"" + res + "\"" +
+                    (entries.hasNext() ? " ," : ""));
             }
             writer.write("}" + (entityIter.hasNext() ? ", " : ""));
         }

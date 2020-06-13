@@ -156,15 +156,21 @@ public final class RestUtils {
             if (marshallerMap.get(entityMetadata.entityClass()).containsKey(type)) {
                 return marshallerMap.get(entityMetadata.entityClass()).get(type).marshall(value);
             } else {
-                System.err.println("Scoped type marshaller might be missing for " +
-                    value + " :: " + type + ".\n");
+                if((!(value instanceof Lazy)) && (!(value instanceof Collection)) && (type != null
+                    && (!type.isAssignableFrom(Lazy.class)) && (!type.isAssignableFrom(Collection.class)))) {
+                    System.err.println("Scoped type marshaller might be missing for " +
+                        value + " :: " + type + ".\n");
+                }
             }
         } else if (marshallerMap.containsKey(null)) {
             if (marshallerMap.get(null).containsKey(type)) {
                 return marshallerMap.get(null).get(type).marshall(value);
             } else {
-                System.err.println("Type marshaller might be missing for " +
-                    value + " :: " + type + ".\n");
+                if((!(value instanceof Lazy)) && (!(value instanceof Collection)) && (type != null
+                    && (!type.isAssignableFrom(Lazy.class)) && (!type.isAssignableFrom(Collection.class)))) {
+                    System.err.println("Type marshaller might be missing for " +
+                        value + " :: " + type + ".\n");
+                }
             }
         }
         return value;

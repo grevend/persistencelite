@@ -236,7 +236,7 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
     @NotNull
     @Contract(pure = true)
     public <T> Result<T> fail() {
-        return this.throwable == null ? (Failure<T>) () -> this.throwable : (Success<T>) () -> null;
+        return this.failure() ? (Success<T>) () -> null : (Failure<T>) () -> this.throwable;
     }
 
 }

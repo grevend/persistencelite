@@ -109,8 +109,9 @@ public final class RestService implements Service<RestConfigurator> {
                         (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>)
                             (Object) RestService.this.unmarshallerMap),
                         RestService.this.transactionFactory(), RestService.this.transactionFactory()
-                        .createTransaction(), false, new HashMap<>(),
-                        new HashMap<>());
+                        .createTransaction(),
+                        RestService.this.configuration.mode() != RestMode.REQUESTER,
+                        new HashMap<>(), new HashMap<>());
                 } catch (Throwable throwable) {
                     return new FailureDao<>(() -> throwable);
                 }
@@ -193,9 +194,9 @@ public final class RestService implements Service<RestConfigurator> {
             this.unmarshallerMap.put(entity, new HashMap<>());
         }
         this.marshallerMap.get(entity).put(from, customNullHandling ? marshaller
-            : (A a) -> a == null ? null : marshaller.marshall(a));
+            : (A a) -> a == null || Objects.equals(a, "null") ? null : marshaller.marshall(a));
         this.unmarshallerMap.get(entity).put(from, customNullHandling ? unmarshaller
-            : (B b) -> b == null ? null : unmarshaller.marshall(b));
+            : (B b) -> b == null || Objects.equals(b, "null") ? null : unmarshaller.marshall(b));
     }
 
     /**
