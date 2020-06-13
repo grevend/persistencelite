@@ -24,6 +24,10 @@
 
 package grevend.persistencelite.service.sql;
 
+import static grevend.persistencelite.service.sql.ConnectionStatus.PROTOCOL;
+import static grevend.persistencelite.service.sql.ConnectionStatus.REFUSED;
+import static grevend.persistencelite.service.sql.ConnectionStatus.UNKNOWN;
+
 import grevend.common.Failure;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
@@ -36,9 +40,12 @@ import grevend.persistencelite.internal.service.sql.SqlDao;
 import grevend.persistencelite.internal.service.sql.SqlTransaction;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
+import grevend.sequence.function.ThrowingConsumer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -53,6 +60,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class PostgresService implements Service<PostgresConfigurator> {
 
+    final Collection<ThrowingConsumer<ConnectionStatus>> connectionFailureCallbacks;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap;
     private Properties properties;
@@ -64,6 +72,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     public PostgresService() {
         this.marshallerMap = new HashMap<>();
         this.unmarshallerMap = new HashMap<>();
+        this.connectionFailureCallbacks = new ArrayList<>();
         this.properties = new Properties();
     }
 
@@ -219,18 +228,33 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      */
     @NotNull
     private Connection createConnection() throws SQLException {
-        if (this.properties.getProperty("user") == null
-            || this.properties.getProperty("password") == null) {
-            throw new IllegalStateException("No credentials provided.");
-        }
+        try {
+            if (this.properties.getProperty("user") == null
+                || this.properties.getProperty("password") == null) {
+                throw new IllegalStateException("No credentials provided.");
+            }
 
-        if (this.notEmpty("sqlHost") && this.notEmpty("sqlPort")) {
-            return DriverManager.getConnection("jdbc:postgresql://" +
-                this.properties.getProperty("sqlHost") + ":" +
-                this.properties.getProperty("sqlPort") + "/" + "postgres", this.properties);
-        } else {
-            return DriverManager
-                .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
+            this.properties.setProperty("connectTimeout", "5");
+
+            if (this.notEmpty("sqlHost") && this.notEmpty("sqlPort")) {
+                return DriverManager.getConnection("jdbc:postgresql://" +
+                    this.properties.getProperty("sqlHost") + ":" +
+                    this.properties.getProperty("sqlPort") + "/" + "postgres", this.properties);
+            } else {
+                return DriverManager
+                    .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
+            }
+        } catch (SQLException sqlException) {
+            var message = sqlException.getMessage().toLowerCase().trim();
+            var failureStatus = message.contains("connection could not be made using the" +
+                " requested protocol") ? PROTOCOL : (message.contains("refused") ? REFUSED :
+                UNKNOWN);
+            this.connectionFailureCallbacks.forEach(consumer -> {
+                try {
+                    consumer.accept(failureStatus);
+                } catch (Throwable ignored) {}
+            });
+            throw sqlException;
         }
     }
 
