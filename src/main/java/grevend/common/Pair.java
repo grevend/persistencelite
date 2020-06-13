@@ -24,35 +24,28 @@
 
 package grevend.common;
 
-import grevend.persistencelite.internal.util.Utils;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public final record Pair<A extends Serializable, B extends Serializable>(@Nullable A first, B second) implements Serializable {
+public interface Pair<A, B> {
 
-    private static final long serialVersionUID = 3602413341346015513L;
-
-    @Contract(value = "_, _ -> new", pure = true)
-    public static @NotNull <A extends Serializable, B extends Serializable> Pair<A, B> of(A first, B second) {
-        return new Pair<>(first, second);
-    }
-
-    @SuppressWarnings("unused")
+    @NotNull
     @Contract(pure = true)
-    public static @NotNull <A extends Serializable, B extends Serializable> Collector<Pair<A, B>, ?, Map<A, B>> toMap() {
+    static <A, B> Collector<? extends Pair<A, B>, ?, Map<A, B>> toMap() {
         return Collectors.toMap(Pair::first, Pair::second);
     }
 
     @NotNull
-    @Override
-    public String toString() {
-        return "Pair{first=" + Utils.stringify(this.first) + ", second=" +
-            Utils.stringify(this.second) + '}';
+    @Contract(pure = true)
+    static <A, B> Collector<? extends Pair<A, B>, ?, Map<A, B>> toUnmodifiableMap() {
+        return Collectors.toUnmodifiableMap(Pair::first, Pair::second);
     }
+
+    A first();
+
+    B second();
 
 }

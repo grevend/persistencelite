@@ -22,10 +22,12 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.service;
+package grevend.persistencelite.crud;
 
 /**
  * @author David Greven
- * @since 0.2.0
+ * @since 0.3.3
  */
-interface Configuration {}
+public enum Crud {
+    CREATE, RETRIEVE, UPDATE, DELETE;
+}

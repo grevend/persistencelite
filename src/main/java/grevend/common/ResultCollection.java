@@ -24,26 +24,6 @@
 
 package grevend.common;
 
-import grevend.persistencelite.internal.util.Utils;
-import java.io.Serializable;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import java.util.Collection;
 
-public final record Triplet<A extends Serializable, B extends Serializable, C extends Serializable>(@Nullable A first, @Nullable B second, @Nullable C third) implements Serializable {
-
-    private static final long serialVersionUID = 2550349264294704474L;
-
-    @Contract(value = "_, _, _ -> new", pure = true)
-    public static @NotNull <A extends Serializable, B extends Serializable, C extends Serializable> Triplet<A, B, C> of(A first, B second, C third) {
-        return new Triplet<>(first, second, third);
-    }
-
-    @NotNull
-    @Override
-    public String toString() {
-        return "Triplet{first=" + Utils.stringify(this.first) + ", second=" +
-            Utils.stringify(this.second) + ", third=" + Utils.stringify(this.third) + '}';
-    }
-
-}
+public interface ResultCollection<E> extends Collection<E>, CollectionExtension<E, ResultCollection<E>>, Result<Collection<E>> {}

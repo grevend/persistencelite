@@ -25,6 +25,7 @@
 package grevend.persistencelite.internal.entity;
 
 import java.lang.invoke.MethodHandle;
+import org.jetbrains.annotations.ApiStatus.AvailableSince;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,4 +35,4 @@ import org.jetbrains.annotations.Nullable;
  * @see MethodHandle
  * @since 0.2.0
  */
-public final record EntityProperty(@NotNull Class<?>type, @Nullable MethodHandle getter, @NotNull String fieldName, @NotNull String propertyName, @Nullable EntityIdentifier identifier, @Nullable EntityRelation relation, boolean copy) {}
+public final record EntityProperty(@NotNull Class<?>type, @Nullable MethodHandle getter, @NotNull String fieldName, @NotNull String propertyName, @Nullable EntityIdentifier identifier, @Nullable EntityRelation relation, boolean copy, @AvailableSince(value = "0.5.0")boolean escape) {}

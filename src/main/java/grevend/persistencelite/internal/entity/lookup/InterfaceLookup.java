@@ -38,15 +38,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An implementation of the {@code ComponentLookup} interface for interface-based entities.
+ * An implementation of the {@code EntityLookup} interface for interface-based entities.
  *
  * @param <E> The entity type.
  *
  * @author David Greven
- * @see ComponentLookup
+ * @see EntityLookup
  * @since 0.2.0
  */
-public final class InterfaceLookup<E> implements ComponentLookup<E, Method> {
+public final class InterfaceLookup<E> implements EntityLookup<E, Method> {
 
     /**
      * Generates a {@code Stream} of annotated member components.
@@ -62,7 +62,7 @@ public final class InterfaceLookup<E> implements ComponentLookup<E, Method> {
     @NotNull
     @Override
     public Stream<Method> components(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getDeclaredMethods()).filter(
+        return Stream.of(entityMetadata.entityClass().getDeclaredMethods()).filter(
             method -> method.getParameterCount() == 0 && !method.isDefault() && !method.isBridge()
                 && !method.isVarArgs() && !method.isSynthetic() && !Modifier
                 .isStatic(method.getModifiers()) && !method.isAnnotationPresent(Ignore.class));
@@ -111,7 +111,7 @@ public final class InterfaceLookup<E> implements ComponentLookup<E, Method> {
      *
      * @see MethodHandle
      * @see EntityMetadata
-     * @see ComponentLookup
+     * @see EntityLookup
      * @since 0.2.0
      */
     @Nullable
@@ -156,7 +156,7 @@ public final class InterfaceLookup<E> implements ComponentLookup<E, Method> {
     @NotNull
     @Override
     public Collection<EntityMetadata<?>> lookupSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getInterfaces())
+        return Stream.of(entityMetadata.entityClass().getInterfaces())
             .filter(superType -> superType.isAnnotationPresent(Entity.class))
             .map(EntityMetadata::of)
             .collect(Collectors.toList());

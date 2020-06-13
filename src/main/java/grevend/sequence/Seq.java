@@ -24,7 +24,14 @@
 
 package grevend.sequence;
 
+import grevend.common.Failure;
+import grevend.common.Result;
+import grevend.common.Result.AbortOnFailure;
+import grevend.common.Success;
 import grevend.persistencelite.internal.util.Utils;
+import grevend.sequence.function.ThrowableEscapeHatch;
+import grevend.sequence.function.ThrowingFunction;
+import grevend.sequence.function.ThrowingSupplier;
 import grevend.sequence.function.TriFunction;
 import grevend.sequence.iterators.ConcatIterator;
 import grevend.sequence.iterators.DistinctIterator;
@@ -99,6 +106,14 @@ public class Seq<T, S extends Seq<T, S>> implements Iterable<T> {
 
     public static @NotNull <T, S extends Seq<T, S>> Seq<T, S> of(@NotNull Iterable<T> iterable) {
         return of(iterable.iterator());
+    }
+
+    public static @NotNull <T, S extends Seq<T, S>> Seq<T, S> of(@NotNull ThrowingSupplier<Iterable<T>> supplier) {
+        try {
+            return of(Objects.requireNonNull(supplier.get()).iterator());
+        } catch (Throwable throwable) {
+            return Seq.empty();
+        }
     }
 
     public static @NotNull <T extends Number, S extends NumberSeq<T>> NumberSeq<T> ofNumeric(
@@ -191,6 +206,27 @@ public class Seq<T, S extends Seq<T, S>> implements Iterable<T> {
     public @NotNull <R, U extends Seq<R, U>> U map(
         @NotNull Function<? super T, ? extends R> function) {
         return (U) Seq.<R, U>of(new MapIterator<>(this.iterator, function));
+    }
+
+    @SuppressWarnings("unchecked")
+    public @NotNull <R, U extends Seq<R, U>> U mapAbort(
+        @NotNull Result.AbortableFunction<? super T, ? extends R> function) throws AbortOnFailure {
+        var escapeHatch = new ThrowableEscapeHatch<>(AbortOnFailure.class, true);
+        return (U) Seq.<R, U>of(new MapIterator<>(this.iterator,
+            ThrowableEscapeHatch.escapeUnsafe(function, escapeHatch)));
+    }
+
+    @SuppressWarnings("unchecked")
+    public @NotNull <R, U extends Seq<Result<R>, U>> U mapThrowing(
+        @NotNull ThrowingFunction<? super T, ? extends R> function) {
+        return (U) Seq.<Result<R>, U>of(new MapIterator<>(this.iterator, arg -> {
+            try {
+                var ret = function.apply(arg);
+                return (Success<R>) () -> ret;
+            } catch (Throwable throwable) {
+                return (Failure<R>) () -> throwable;
+            }
+        }));
     }
 
     @SuppressWarnings("unchecked")

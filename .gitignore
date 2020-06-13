@@ -75,7 +75,6 @@ checkstyle.xml
 .settings
 .project
 .classpath
-postgres.ser
-src/main/resources/credentials.properties
+*.properties
 src/main/java/grevend/main/Main.java
-Framework/src/main/resources/credentials.properties
+postgres.ser

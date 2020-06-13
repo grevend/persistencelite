@@ -24,104 +24,91 @@
 
 package grevend.persistencelite.internal.dao;
 
+import static grevend.persistencelite.internal.util.Utils.unsafeCast;
+
+import grevend.common.Failure;
+import grevend.common.Pair;
+import grevend.common.Result;
+import grevend.common.ResultCollection;
+import grevend.common.SuccessCollection;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.Transaction;
+import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.internal.entity.EntityProperty;
 import grevend.persistencelite.internal.entity.factory.EntityFactory;
-import grevend.sequence.function.ThrowableEscapeHatch;
-import grevend.sequence.function.ThrowingConsumer;
-import grevend.sequence.function.ThrowingFunction;
-import java.util.ArrayList;
+import grevend.persistencelite.internal.entity.representation.EntityDeserializer;
+import grevend.persistencelite.internal.entity.representation.EntitySerializer;
+import grevend.persistencelite.internal.util.Utils;
+import grevend.persistencelite.util.TypeMarshaller;
+import grevend.sequence.Seq;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.UnmodifiableView;
 
 /**
- * An abstract {@code BaseDao} class that offers standard implementations for some CRUD operations
- * which can be used to simplify creating a custom {@code Dao} implementation. It also enables
- * simplified access to the entity metadata and current transaction.
- *
- * @param <E> The type of the entity to which the {@code Dao} should apply.
- * @param <T> The type of {@code Transaction} that can be used in combination with the
- *            implementation based on this base class.
+ * @param <E>
  *
  * @author David Greven
- * @see Dao
- * @see Transaction
- * @since 0.2.0
+ * @since 0.3.3
  */
-public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
+public class BaseDao<E, Thr extends Throwable> implements Dao<E> {
 
     private final EntityMetadata<E> entityMetadata;
-    private final T transaction;
+    private final DaoImpl<Thr> daoImpl;
+    private final EntitySerializer<E> entitySerializer;
+    private final EntityDeserializer<E> entityDeserializer;
+    private Transaction transaction;
 
-    /**
-     * @param entityMetadata
-     * @param transaction
-     *
-     * @since 0.2.0
-     */
     @Contract(pure = true)
-    public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable T transaction) {
+    public BaseDao(@NotNull EntityMetadata<E> entityMetadata, @NotNull DaoImpl<Thr> daoImpl, @NotNull TransactionFactory transactionFactory, @Nullable Transaction transaction, boolean props, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap) throws Throwable {
         this.entityMetadata = entityMetadata;
-        this.transaction = transaction;
+        this.daoImpl = daoImpl;
+        this.transaction = transaction == null ?
+            transactionFactory.createTransaction() : transaction;
+        this.entitySerializer = entity ->
+            EntityFactory.deconstruct(entityMetadata, entity, unsafeCast(unmarshallerMap));
+        this.entityDeserializer = map ->
+            EntityFactory.construct(entityMetadata, map, props, unsafeCast(marshallerMap));
     }
 
     /**
-     * Returns the current {@code Transaction} that will be used by all operations performed on this
-     * {@code Dao} instance.
-     *
-     * @return Returns either the current transaction or null if unavailable.
-     *
-     * @see Dao
-     * @see Transaction
-     * @since 0.2.0
-     */
-    @Nullable
-    protected T getTransaction() {
-        return this.transaction;
-    }
-
-    /**
-     * Returns the metadata of the entity that this {@code Dao} applies to.
-     *
-     * @return The metadata of the entity.
-     *
-     * @see EntityMetadata
-     * @since 0.2.0
-     */
-    @NotNull
-    protected EntityMetadata<E> getEntityMetadata() {
-        return this.entityMetadata;
-    }
-
-    /**
-     * An implementation of the <b>create</b> CRUD operation that persists an entity.
+     * {@inheritDoc}
      *
      * @param entity The entity to be persisted.
      *
      * @return Either returns the entity from the first parameter or creates a new instance based on
      * the persistent version.
      *
-     * @throws Exception If an error occurs during the persistence process.
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
     @Override
-    public E create(@NotNull E entity) throws Exception {
-        return this.create(entity, EntityFactory.deconstruct(this.entityMetadata, entity));
+    public Result<E> create(@NotNull E entity) {
+        return Result.ofThrowing(() -> {
+            var entityComponents = this.entitySerializer.serialize(entity);
+            this.daoImpl.create(entityComponents);
+            var merged = this.entitySerializer.merge(entityComponents);
+            var iter = this.daoImpl.retrieve(
+                Seq.of(this.entityMetadata.declaredIdentifiers()).map(EntityProperty::propertyName)
+                    .toUnmodifiableList(), merged).iterator();
+            if (!iter.hasNext()) { throw new IllegalStateException("Unable to retrieve entity!"); }
+            return this.entityDeserializer.deserialize(iter.next());
+        });
     }
 
     /**
-     * An implementation of the <b>create</b> CRUD operation that persists none, one or many
-     * entities.
+     * {@inheritDoc}
      *
      * @param entities An {@code Iterable} that provides the entities that should be persisted.
      *
@@ -130,97 +117,261 @@ public abstract class BaseDao<E, T extends Transaction> implements Dao<E> {
      * avoid confusion about the synchronization behavior of the contained entities with the data
      * source.
      *
-     * @throws Exception If an error occurs during the persistence process.
      * @see Collection
      * @see Iterable
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
     @Override
-    public Collection<E> create(@NotNull Iterable<E> entities) throws Exception {
-        final var escapeHatch = new ThrowableEscapeHatch<>(Exception.class);
-        var res = StreamSupport.stream(entities.spliterator(), false).map(ThrowableEscapeHatch
-            .escape((@NotNull ThrowingFunction<E, E>) this::create, escapeHatch))
-            .filter(Objects::nonNull).collect(Collectors.toUnmodifiableList());
-        escapeHatch.rethrow();
-        return res;
+    public ResultCollection<E> create(@NotNull Iterable<E> entities) {
+        return Result.ofTry(() -> SuccessCollection.of(Seq.of(entities).filter(Objects::nonNull)
+            .mapAbort(entity -> this.create(Objects.requireNonNull(entity)).orAbort())
+            .toUnmodifiableList()));
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param identifiers The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entity found in the form of an {@code Optional}.
+     *
+     * @see Optional
+     * @see Map
+     * @since 0.3.3
+     */
     @NotNull
-    protected abstract E create(@NotNull E entity, @NotNull Collection<Map<String, Object>> properties) throws Exception;
+    @Override
+    public Result<E> retrieveById(@NotNull Map<String, Object> identifiers) {
+        return Result.ofThrowing(() -> {
+            var iter = this.daoImpl.retrieve(
+                this.entityMetadata.declaredIdentifiers().stream().map(EntityProperty::propertyName)
+                    .collect(Collectors.toUnmodifiableList()), identifiers).iterator();
+            return iter.hasNext() ? this.entityDeserializer.deserialize(iter.next())
+                : Result.abort("Empty collection.");
+        });
+    }
 
     /**
-     * An implementation of the <b>update</b> CRUD operation which returns an updated versions of
-     * the provided entities. An {@code Iterable} of properties that should be updated are passed in
-     * as the second parameter in the form of a {@code Map}.
+     * {@inheritDoc}
      *
-     * @param entities   The immutable entities that should be updated.
-     * @param properties The {@code Iterable} of key-value pair {@code Map} objects that represents
-     *                   the properties and their updated values.
+     * @param identifiers - The key components.
+     * @param values      - The {@link Iterable} of values represented by a nested {@link
+     *                    Iterable}.
+     *
+     * @return Returns the entities found in the form of a Collection.
+     *
+     * @see ResultCollection
+     * @since 0.5.7
+     */
+    @NotNull
+    @Override
+    public ResultCollection<E> retrieveByIds(@NotNull Iterable<String> identifiers, @NotNull Iterable<Iterable<Object>> values) {
+        record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
+
+        return Result.ofTry(() -> SuccessCollection
+            .of(Seq.of(values).map(vals -> new PairImpl<>(identifiers, vals)).mapThrowing(
+                pair -> Seq.of(() -> this.daoImpl.retrieve(
+                    this.entityMetadata.declaredIdentifiers().stream()
+                        .map(EntityProperty::propertyName)
+                        .collect(Collectors.toUnmodifiableList()),
+                    Utils.zip(pair.first.iterator(), pair.second.iterator())
+                        .collect(Collectors.toMap(Pair::first, Pair::second))))
+                    .mapThrowing(this.entityDeserializer::deserialize)
+                    .filter(Objects::nonNull)
+                    .mapAbort(Result::orAbort)
+                    .toUnmodifiableList())
+                .flatMap(res -> Seq.of(res.or(Collections.emptyList())))
+                .toUnmodifiableList()));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param props The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the entities found in the form of an {@code Collection}.
+     *
+     * @see Collection
+     * @see Map
+     * @since 0.3.3
+     */
+    @NotNull
+    @Override
+    public ResultCollection<E> retrieveByProps(@NotNull Map<String, Object> props) {
+        return Result.ofTry(() -> SuccessCollection.of(Seq.of(() ->
+            this.daoImpl.retrieve(props.keySet(), props))
+            .mapThrowing(this.entityDeserializer::deserialize)
+            .filter(Objects::nonNull)
+            .mapAbort(Result::orAbort)
+            .filter(Objects::nonNull)
+            .toUnmodifiableList()));
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param properties The key-value pairs in the form of a {@code Map}.
+     *
+     * @return Returns the first entity found in the form of an {@code Result}.
+     *
+     * @see Result
+     * @see Map
+     * @since 0.4.8
+     */
+    @NotNull
+    @Override
+    public Result<E> retrieveFirstByProps(@NotNull Map<String, Object> properties) {
+        return Result.ofThrowing(() -> {
+            var iter = this.daoImpl.retrieve(
+                this.entityMetadata.declaredProperties().stream().filter(e -> properties
+                    .containsKey(e.fieldName())).map(EntityProperty::propertyName)
+                    .collect(Collectors.toUnmodifiableList()), properties).iterator();
+            return iter.hasNext() ? this.entityDeserializer.deserialize(iter.next())
+                : Result.abort("Empty collection.");
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return Returns the entities found in the form of a collection. The returned collection
+     * should be immutable to avoid confusion about the synchronization behavior of the contained
+     * entities with the data source.
+     *
+     * @see Collection
+     * @since 0.3.3
+     */
+    @NotNull
+    @Override
+    public ResultCollection<E> retrieveAll() {
+        return this.retrieveByProps(Map.of());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param entity The immutable entity that should be updated.
+     * @param props  The {@code Map} of key-value pairs that represents the properties and their
+     *               updated values.
      *
      * @return Returns the updated entity.
      *
-     * @throws Throwable If an error occurs during the persistence process.
-     * @see Collection
-     * @see Iterable
      * @see Map
-     * @since 0.2.0
+     * @since 0.3.3
      */
     @NotNull
     @Override
-    @UnmodifiableView
-    public Collection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> properties) throws Throwable {
-        var entityIterator = entities.iterator();
-        var propertiesIterator = properties.iterator();
-        Collection<E> list = new ArrayList<E>();
-        while (entityIterator.hasNext() && propertiesIterator.hasNext()) {
-            list.add(this.update(entityIterator.next(), propertiesIterator.next()));
-        }
-        return Collections.unmodifiableCollection(list);
+    public Result<E> update(@NotNull E entity, @NotNull Map<String, Object> props) {
+        return Result.ofThrowing(() -> {
+            var components = this.entitySerializer.serialize(entity);
+            this.daoImpl.update(components, props);
+            var merged = this.entitySerializer.merge(components);
+            var iter = this.daoImpl.retrieve(
+                Seq.of(this.entityMetadata.declaredIdentifiers()).map(EntityProperty::propertyName)
+                    .toUnmodifiableList(),
+                Stream.of(merged, props)
+                    .flatMap(map -> map.entrySet().stream()).
+                    collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()),
+                        HashMap::putAll)).iterator();
+            if (!iter.hasNext()) {
+                throw new NoSuchElementException("No entity found for " + props + ".");
+            }
+            return this.entityDeserializer.deserialize(iter.next());
+        });
     }
 
     /**
-     * An implementation of the <b>delete</b> CRUD operation which deletes the given entity from the
-     * current data source.
+     * {@inheritDoc}
+     *
+     * @param entities The immutable entities that should be updated.
+     * @param props    The {@code Iterable} of key-value pair {@code Map} objects that represents
+     *                 the properties and their updated values.
+     *
+     * @return Returns the updated entity.
+     *
+     * @see Collection
+     * @see Iterable
+     * @see Map
+     * @since 0.3.3
+     */
+    @NotNull
+    @Override
+    public ResultCollection<E> update(@NotNull Iterable<E> entities, @NotNull Iterable<Map<String, Object>> props) {
+        var res = Utils.zip(entities.iterator(), props.iterator())
+            .map((Pair<E, Map<String, Object>> pair) -> this
+                .update(Objects.requireNonNull(pair).first(), pair.second()))
+            .collect(Collectors.toUnmodifiableList());
+
+        return Result.ofTry(() -> SuccessCollection
+            .of(Seq.of(res).mapAbort(el -> Objects.requireNonNull(el).orAbort())
+                .toUnmodifiableList()));
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * @param entity The entity that should be deleted.
      *
-     * @throws Exception If an error occurs during the persistence process.
-     * @since 0.2.0
+     * @since 0.3.3
      */
+    @NotNull
     @Override
-    public void delete(@NotNull E entity) throws Exception {
-        var deconstructed = EntityFactory.deconstruct(this.entityMetadata, entity);
-        if (!deconstructed.isEmpty()) {
-            this.delete(deconstructed.iterator().next());
+    public Result<Void> delete(@NotNull E entity) {
+        try {
+            return this.delete(this.entitySerializer
+                .merge(this.entitySerializer.serialize(entity)));
+        } catch (Throwable throwable) {
+            return (Failure<Void>) () -> throwable;
         }
     }
 
     /**
-     * An implementation of the <b>delete</b> CRUD operation which deletes the given entities from
-     * the current data source.
+     * {@inheritDoc}
      *
-     * @param entities The {@code Iterable} of entities that should be deleted.
+     * @param identifiers The identifiers that should be used to delete the entity.
      *
-     * @throws Exception If an error occurs during the persistence process.
-     * @see Iterable
-     * @since 0.2.0
+     * @since 0.3.3
      */
+    @NotNull
     @Override
-    public void delete(@NotNull Iterable<E> entities) throws Exception {
-        final var escapeHatch = new ThrowableEscapeHatch<>(Exception.class);
-        entities.forEach(
-            ThrowableEscapeHatch.escape((@NotNull ThrowingConsumer<E>) this::delete, escapeHatch));
-        escapeHatch.rethrow();
+    public Result<Void> delete(@NotNull Map<String, Object> identifiers) {
+        return Result.ofThrowing(() -> this.daoImpl.delete(identifiers));
     }
 
     /**
-     * @throws Exception
-     * @since 0.2.0
+     * {@inheritDoc}
+     *
+     * @param entities The {@code Iterable} of entities that should be deleted.
+     *
+     * @see Iterable
+     * @since 0.3.3
+     */
+    @NotNull
+    @Override
+    public Result<Void> delete(@NotNull Iterable<E> entities) {
+        return Result.ofTry(() -> Seq.of(entities).filter(Objects::nonNull)
+            .mapAbort(entity -> this.delete(Objects.requireNonNull(entity)).orAbort())
+            .toUnmodifiableList());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws Exception if this resource cannot be closed
+     * @since 0.3.3
      */
     @Override
     public void close() throws Exception {
-        //if (this.transaction != null) { this.transaction.close(); }
+        if (this.transaction != null) {
+            this.transaction.close();
+        }
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public DaoImpl<Thr> daoImpl() {
+        return this.daoImpl;
     }
 
 }

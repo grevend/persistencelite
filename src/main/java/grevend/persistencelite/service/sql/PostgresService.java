@@ -24,16 +24,16 @@
 
 package grevend.persistencelite.service.sql;
 
-import static grevend.sequence.function.ThrowableEscapeHatch.escape;
-
+import grevend.common.Failure;
 import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
 import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.internal.service.sql.SqlDaoFactory;
-import grevend.persistencelite.internal.service.sql.SqlTransactionFactory;
-import grevend.sequence.function.ThrowableEscapeHatch;
+import grevend.persistencelite.internal.dao.BaseDao;
+import grevend.persistencelite.internal.dao.FailureDao;
+import grevend.persistencelite.internal.service.sql.SqlDao;
+import grevend.persistencelite.internal.service.sql.SqlTransaction;
 import grevend.persistencelite.service.Service;
 import grevend.persistencelite.util.TypeMarshaller;
 import java.sql.Connection;
@@ -54,6 +54,7 @@ import org.jetbrains.annotations.Nullable;
 public final class PostgresService implements Service<PostgresConfigurator> {
 
     private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
+    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> unmarshallerMap;
     private Properties properties;
 
     /**
@@ -62,18 +63,8 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @Contract(pure = true)
     public PostgresService() {
         this.marshallerMap = new HashMap<>();
+        this.unmarshallerMap = new HashMap<>();
         this.properties = new Properties();
-    }
-
-    /**
-     * @return
-     *
-     * @since 0.2.0
-     */
-    @NotNull
-    @Contract(pure = true)
-    public Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> getMarshallerMap() {
-        return this.marshallerMap;
     }
 
     /**
@@ -92,7 +83,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      *
      * @since 0.2.0
      */
-    public void setProperties(@NotNull Properties properties) {
+    void setProperties(@NotNull Properties properties) {
         this.properties = properties;
     }
 
@@ -109,8 +100,9 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @since 0.2.0
      */
     @NotNull
+    @Override
     public <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction) {
-        return this.getDaoFactory().createDao(EntityMetadata.of(entity), transaction);
+        return this.daoFactory().createDao(EntityMetadata.of(entity), transaction);
     }
 
     /**
@@ -125,8 +117,13 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @since 0.2.0
      */
     @NotNull
-    public <E> Dao<E> createDao(@NotNull Class<E> entity) throws Throwable {
-        return this.createDao(entity, this.getTransactionFactory().createTransaction());
+    @Override
+    public <E> Dao<E> createDao(@NotNull Class<E> entity) {
+        try {
+            return this.createDao(entity, this.transactionFactory().createTransaction());
+        } catch (Throwable throwable) {
+            return new FailureDao<>((Failure<?>) () -> throwable);
+        }
     }
 
     /**
@@ -137,7 +134,7 @@ public final class PostgresService implements Service<PostgresConfigurator> {
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
-    public PostgresConfigurator getConfigurator() {
+    public PostgresConfigurator configurator() {
         return new PostgresConfigurator(this);
     }
 
@@ -145,36 +142,48 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @return
      *
      * @see DaoFactory
-     * @see SqlDaoFactory
      * @since 0.2.0
      */
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
-    public DaoFactory getDaoFactory() {
-        var exceptionEscapeHatch = new ThrowableEscapeHatch<>(Exception.class);
-        DaoFactory res = new SqlDaoFactory(
-            escape(() -> this.getTransactionFactory().createTransaction(), exceptionEscapeHatch));
-        try {
-            exceptionEscapeHatch.rethrow();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return res;
+    public DaoFactory daoFactory() {
+        return new DaoFactory() {
+            @NotNull
+            @Override
+            public <E> Dao<E> createDao(@NotNull EntityMetadata<E> entityMetadata, @Nullable Transaction transaction) {
+                if (transaction instanceof SqlTransaction sqlTransaction) {
+                    EntityMetadata.inferRelationTypes(entityMetadata);
+                    try {
+                        return new BaseDao<>(entityMetadata,
+                            new SqlDao<>(entityMetadata, sqlTransaction,
+                                PostgresService.this.transactionFactory(),
+                                PostgresService.this.marshallerMap),
+                            PostgresService.this.transactionFactory(), transaction, true,
+                            PostgresService.this.marshallerMap,
+                            PostgresService.this.unmarshallerMap);
+                    } catch (Throwable throwable) {
+                        throw new IllegalStateException("Failed to construct Dao.", throwable);
+                    }
+                } else {
+                    throw new IllegalArgumentException(
+                        "Transaction must be of type SqlTransaction.");
+                }
+            }
+        };
     }
 
     /**
      * @return
      *
      * @see TransactionFactory
-     * @see SqlTransactionFactory
      * @since 0.2.0
      */
     @NotNull
     @Override
     @Contract(value = " -> new", pure = true)
-    public TransactionFactory getTransactionFactory() {
-        return new SqlTransactionFactory(this::createConnection);
+    public TransactionFactory transactionFactory() {
+        return () -> new SqlTransaction(this.createConnection());
     }
 
     /**
@@ -182,16 +191,23 @@ public final class PostgresService implements Service<PostgresConfigurator> {
      * @param from
      * @param to
      * @param marshaller
+     * @param unmarshaller
+     * @param customNullHandling
      *
-     * @since 0.2.0
+     * @since 0.5.2
      */
     @Override
-    @Contract(pure = true)
-    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller) {
+    public <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling) {
         if (!this.marshallerMap.containsKey(entity)) {
             this.marshallerMap.put(entity, new HashMap<>());
         }
-        this.marshallerMap.get(entity).put(from, marshaller);
+        if (!this.unmarshallerMap.containsKey(entity)) {
+            this.unmarshallerMap.put(entity, new HashMap<>());
+        }
+        this.marshallerMap.get(entity).put(to, customNullHandling ? marshaller
+            : (A a) -> a == null ? null : marshaller.marshall(a));
+        this.unmarshallerMap.get(entity).put(to, customNullHandling ? unmarshaller
+            : (B b) -> b == null ? null : unmarshaller.marshall(b));
     }
 
     /**
@@ -208,8 +224,30 @@ public final class PostgresService implements Service<PostgresConfigurator> {
             throw new IllegalStateException("No credentials provided.");
         }
 
-        return DriverManager
-            .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
+        if (this.notEmpty("sqlHost") && this.notEmpty("sqlPort")) {
+            return DriverManager.getConnection("jdbc:postgresql://" +
+                this.properties.getProperty("sqlHost") + ":" +
+                this.properties.getProperty("sqlPort") + "/" + "postgres", this.properties);
+        } else {
+            return DriverManager
+                .getConnection("jdbc:postgresql://localhost/" + "postgres", this.properties);
+        }
+    }
+
+    private boolean notEmpty(@NotNull String property) {
+        var res = this.properties.getProperty(property);
+        return res != null && !(res.equals(""));
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @Override
+    @Contract(pure = true)
+    public boolean allowsCaching() {
+        return true;
     }
 
 }

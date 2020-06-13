@@ -24,45 +24,33 @@
 
 package grevend.common;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import org.junit.jupiter.api.Test;
+public interface Failure<T> extends Result<T> {
 
-class PairTest {
-
-    @Test
-    void testPairOf() {
-        var pair = Pair.of("test", 45L);
-        assertThat(pair.first()).isEqualTo("test");
-        assertThat(pair.second()).isEqualTo(45L);
+    @NotNull
+    @Contract(pure = true)
+    static <T> Failure<T> of(@NotNull Failure<?> failure) {
+        return failure::reason;
     }
 
-    @Test
-    void testPairToString() {
-        var pair = Pair.of("test", 45L);
-        assertThat(pair.toString()).isEqualTo("Pair{first=test, second=45}");
+    @Override
+    default boolean success() {
+        return false;
     }
 
-    @Test
-    void testPairWithNullToString() {
-        var pair = Pair.of(null, null);
-        assertThat(pair.toString()).isEqualTo("Pair{first=null, second=null}");
+    @Override
+    default T or(T or) {
+        return or;
     }
 
-    @Test
-    void testPairWithPrimitiveArraysToString() {
-        var pair = Pair.of(new int[]{12, 42}, new long[]{21, 24});
-        assertThat(pair.toString()).contains("Pair{first=[I@");
-        assertThat(pair.toString()).contains(", second=[J@");
+    @Override
+    default T orThrow() throws Throwable {
+        throw this.reason();
     }
 
-    @Test
-    void testPairToMap() {
-        var map = List.of(Pair.of(12, 21), Pair.of(34, 43), Pair.of(56, 65)).stream()
-            .collect(Pair.toMap());
-        assertThat(map).containsKeys(12, 34, 56);
-        assertThat(map).containsValues(21, 43, 65);
-    }
+    @NotNull
+    Throwable reason();
 
 }

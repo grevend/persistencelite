@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
  * @see Transaction
  * @since 0.2.0
  */
+@FunctionalInterface
 public interface TransactionFactory {
 
     /**

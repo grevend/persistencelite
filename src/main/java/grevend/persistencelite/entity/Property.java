@@ -53,4 +53,11 @@ public @interface Property {
      */
     boolean copy() default false;
 
+    /**
+     * @return
+     *
+     * @since 0.5.0
+     */
+    boolean escape() default false;
+
 }

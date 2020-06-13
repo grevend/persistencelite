@@ -22,86 +22,59 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.internal.service.sql;
+package grevend.common;
 
-import grevend.common.LazyCollection;
-import grevend.persistencelite.dao.Transaction;
-import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.internal.entity.EntityRelation;
-import grevend.persistencelite.util.TypeMarshaller;
 import grevend.sequence.Seq;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-/**
- * @param <E>
- *
- * @author David Greven
- * @see LazyCollection
- * @since 0.2.0
- */
-public final class SqlRelation<E> implements LazyCollection<E> {
+public final class FailureCollection<E> implements ResultCollection<E>, Failure<Collection<E>> {
 
-
-    private final Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap;
-    private final EntityMetadata<?> entityMetadata;
-    private final EntityRelation entityRelation;
-    private final Map<String, Object> values;
-    private final Supplier<Transaction> transactionSupplier;
-    private final List<E> elements;
+    private final Failure<E> failure;
 
     @Contract(pure = true)
-    SqlRelation(@NotNull EntityMetadata<?> entityMetadata, @NotNull EntityRelation entityRelation, @NotNull Map<String, Object> values, @NotNull Supplier<Transaction> transactionSupplier, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> marshallerMap) {
-        this.entityMetadata = entityMetadata;
-        this.entityRelation = entityRelation;
-        this.values = values;
-        this.transactionSupplier = transactionSupplier;
-        this.elements = new ArrayList<>();
-        this.marshallerMap = marshallerMap;
+    private FailureCollection(@NotNull Failure<?> failure) {
+        this.failure = Failure.of(failure);
     }
 
-    @Contract(pure = true)
-    private List<E> retrieve() {
-        if (this.elements.isEmpty()) {
-            this.elements.addAll(SqlUtils.retrieve(this.entityMetadata, this.entityRelation,
-                this.values, this.transactionSupplier, this.marshallerMap));
-        }
-        return this.elements;
+    @Contract(value = "_ -> new", pure = true)
+    public static <E> @NotNull FailureCollection<E> of(@NotNull Failure<?> failure) {
+        return new FailureCollection<>(failure);
+    }
+
+    @NotNull
+    @Override
+    public Throwable reason() {
+        return this.failure.reason();
     }
 
     /**
-     * Returns the number of elements in this collection.  If this collection contains more than
-     * {@code Integer.MAX_VALUE} elements, returns {@code Integer.MAX_VALUE}.
+     * {@inheritDoc}
      *
      * @return the number of elements in this collection
      */
     @Override
+    @Contract(pure = true)
     public int size() {
-        return this.retrieve().size();
+        return 0;
     }
 
     /**
-     * Returns {@code true} if this collection contains no elements.
+     * {@inheritDoc}
      *
      * @return {@code true} if this collection contains no elements
      */
     @Override
     @Contract(pure = true)
     public boolean isEmpty() {
-        return this.retrieve().isEmpty();
+        return true;
     }
 
     /**
-     * Returns {@code true} if this collection contains the specified element. More formally,
-     * returns {@code true} if and only if this collection contains at least one element {@code e}
-     * such that {@code Objects.equals(o, e)}.
+     * {@inheritDoc}
      *
      * @param o element whose presence in this collection is to be tested
      *
@@ -114,33 +87,36 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      */
     @Override
     @Contract(pure = true)
-    public boolean contains(@Nullable Object o) {
-        return this.retrieve().contains(o);
+    public boolean contains(Object o) {
+        return false;
     }
 
     /**
-     * Returns an iterator over the elements in this collection.  There are no guarantees concerning
-     * the order in which the elements are returned (unless this collection is an instance of some
-     * class that provides a guarantee).
+     * {@inheritDoc}
      *
      * @return an {@code Iterator} over the elements in this collection
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public Iterator<E> iterator() {
-        return this.retrieve().iterator();
+        return new Iterator<>() {
+
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public E next() {
+                return null;
+            }
+
+        };
     }
 
     /**
-     * Returns an array containing all of the elements in this collection. If this collection makes
-     * any guarantees as to what order its elements are returned by its iterator, this method must
-     * return the elements in the same order. The returned array's {@linkplain
-     * Class#getComponentType runtime component type} is {@code Object}.
-     *
-     * <p>The returned array will be "safe" in that no references to it are
-     * maintained by this collection.  (In other words, this method must allocate a new array even
-     * if this collection is backed by an array). The caller is thus free to modify the returned
-     * array.
+     * {@inheritDoc}
      *
      * @return an array, whose {@linkplain Class#getComponentType runtime component type} is {@code
      * Object}, containing all of the elements in this collection
@@ -151,24 +127,13 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public Object[] toArray() {
-        return this.retrieve().toArray();
+        return new Object[0];
     }
 
     /**
-     * Returns an array containing all of the elements in this collection; the runtime type of the
-     * returned array is that of the specified array. If the collection fits in the specified array,
-     * it is returned therein. Otherwise, a new array is allocated with the runtime type of the
-     * specified array and the size of this collection.
-     *
-     * <p>If this collection fits in the specified array with room to spare
-     * (i.e., the array has more elements than this collection), the element in the array
-     * immediately following the end of the collection is set to {@code null}.  (This is useful in
-     * determining the length of this collection <i>only</i> if the caller knows that this
-     * collection does not contain any {@code null} elements.)
-     *
-     * <p>If this collection makes any guarantees as to what order its elements
-     * are returned by its iterator, this method must return the elements in the same order.
+     * {@inheritDoc}
      *
      * @param a the array into which the elements of this collection are to be stored, if it is big
      *          enough; otherwise, a new array of the same runtime type is allocated for this
@@ -202,25 +167,13 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public <T> T[] toArray(@NotNull T[] a) {
-        return this.retrieve().toArray(a);
+        return a;
     }
 
     /**
-     * Ensures that this collection contains the specified element (optional operation).  Returns
-     * {@code true} if this collection changed as a result of the call.  (Returns {@code false} if
-     * this collection does not permit duplicates and already contains the specified element.)<p>
-     * <p>
-     * Collections that support this operation may place limitations on what elements may be added
-     * to this collection.  In particular, some collections will refuse to add {@code null}
-     * elements, and others will impose restrictions on the type of elements that may be added.
-     * Collection classes should clearly specify in their documentation any restrictions on what
-     * elements may be added.<p>
-     * <p>
-     * If a collection refuses to add a particular element for any reason other than that it already
-     * contains the element, it <i>must</i> throw an exception (rather than returning {@code
-     * false}).  This preserves the invariant that a collection always contains the specified
-     * element after this call returns.
+     * {@inheritDoc}
      *
      * @param e element whose presence in this collection is to be ensured
      *
@@ -238,17 +191,13 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      *                                       insertion restrictions
      */
     @Override
-    @Contract(value = "_ -> fail", pure = true)
-    public boolean add(@NotNull E e) {
-        throw new UnsupportedOperationException();
+    @Contract(pure = true)
+    public boolean add(E e) {
+        return false;
     }
 
     /**
-     * Removes a single instance of the specified element from this collection, if it is present
-     * (optional operation).  More formally, removes an element {@code e} such that {@code
-     * Objects.equals(o, e)}, if this collection contains one or more such elements.  Returns {@code
-     * true} if this collection contained the specified element (or equivalently, if this collection
-     * changed as a result of the call).
+     * {@inheritDoc}
      *
      * @param o element to be removed from this collection, if present
      *
@@ -262,14 +211,13 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      *                                       this collection
      */
     @Override
-    @Contract(value = "_ -> fail", pure = true)
+    @Contract(pure = true)
     public boolean remove(Object o) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     /**
-     * Returns {@code true} if this collection contains all of the elements in the specified
-     * collection.
+     * {@inheritDoc}
      *
      * @param c collection to be checked for containment in this collection
      *
@@ -285,15 +233,13 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      * @see #contains(Object)
      */
     @Override
+    @Contract(pure = true)
     public boolean containsAll(@NotNull Collection<?> c) {
-        return this.retrieve().containsAll(c);
+        return false;
     }
 
     /**
-     * Adds all of the elements in the specified collection to this collection (optional operation).
-     * The behavior of this operation is undefined if the specified collection is modified while the
-     * operation is in progress. (This implies that the behavior of this call is undefined if the
-     * specified collection is this collection, and this collection is nonempty.)
+     * {@inheritDoc}
      *
      * @param c collection containing elements to be added to this collection
      *
@@ -314,15 +260,13 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      * @see #add(Object)
      */
     @Override
-    @Contract(value = "_ -> fail", pure = true)
+    @Contract(pure = true)
     public boolean addAll(@NotNull Collection<? extends E> c) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     /**
-     * Removes all of this collection's elements that are also contained in the specified collection
-     * (optional operation).  After this call returns, this collection will contain no elements in
-     * common with the specified collection.
+     * {@inheritDoc}
      *
      * @param c collection containing elements to be removed from this collection
      *
@@ -341,15 +285,13 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      * @see #contains(Object)
      */
     @Override
-    @Contract(value = "_ -> fail", pure = true)
+    @Contract(pure = true)
     public boolean removeAll(@NotNull Collection<?> c) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     /**
-     * Retains only the elements in this collection that are contained in the specified collection
-     * (optional operation).  In other words, removes from this collection all of its elements that
-     * are not contained in the specified collection.
+     * {@inheritDoc}
      *
      * @param c collection containing elements to be retained in this collection
      *
@@ -368,34 +310,39 @@ public final class SqlRelation<E> implements LazyCollection<E> {
      * @see #contains(Object)
      */
     @Override
-    @Contract(value = "_ -> fail", pure = true)
+    @Contract(pure = true)
     public boolean retainAll(@NotNull Collection<?> c) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     /**
-     * Removes all of the elements from this collection (optional operation). The collection will be
-     * empty after this method returns.
+     * {@inheritDoc}
      *
      * @throws UnsupportedOperationException if the {@code clear} operation is not supported by this
      *                                       collection
      */
     @Override
-    @Contract(value = " -> fail", pure = true)
-    public void clear() {
-        throw new UnsupportedOperationException();
-    }
-
-    @NotNull
-    @Override
-    public String toString() {
-        return "SqlRelation" + this.elements.toString();
-    }
+    @Contract(pure = true)
+    public void clear() {}
 
     @NotNull
     @Override
     public <S extends Seq<E, S>> Seq<E, S> sequence() {
-        return Seq.of(this.retrieve());
+        return Seq.empty();
+    }
+
+    @NotNull
+    @Override
+    @Contract(pure = true)
+    public Supplier<ResultCollection<E>> factory() {
+        return SuccessCollection::new;
+    }
+
+    @NotNull
+    @Override
+    @Contract(pure = true)
+    public String toString() {
+        return "FailureCollection{failure=" + this.failure + '}';
     }
 
 }

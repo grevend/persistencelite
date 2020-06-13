@@ -24,6 +24,10 @@
 
 package grevend.sequence.function;
 
+import grevend.common.Failure;
+import grevend.common.Result;
+import grevend.common.Result.AbortOnFailure;
+import grevend.common.Success;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -43,6 +47,11 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
 
     @Contract(pure = true)
     public ThrowableEscapeHatch(@NotNull Class<Thr> clazz) {
+        this.clazz = clazz;
+    }
+
+    @Contract(pure = true)
+    public ThrowableEscapeHatch(@NotNull Class<Thr> clazz, boolean dummy) throws AbortOnFailure {
         this.clazz = clazz;
     }
 
@@ -75,6 +84,35 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         };
     }
 
+    @NotNull
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public static <T, R, Thr extends Throwable> Function<T, R> escape(@NotNull Result.AbortableFunction<T, R> function, @NotNull ThrowableEscapeHatch<Thr> escapeHatch) {
+        return arg -> {
+            try {
+                return function.apply(arg);
+            } catch (Throwable throwable) {
+                if (!escapeHatch.getThrowableClass().isAssignableFrom(throwable.getClass())) {
+                    throw new RuntimeException("Encountered unexpected throwable.", throwable);
+                } else {
+                    escapeHatch.escape((Thr) throwable);
+                    return null;
+                }
+            }
+        };
+    }
+
+    public static <T, R, Thr extends Throwable> Function<T, R> escapeUnsafe(@NotNull Result.AbortableFunction<T, R> function, @NotNull ThrowableEscapeHatch<Thr> escapeHatch) {
+        return arg -> {
+            try {
+                return function.apply(arg);
+            } catch (AbortOnFailure throwable) {
+                escapeHatch.escapeUnsafe(throwable);
+                return null;
+            }
+        };
+    }
+
     /**
      * @param consumer
      * @param escapeHatch
@@ -89,6 +127,23 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
     @Contract(pure = true)
     @SuppressWarnings("unchecked")
     public static <T, Thr extends Throwable> Consumer<T> escape(@NotNull ThrowingConsumer<T> consumer, @NotNull ThrowableEscapeHatch<Thr> escapeHatch) {
+        return arg -> {
+            try {
+                consumer.accept(arg);
+            } catch (Throwable throwable) {
+                if (!escapeHatch.getThrowableClass().isAssignableFrom(throwable.getClass())) {
+                    throw new RuntimeException("Encountered unexpected throwable.", throwable);
+                } else {
+                    escapeHatch.escape((Thr) throwable);
+                }
+            }
+        };
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public static <T, Thr extends Throwable> Consumer<? super T> escapeSuper(@NotNull ThrowingConsumer<? super T> consumer, @NotNull ThrowableEscapeHatch<Thr> escapeHatch) {
         return arg -> {
             try {
                 consumer.accept(arg);
@@ -137,7 +192,7 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
      */
     @NotNull
     @Contract(pure = true)
-    public Class<Thr> getThrowableClass() {
+    private Class<Thr> getThrowableClass() {
         return this.clazz;
     }
 
@@ -152,6 +207,11 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         }
     }
 
+    @Contract(value = "_ -> fail", pure = true)
+    private void escapeUnsafe(@NotNull AbortOnFailure abortOnFailure) {
+        throw abortOnFailure;
+    }
+
     /**
      * @throws Thr
      * @since 0.2.3
@@ -161,6 +221,22 @@ public final class ThrowableEscapeHatch<Thr extends Throwable> {
         if (this.throwable != null) {
             throw this.throwable;
         }
+    }
+
+    /**
+     * @return
+     *
+     * @since 0.5.5
+     */
+    @Contract(pure = true)
+    public boolean failure() {
+        return this.throwable == null;
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public <T> Result<T> fail() {
+        return this.throwable == null ? (Failure<T>) () -> this.throwable : (Success<T>) () -> null;
     }
 
 }

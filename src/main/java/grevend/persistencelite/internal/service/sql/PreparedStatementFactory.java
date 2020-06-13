@@ -24,18 +24,23 @@
 
 package grevend.persistencelite.internal.service.sql;
 
+import static grevend.persistencelite.crud.Crud.CREATE;
+
+import grevend.persistencelite.crud.Crud;
 import grevend.persistencelite.entity.EntityMetadata;
 import grevend.persistencelite.internal.entity.EntityProperty;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
@@ -44,72 +49,100 @@ import org.jetbrains.annotations.NotNull;
  */
 final class PreparedStatementFactory {
 
-    /**
-     * @param statementType
-     * @param connection
-     * @param entityMetadata
-     *
-     * @return
-     *
-     * @throws SQLException
-     * @see PreparedStatement
-     * @see StatementType
-     * @see Connection
-     * @see EntityMetadata
-     * @since 0.2.0
-     */
-    @NotNull
-    PreparedStatement prepare(@NotNull StatementType statementType, @NotNull Connection connection, @NotNull EntityMetadata<?> entityMetadata) throws SQLException {
-        var cache = StatementCache.getInstance().getStatementMap();
+    @Nullable
+    PreparedStatement prepare(@NotNull Crud crud, @NotNull EntityMetadata<?> entityMetadata, @NotNull SqlTransaction transaction, boolean cached, int limit) {
+        var cache = StatementCache.instance().cache();
         if (!cache.containsKey(entityMetadata)) {
             cache.put(entityMetadata, new HashMap<>());
         }
-        if (!cache.get(entityMetadata).containsKey(statementType)) {
-            cache.get(entityMetadata).put(statementType, switch (statementType) {
-                case INSERT -> this.prepareInsert(entityMetadata);
-                case SELECT -> this.prepareSelect(entityMetadata);
-                case SELECT_ALL -> this.prepareSelectAll(entityMetadata);
-                case UPDATE -> this.prepareUpdate(entityMetadata);
-                case DELETE -> this.prepareDelete(entityMetadata);
+
+        if (!cache.get(entityMetadata).containsKey(crud)) {
+            cache.get(entityMetadata).put(crud, switch (crud) {
+                case CREATE -> this.create(entityMetadata);
+                case RETRIEVE -> limit == -1 ? this.prepareSelectAll(entityMetadata)
+                    : this.retrieve(entityMetadata);
+                case UPDATE -> this.update(entityMetadata);
+                case DELETE -> this.delete(entityMetadata);
             });
         }
-        return connection.prepareStatement(
-            StatementCache.getInstance().getStatementMap().get(entityMetadata).get(statementType));
+
+        try {
+            var statement = cache.get(entityMetadata).get(crud);
+            if (!cached) { cache.get(entityMetadata).remove(crud); }
+            return transaction.connection().prepareStatement(statement,
+                crud == CREATE ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS);
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+            return null;
+        }
     }
 
-    /**
-     * @param entityMetadata
-     *
-     * @return
-     *
-     * @see EntityMetadata
-     * @since 0.2.0
-     */
     @NotNull
-    private String prepareInsert(@NotNull EntityMetadata<?> entityMetadata) {
-        return "insert into " + entityMetadata.getName() + " ("
-            + entityMetadata.getUniqueProperties().stream().map(EntityProperty::propertyName)
-            .distinct().collect(Collectors.joining(", "))
-            + ") values ("
-            + String
-            .join(", ", Collections.nCopies(entityMetadata.getUniqueProperties().size(), "?"))
-            + ")";
+    @Contract(pure = true)
+    public String escape(@NotNull EntityProperty property) {
+        return property.escape() ? this.escape(property.propertyName()) : property.propertyName();
     }
 
-    /**
-     * @param entityMetadata
-     *
-     * @return
-     *
-     * @see EntityMetadata
-     * @since 0.2.0
-     */
     @NotNull
-    private String prepareSelect(@NotNull EntityMetadata<?> entityMetadata) {
+    @Contract(pure = true)
+    public String escape(@NotNull EntityMetadata<?> metadata) {
+        return metadata.escape() ? this.escape(metadata.name()) : metadata.name();
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public String escape(@NotNull String text) {
+        return "\"" + text + "\"";
+    }
+
+    @NotNull
+    private String create(@NotNull EntityMetadata<?> entityMetadata) {
+        return "insert into " + this.escape(entityMetadata) + " (" + entityMetadata
+            .uniqueProperties().stream().map(this::escape).distinct()
+            .collect(Collectors.joining(", ")) + ") values (" +
+            entityMetadata.uniqueProperties().stream().map(prop -> (prop.identifier() != null
+                && Objects.requireNonNull(prop.identifier()).autoGenerated()) ? "default" : "?")
+                .collect(Collectors.joining(", ")) + ")";
+    }
+
+    @NotNull
+    @Contract("_, _, _ -> param2")
+    public PreparedStatement values(@NotNull Iterable<String> props, @NotNull PreparedStatement statement, @NotNull Map<String, Object> properties) throws SQLException {
+        var i = 0;
+        for (String property : props) {
+            var value = properties.get(property);
+            if (value == null || value.equals("null")) {
+                statement.setNull(i + 1, Types.NULL);
+            } else {
+                statement.setObject(i + 1, value);
+            }
+            i++;
+        }
+        return statement;
+    }
+
+    @NotNull
+    private String retrieve(@NotNull EntityMetadata<?> entityMetadata) {
         return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata
-            .getDeclaredIdentifiers()
-            .stream().map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
+            .declaredIdentifiers().stream().map(this::escape)
+            .map(prop -> this.escape(entityMetadata) + "." + prop + " = ?")
             .collect(Collectors.joining(" and ")) + " limit 1";
+    }
+
+    @NotNull
+    private String update(@NotNull EntityMetadata<?> entityMetadata) {
+        return "update " + this.escape(entityMetadata) + " set " + entityMetadata.uniqueProperties()
+            .stream().map(this::escape).map(prop -> prop + " = ?").collect(Collectors.joining(", "))
+            + " where " + entityMetadata.declaredIdentifiers().stream().map(this::escape)
+            .map(prop -> prop + " = ?").collect(Collectors.joining(" and "));
+    }
+
+    @NotNull
+    private String delete(@NotNull EntityMetadata<?> entityMetadata) {
+        return "delete from " + this.escape(entityMetadata) + " where " + entityMetadata
+            .declaredIdentifiers().stream().map(this::escape)
+            .map(prop -> this.escape(entityMetadata) + "." + prop + " = ?")
+            .collect(Collectors.joining(" and "));
     }
 
     /**
@@ -123,13 +156,11 @@ final class PreparedStatementFactory {
      */
     @NotNull
     String prepareSelectWithAttributes(@NotNull EntityMetadata<?> entityMetadata, @NotNull Collection<String> attributes) {
-        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.getProperties()
-            .stream().filter(prop -> attributes.contains(prop.propertyName()) ||
-                attributes.contains(prop.fieldName()))
-            .map(prop ->
-                (prop.identifier() != null || prop.copy() ? (entityMetadata.getName() + ".") : "")
-                    + prop.propertyName() + " = ?")
-            .collect(Collectors.joining(" and "));
+        return this.prepareSelectAll(entityMetadata) + " where " + entityMetadata.properties()
+            .stream().filter(prop -> attributes.contains(prop.propertyName()) || attributes
+                .contains(prop.fieldName())).map(prop ->
+                (prop.identifier() != null || prop.copy() ? (this.escape(entityMetadata) + ".")
+                    : "") + this.escape(prop) + " = ?").collect(Collectors.joining(" and "));
     }
 
     /**
@@ -143,8 +174,8 @@ final class PreparedStatementFactory {
     @NotNull
     private String prepareSelectAll(@NotNull EntityMetadata<?> entityMetadata) {
         var builder = new StringBuilder();
-        builder.append("select distinct * from ").append(entityMetadata.getName());
-        entityMetadata.getDeclaredSuperTypes()
+        builder.append("select distinct * from ").append(this.escape(entityMetadata));
+        entityMetadata.declaredSuperTypes()
             .forEach(superType -> this.prepareSelectAll(builder, entityMetadata, superType));
         return builder.toString();
     }
@@ -160,7 +191,7 @@ final class PreparedStatementFactory {
      */
     private void prepareSelectAll(@NotNull StringBuilder builder, @NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
         builder.append(this.prepareInnerJoin(parent, child));
-        child.getDeclaredSuperTypes()
+        child.declaredSuperTypes()
             .forEach(superType -> this.prepareSelectAll(builder, child, superType));
     }
 
@@ -175,63 +206,23 @@ final class PreparedStatementFactory {
      */
     @NotNull
     private String prepareInnerJoin(@NotNull EntityMetadata<?> parent, @NotNull EntityMetadata<?> child) {
-        return " inner join " + child.getName() + " on " + child.getDeclaredIdentifiers()
-            .stream().map(prop -> parent.getName() + "." + prop.propertyName() + " = " +
-                child.getName() + "." + prop.propertyName())
-            .collect(Collectors.joining(" and "));
-    }
-
-    /**
-     * @param entityMetadata
-     *
-     * @return
-     *
-     * @see EntityMetadata
-     * @since 0.2.0
-     */
-    @NotNull
-    private String prepareUpdate(@NotNull EntityMetadata<?> entityMetadata) {
-        return "update " + entityMetadata.getName() + " set " + entityMetadata.getUniqueProperties()
-            .stream().map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(", "))
-            + " where " + entityMetadata.getDeclaredIdentifiers().stream()
-            .map(prop -> prop.propertyName() + " = ?").collect(Collectors.joining(" and "));
-    }
-
-    /**
-     * @param entityMetadata
-     *
-     * @return
-     *
-     * @see EntityMetadata
-     * @since 0.2.0
-     */
-    @NotNull
-    private String prepareDelete(@NotNull EntityMetadata<?> entityMetadata) {
-        return "delete from " + entityMetadata.getName() + " where " + entityMetadata
-            .getDeclaredIdentifiers().stream()
-            .map(prop -> entityMetadata.getName() + "." + prop.propertyName() + " = ?")
+        return " inner join " + this.escape(child) + " on " + child.declaredIdentifiers().stream()
+            .map(this::escape)
+            .map(prop -> this.escape(parent) + "." + prop + " = " + this.escape(child) + "." + prop)
             .collect(Collectors.joining(" and "));
     }
 
     /**
      * @author David Greven
-     * @since 0.2.0
-     */
-    enum StatementType {
-        INSERT, SELECT, SELECT_ALL, UPDATE, DELETE
-    }
-
-    /**
-     * @author David Greven
      * @see EntityMetadata
-     * @see StatementType
-     * @since 0.2.0
+     * @see Crud
+     * @since 0.3.3
      */
-    static final class StatementCache {
+    private static final class StatementCache {
 
         private static final Object MUTEX = new Object();
         private static volatile StatementCache INSTANCE;
-        private final Map<EntityMetadata<?>, Map<StatementType, String>> preparedStatementMap;
+        private final Map<EntityMetadata<?>, Map<Crud, String>> preparedStatementMap;
 
         /**
          * @since 0.2.0
@@ -244,10 +235,10 @@ final class PreparedStatementFactory {
         /**
          * @return
          *
-         * @since 0.2.0
+         * @since 0.3.3
          */
         @NotNull
-        private static StatementCache getInstance() {
+        private static StatementCache instance() {
             var result = INSTANCE;
             if (result == null) {
                 synchronized (MUTEX) {
@@ -263,23 +254,12 @@ final class PreparedStatementFactory {
         /**
          * @return
          *
-         * @see Map
-         * @see EntityMetadata
-         * @see StatementType
-         * @since 0.2.0
+         * @since 0.3.3
          */
         @NotNull
         @Contract(pure = true)
-        private Map<EntityMetadata<?>, Map<StatementType, String>> getStatementMap() {
+        private Map<EntityMetadata<?>, Map<Crud, String>> cache() {
             return this.preparedStatementMap;
-        }
-
-        /**
-         * @since 0.2.0
-         */
-        @SuppressWarnings("unused")
-        void clearCache() {
-            this.preparedStatementMap.clear();
         }
 
     }

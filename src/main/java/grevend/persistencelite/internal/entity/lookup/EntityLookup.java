@@ -24,18 +24,19 @@
 
 package grevend.persistencelite.internal.entity.lookup;
 
-import grevend.persistencelite.internal.entity.EntityIdentifier;
 import grevend.persistencelite.entity.EntityMetadata;
-import grevend.persistencelite.internal.entity.EntityProperty;
-import grevend.persistencelite.internal.entity.EntityRelation;
-import grevend.persistencelite.internal.entity.EntityRelationType;
 import grevend.persistencelite.entity.Id;
 import grevend.persistencelite.entity.Property;
 import grevend.persistencelite.entity.Relation;
+import grevend.persistencelite.internal.entity.EntityIdentifier;
+import grevend.persistencelite.internal.entity.EntityProperty;
+import grevend.persistencelite.internal.entity.EntityRelation;
+import grevend.persistencelite.internal.entity.EntityRelationType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.Contract;
@@ -55,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
  * @see MethodHandles
  * @since 0.2.0
  */
-public interface ComponentLookup<E, C extends AnnotatedElement> {
+public interface EntityLookup<E, C extends AnnotatedElement> {
 
     /**
      * Generates a {@code Stream} of annotated member components.
@@ -98,7 +99,7 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
 
     /**
      * Creates an {@code EntityProperty} based on the {@code EntityMetadata}, the {@code
-     * ComponentLookup} {@code MethodHandle} factory and the provided component.
+     * EntityLookup} {@code MethodHandle} factory and the provided component.
      *
      * @param entityMetadata The metadata of the entity for which this operation is being
      *                       performed.
@@ -109,7 +110,7 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
      *
      * @see EntityProperty
      * @see EntityMetadata
-     * @see ComponentLookup
+     * @see EntityLookup
      * @see MethodHandle
      * @since 0.2.0
      */
@@ -133,8 +134,11 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
             (component.isAnnotationPresent(Property.class) &&
                 component.getAnnotation(Property.class).copy());
 
+        var escape = component.isAnnotationPresent(Property.class) &&
+            component.getAnnotation(Property.class).escape();
+
         return new EntityProperty(this.lookupComponentType(component), getter,
-            this.lookupComponentName(component), propertyName, identifier, relation, copy);
+            this.lookupComponentName(component), propertyName, identifier, relation, copy, escape);
     }
 
     /**
@@ -172,10 +176,17 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
      */
     @NotNull
     default Collection<EntityProperty> lookupProperties(@NotNull EntityMetadata<E> entityMetadata) {
-        var lookup = MethodHandles.lookup();
-        return this.components(entityMetadata)
-            .map(component -> this.createProperty(entityMetadata, lookup, component))
-            .collect(Collectors.toUnmodifiableList());
+        try {
+            this.getClass().getModule().addReads(entityMetadata.entityClass().getModule());
+            var lookup = MethodHandles
+                .privateLookupIn(entityMetadata.entityClass(), MethodHandles.lookup());
+            return this.components(entityMetadata)
+                .map(component -> this.createProperty(entityMetadata, lookup, component))
+                .collect(Collectors.toUnmodifiableList());
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            return Collections.emptySet();
+        }
     }
 
     /**
@@ -190,7 +201,7 @@ public interface ComponentLookup<E, C extends AnnotatedElement> {
      *
      * @see MethodHandle
      * @see EntityMetadata
-     * @see ComponentLookup
+     * @see EntityLookup
      * @since 0.2.0
      */
     @Nullable

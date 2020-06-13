@@ -22,38 +22,26 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite;
+package grevend.common;
 
-import grevend.persistencelite.service.Configurator;
-import grevend.persistencelite.service.Service;
-import java.lang.reflect.InvocationTargetException;
+import grevend.sequence.Seq;
+import java.util.Collection;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author David Greven
- * @since 0.2.0
- */
-public final class PersistenceLite {
+public interface CollectionExtension<E, C extends Collection<E>> {
 
-    public static final System.Logger LOGGER = System.getLogger("PersistenceLiteLogger");
-    public static final String VERSION = "0.6.6";
+    @NotNull <S extends Seq<E, S>> Seq<E, S> sequence();
 
-    /**
-     * @param service
-     * @param <C>
-     * @param <S>
-     *
-     * @return
-     *
-     * @since 0.3.0
-     */
     @NotNull
-    public static <C extends Configurator<S>, S extends Service<C>> C configure(@NotNull Class<S> service) {
-        try {
-            return service.getConstructor().newInstance().configurator();
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            throw new IllegalStateException("Service configurator construction failed.", e);
-        }
+    default C filter(@NotNull Predicate<? super E> predicate) {
+        return this.sequence().filter(predicate)
+            .collect(Collectors.toCollection(this.factory()));
     }
+
+    @NotNull
+    Supplier<C> factory();
 
 }

@@ -22,28 +22,17 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.util;
+package grevend.persistencelite.internal.service.rest;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import grevend.persistencelite.service.Service;
+import grevend.persistencelite.service.rest.RestMode;
+import java.nio.charset.Charset;
+import java.util.Properties;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import grevend.persistencelite.internal.util.Utils;
-import org.junit.jupiter.api.Test;
-
-class UtilsTest {
-
-    @Test
-    void testStringify() {
-        assertThat(Utils.stringify(12)).isEqualTo("12");
-    }
-
-    @Test
-    void testStringifyNull() {
-        assertThat(Utils.stringify(null)).isEqualTo("null");
-    }
-
-    @Test
-    void testStringifyPrimitiveArray() {
-        assertThat(Utils.stringify(new int[]{12, 42})).startsWith("[I@");
-    }
-
-}
+/**
+ * @author David Greven
+ * @since 0.4.6
+ */
+public record RestConfiguration(@NotNull RestMode mode, int version, @NotNull Charset charset, boolean cached, int poolSize, int backlog, @Nullable String scope, @Nullable Service<?>service, @Nullable Properties properties) {}

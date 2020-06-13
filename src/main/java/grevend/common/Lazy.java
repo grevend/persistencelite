@@ -47,8 +47,36 @@ public class Lazy<E> {
      * @since 0.2.0
      */
     @Contract(pure = true)
-    public Lazy(@NotNull final Supplier<E> supplier) {
+    private Lazy(@NotNull final Supplier<E> supplier) {
         this.supplier = supplier;
+    }
+
+    /**
+     * @param supplier
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.6.4
+     */
+    @NotNull
+    @Contract(value = "_ -> new", pure = true)
+    public static <E> Lazy<E> of(@NotNull final Supplier<E> supplier) {
+        return new Lazy<>(supplier);
+    }
+
+    /**
+     * @param value
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.6.4
+     */
+    @NotNull
+    @Contract(value = "_ -> new", pure = true)
+    public static <E> Lazy<E> of(@NotNull final E value) {
+        return new Lazy<>(() -> value);
     }
 
     /**

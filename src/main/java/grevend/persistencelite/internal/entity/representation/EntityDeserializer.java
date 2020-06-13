@@ -22,38 +22,19 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite;
+package grevend.persistencelite.internal.entity.representation;
 
-import grevend.persistencelite.service.Configurator;
-import grevend.persistencelite.service.Service;
-import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author David Greven
- * @since 0.2.0
+ * @since 0.3.2
  */
-public final class PersistenceLite {
+@FunctionalInterface
+public interface EntityDeserializer<T> {
 
-    public static final System.Logger LOGGER = System.getLogger("PersistenceLiteLogger");
-    public static final String VERSION = "0.6.6";
-
-    /**
-     * @param service
-     * @param <C>
-     * @param <S>
-     *
-     * @return
-     *
-     * @since 0.3.0
-     */
     @NotNull
-    public static <C extends Configurator<S>, S extends Service<C>> C configure(@NotNull Class<S> service) {
-        try {
-            return service.getConstructor().newInstance().configurator();
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-            throw new IllegalStateException("Service configurator construction failed.", e);
-        }
-    }
+    T deserialize(@NotNull Map<String, Object> values) throws Throwable;
 
 }

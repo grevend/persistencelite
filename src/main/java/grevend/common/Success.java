@@ -24,38 +24,31 @@
 
 package grevend.common;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
-import org.junit.jupiter.api.Test;
+public interface Success<T> extends Result<T> {
 
-class TripletTest {
-
-    @Test
-    void testTripletOf() {
-        var triplet = Triplet.of("test", 45L, true);
-        assertThat(triplet.first()).isEqualTo("test");
-        assertThat(triplet.second()).isEqualTo(45L);
-        assertThat(triplet.third()).isEqualTo(true);
+    @Contract(value = "_ -> param1", pure = true)
+    static <T> Success<T> of(@NotNull Success<T> success) {
+        return success;
     }
 
-    @Test
-    void testTripletToString() {
-        var triplet = Triplet.of("test", 45L, true);
-        assertThat(triplet.toString()).isEqualTo("Triplet{first=test, second=45, third=true}");
+    @Override
+    default boolean success() {
+        return true;
     }
 
-    @Test
-    void testTripletWithNullToString() {
-        var triplet = Triplet.of(null, null, null);
-        assertThat(triplet.toString()).isEqualTo("Triplet{first=null, second=null, third=null}");
+    @Override
+    default T or(T or) {
+        return this.get();
     }
 
-    @Test
-    void testTripletWithPrimitiveArraysToString() {
-        var triplet = Triplet.of(new int[]{12, 42}, new long[]{21, 24}, new byte[]{12, 24});
-        assertThat(triplet.toString()).contains("Triplet{first=[I@");
-        assertThat(triplet.toString()).contains(", second=[J@");
-        assertThat(triplet.toString()).contains(", third=[B@");
+    @Override
+    default T orThrow() {
+        return this.get();
     }
+
+    T get();
 
 }

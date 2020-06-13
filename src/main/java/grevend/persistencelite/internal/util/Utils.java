@@ -24,30 +24,27 @@
 
 package grevend.persistencelite.internal.util;
 
+import grevend.common.Pair;
+import grevend.persistencelite.util.TypeMarshaller;
+import grevend.sequence.Seq;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.BaseStream;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Utils {
-
-    private static final Set<String> arrayPrimitives =
-        Set.of("void[]", "byte[]", "short[]", "int[]", "long[]", "float[]", "double[]", "boolean[]",
-            "char[]");
-
-    @Contract("null -> !null")
-    @SuppressWarnings("unchecked")
-    public static <A> String stringify(A a) {
-        if (a == null) {
-            return "null";
-        } else {
-            return a.getClass().isArray() &&
-                !Utils.arrayPrimitives.contains(a.getClass().getCanonicalName()) ?
-                Arrays.toString((A[]) a) : a.toString();
-        }
-    }
 
     @Contract(pure = true)
     @SuppressWarnings("unchecked")
@@ -138,6 +135,72 @@ public final class Utils {
         }
 
         return value;
+    }
+
+    @NotNull
+    public static <A, B> Stream<Pair<A, B>> zip(@NotNull BaseStream<A, Stream<A>> first, @NotNull BaseStream<B, Stream<B>> second) {
+        return zip(first.iterator(), second.iterator());
+    }
+
+    @NotNull
+    public static <A, B, S1 extends Seq<A, S1>, S2 extends Seq<B, S2>> Stream<Pair<A, B>> zip(@NotNull S1 first, @NotNull S2 second) {
+        return zip(first.iterator(), second.iterator());
+    }
+
+    @NotNull
+    public static <A, B> Stream<Pair<A, B>> zip(@NotNull Iterator<A> first, @NotNull Iterator<B> second) {
+        record PairImpl<A, B>(@Nullable A first, @Nullable B second) implements Pair<A, B> {}
+
+        Iterable<Pair<A, B>> iter = () -> new Iterator<>() {
+
+            @Override
+            public boolean hasNext() {
+                return first.hasNext() && second.hasNext();
+            }
+
+            @Override
+            public Pair<A, B> next() {
+                return new PairImpl<>(first.next(), second.next());
+            }
+
+        };
+
+        return StreamSupport.stream(iter.spliterator(), false);
+    }
+
+    private static <T> boolean containsExactly(@NotNull Collection<T> first, @NotNull Collection<T> second) {
+        Collection<T> copy = new ArrayList<>(first);
+        copy.removeAll(second);
+        return first.containsAll(second) && second.containsAll(first) && copy.isEmpty();
+    }
+
+    public static <T> boolean containsExactly(@NotNull Iterable<T> first, @NotNull Iterable<T> second) {
+        return containsExactly(Seq.of(first).toList(), Seq.of(second).toList());
+    }
+
+    @NotNull
+    @Contract("null -> !null")
+    public static Map<String, List<String>> query(@Nullable URI uri) {
+        record PairImpl<A, B>(A first, B second) implements Pair<A, B> {}
+
+        if (uri == null || uri.getQuery() == null || uri.getQuery().equals("")) {
+            return Collections.emptyMap();
+        }
+
+        return Arrays.stream(uri.getQuery().split("&"))
+            .map(param -> new PairImpl<>(param, param.indexOf("="))).map(param -> new PairImpl<>(
+                param.second > 0 ? param.first.substring(0, param.second) : param.first,
+                param.second > 0 && param.first.length() > (param.second + 1) ? param.first
+                    .substring(param.second + 1) : null)).collect(Collectors
+                .groupingBy(Pair::first, HashMap::new,
+                    Collectors.mapping(Pair::second, Collectors.toUnmodifiableList())));
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public static Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unsafeCast(@NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<?, ?>>> map) {
+        return (Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>>) (Object) (map);
     }
 
 }

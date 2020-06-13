@@ -58,7 +58,8 @@ public final class PostgresConfigurator implements Configurator<PostgresService>
      * @since 0.2.0
      */
     @NotNull
-    public PostgresConfigurator loadCredentials(@NotNull String propertiesFile) {
+    @Contract("_ -> this")
+    public PostgresConfigurator credentials(@NotNull String propertiesFile) {
         Properties props = new Properties();
 
         try (var stream = this.getClass().getClassLoader().getResourceAsStream(propertiesFile)) {
@@ -68,8 +69,12 @@ public final class PostgresConfigurator implements Configurator<PostgresService>
                 throw new FileNotFoundException(
                     "Credentials property file '" + propertiesFile + "' not found.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception exception) {
+            if (exception instanceof FileNotFoundException fileNotFoundException) {
+                throw new IllegalStateException("", fileNotFoundException);
+            } else {
+                exception.printStackTrace();
+            }
         }
 
         this.service.setProperties(props);
@@ -83,6 +88,7 @@ public final class PostgresConfigurator implements Configurator<PostgresService>
      */
     @NotNull
     @Override
+    @Contract(pure = true)
     public PostgresService service() {
         return this.service;
     }

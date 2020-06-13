@@ -38,15 +38,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An implementation of the {@code ComponentLookup} interface for record-based entities.
+ * An implementation of the {@code EntityLookup} interface for record-based entities.
  *
  * @param <E> The entity type.
  *
  * @author David Greven
- * @see ComponentLookup
+ * @see EntityLookup
  * @since 0.2.0
  */
-public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent> {
+public final class RecordLookup<E> implements EntityLookup<E, RecordComponent> {
 
     /**
      * Generates a {@code Stream} of annotated member components.
@@ -62,7 +62,7 @@ public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent
     @NotNull
     @Override
     public Stream<RecordComponent> components(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getRecordComponents());
+        return Stream.of(entityMetadata.entityClass().getRecordComponents());
     }
 
     /**
@@ -108,7 +108,7 @@ public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent
      *
      * @see MethodHandle
      * @see EntityMetadata
-     * @see ComponentLookup
+     * @see EntityLookup
      * @since 0.2.0
      */
     @Nullable
@@ -117,7 +117,7 @@ public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent
         try {
             MethodType methodType = MethodType.methodType(component.getType());
             return lookup
-                .findVirtual(entityMetadata.getEntityClass(), component.getName(), methodType);
+                .findVirtual(entityMetadata.entityClass(), component.getName(), methodType);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             e.printStackTrace();
             return null;
@@ -140,12 +140,14 @@ public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent
     @Override
     public MethodHandle lookupConstructor(@NotNull EntityMetadata<E> entityMetadata) {
         try {
-            var lookup = MethodHandles.lookup();
+            this.getClass().getModule().addReads(entityMetadata.entityClass().getModule());
+            var lookup = MethodHandles
+                .privateLookupIn(entityMetadata.entityClass(), MethodHandles.lookup());
             MethodType methodType = MethodType.methodType(void.class,
-                entityMetadata.getDeclaredProperties().stream().map(EntityProperty::type)
+                entityMetadata.declaredProperties().stream().map(EntityProperty::type)
                     .collect(Collectors.toUnmodifiableList()));
 
-            return lookup.findConstructor(entityMetadata.getEntityClass(), methodType);
+            return lookup.findConstructor(entityMetadata.entityClass(), methodType);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             e.printStackTrace();
             return null;
@@ -165,7 +167,7 @@ public final class RecordLookup<E> implements ComponentLookup<E, RecordComponent
     @NotNull
     @Override
     public Collection<EntityMetadata<?>> lookupSuperTypes(@NotNull EntityMetadata<E> entityMetadata) {
-        return Stream.of(entityMetadata.getEntityClass().getInterfaces())
+        return Stream.of(entityMetadata.entityClass().getInterfaces())
             .filter(superType -> superType.isAnnotationPresent(Entity.class))
             .map(EntityMetadata::of)
             .collect(Collectors.toUnmodifiableList());

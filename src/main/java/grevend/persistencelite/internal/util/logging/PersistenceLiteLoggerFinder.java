@@ -25,6 +25,8 @@
 package grevend.persistencelite.internal.util.logging;
 
 import java.lang.System.Logger;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public final class PersistenceLiteLoggerFinder extends System.LoggerFinder {
 
@@ -42,7 +44,8 @@ public final class PersistenceLiteLoggerFinder extends System.LoggerFinder {
      *                              method doesn't allow the {@code RuntimePermission("loggerFinder")}.
      */
     @Override
-    public Logger getLogger(String name, Module module) {
+    @Contract(value = "_, _ -> new", pure = true)
+    public @NotNull Logger getLogger(String name, Module module) {
         return new PersistenceLiteLogger();
     }
 

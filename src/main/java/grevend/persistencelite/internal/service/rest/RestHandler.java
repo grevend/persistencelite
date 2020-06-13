@@ -22,48 +22,42 @@
  * SOFTWARE.
  */
 
-package grevend.persistencelite.internal.service.sql;
+package grevend.persistencelite.internal.service.rest;
 
-import grevend.persistencelite.dao.Transaction;
-import grevend.persistencelite.dao.TransactionFactory;
-import grevend.sequence.function.ThrowingSupplier;
-import java.sql.Connection;
-import java.util.Objects;
-import org.jetbrains.annotations.Contract;
+import com.sun.net.httpserver.HttpExchange;
+import grevend.persistencelite.entity.EntityMetadata;
+import grevend.persistencelite.util.TypeMarshaller;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author David Greven
- * @see TransactionFactory
- * @since 0.2.0
- */
-public final class SqlTransactionFactory implements TransactionFactory {
+@FunctionalInterface
+public interface RestHandler {
 
-    private final ThrowingSupplier<Connection> connectionSupplier;
+    int CHUNKED = 0;
 
-    /**
-     * @param connectionSupplier
-     *
-     * @see ThrowingSupplier
-     * @since 0.2.0
-     */
-    @Contract(pure = true)
-    public SqlTransactionFactory(@NotNull ThrowingSupplier<Connection> connectionSupplier) {
-        this.connectionSupplier = connectionSupplier;
-    }
+    int OK = 200;
+    int CREATED = 201;
+    int BAD_REQUEST = 400;
+    int UNAUTHORIZED = 401;
+    int FORBIDDEN = 403;
+    int NOT_FOUND = 404;
+    int METHOD_NOT_ALLOWED = 405;
+    int INTERNAL_SERVER_ERROR = 500;
+    int NOT_IMPLEMENTED = 501;
 
-    /**
-     * @return
-     *
-     * @throws Throwable
-     * @see SqlTransaction
-     * @since 0.2.0
-     */
-    @NotNull
-    @Override
-    @Contract(" -> new")
-    public Transaction createTransaction() throws Throwable {
-        return new SqlTransaction(Objects.requireNonNull(this.connectionSupplier.get()));
-    }
+    String GET = "GET";
+    String HEAD = "HEAD";
+    String POST = "POST";
+    String PUT = "PUT";
+    String DELETE = "DELETE";
+    String CONNECT = "CONNECT";
+    String OPTIONS = "OPTIONS";
+    String TRACE = "TRACE";
+    String PATCH = "PATCH";
+
+    void handle(int version, @NotNull EntityMetadata<?> entityMetadata, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> marshallerMap, @NotNull Map<Class<?>, Map<Class<?>, TypeMarshaller<Object, Object>>> unmarshallerMap, @NotNull HttpExchange exchange) throws IOException;
 
 }

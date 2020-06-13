@@ -1,9 +1,12 @@
-import grevend.persistencelite.internal.util.logging.PersistenceLiteLoggerFinder;
+open module grevend.persistencelite {
 
-module PersistenceLite {
-    requires org.jetbrains.annotations;
     requires java.sql;
+    requires org.postgresql.jdbc;
+    requires jdk.httpserver;
+    requires java.compiler;
     requires reflections;
+    requires com.google.gson;
+    requires org.jetbrains.annotations;
 
     exports grevend.common.jacoco;
     exports grevend.common;
@@ -12,22 +15,12 @@ module PersistenceLite {
     exports grevend.persistencelite.entity;
     exports grevend.persistencelite.service;
     exports grevend.persistencelite.service.sql;
+    exports grevend.persistencelite.service.rest;
     exports grevend.persistencelite.util;
     exports grevend.sequence.function;
     exports grevend.sequence.iterators;
     exports grevend.sequence;
 
-    opens grevend.common.jacoco;
-    opens grevend.common;
-    opens grevend.persistencelite;
-    opens grevend.persistencelite.dao;
-    opens grevend.persistencelite.entity;
-    opens grevend.persistencelite.service;
-    opens grevend.persistencelite.service.sql;
-    opens grevend.persistencelite.util;
-    opens grevend.sequence.function;
-    opens grevend.sequence.iterators;
-    opens grevend.sequence;
-
     //provides System.LoggerFinder with PersistenceLiteLoggerFinder;
+
 }

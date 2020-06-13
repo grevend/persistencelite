@@ -24,7 +24,9 @@
 
 package grevend.persistencelite.service;
 
+import grevend.persistencelite.dao.Dao;
 import grevend.persistencelite.dao.DaoFactory;
+import grevend.persistencelite.dao.Transaction;
 import grevend.persistencelite.dao.TransactionFactory;
 import grevend.persistencelite.util.TypeMarshaller;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +47,7 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    C getConfigurator();
+    C configurator();
 
     /**
      * @return
@@ -53,7 +55,28 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    DaoFactory getDaoFactory();
+    DaoFactory daoFactory();
+
+    /**
+     * @param entity
+     * @param transaction
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity, @Nullable Transaction transaction);
+
+    /**
+     * @param entity
+     * @param <E>
+     *
+     * @return
+     *
+     * @since 0.4.5
+     */
+    @NotNull <E> Dao<E> createDao(@NotNull Class<E> entity);
 
     /**
      * @return
@@ -61,19 +84,35 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @since 0.2.0
      */
     @NotNull
-    TransactionFactory getTransactionFactory();
+    TransactionFactory transactionFactory();
 
     /**
      * @param from
      * @param to
      * @param marshaller
+     * @param unmarshaller
      * @param <A>
      * @param <B>
      *
-     * @since 0.2.0
+     * @since 0.5.2
      */
-    default <A, B> void registerTypeMarshaller(Class<A> from, Class<B> to, TypeMarshaller<A, B> marshaller) {
-        this.registerTypeMarshaller(null, from, to, marshaller);
+    default <A, B> void registerTypeMarshaller(@NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller) {
+        this.registerTypeMarshaller(null, from, to, marshaller, unmarshaller, false);
+    }
+
+    /**
+     * @param from
+     * @param to
+     * @param marshaller
+     * @param unmarshaller
+     * @param customNullHandling
+     * @param <A>
+     * @param <B>
+     *
+     * @since 0.5.2
+     */
+    default <A, B> void registerTypeMarshaller(@NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling) {
+        this.registerTypeMarshaller(null, from, to, marshaller, unmarshaller, customNullHandling);
     }
 
     /**
@@ -81,12 +120,39 @@ public interface Service<C extends Configurator<? extends Service<C>>> {
      * @param from
      * @param to
      * @param marshaller
+     * @param unmarshaller
      * @param <A>
      * @param <B>
      * @param <E>
      *
-     * @since 0.2.0
+     * @since 0.5.2
      */
-    <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller);
+    default <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller) {
+        this.registerTypeMarshaller(entity, from, to, marshaller, unmarshaller, false);
+    }
+
+    /**
+     * @param entity
+     * @param from
+     * @param to
+     * @param marshaller
+     * @param unmarshaller
+     * @param customNullHandling
+     * @param <A>
+     * @param <B>
+     * @param <E>
+     *
+     * @since 0.5.2
+     */
+    <A, B, E> void registerTypeMarshaller(@Nullable Class<E> entity, @NotNull Class<A> from, @NotNull Class<B> to, @NotNull TypeMarshaller<A, B> marshaller, @NotNull TypeMarshaller<B, A> unmarshaller, boolean customNullHandling);
+
+    /**
+     * @return
+     *
+     * @since 0.4.5
+     */
+    default boolean allowsCaching() {
+        return false;
+    }
 
 }
