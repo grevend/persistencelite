@@ -25,10 +25,12 @@
 package grevend.persistencelite.service.sql;
 
 import grevend.persistencelite.service.Configurator;
+import grevend.sequence.function.ThrowingConsumer;
 import java.io.FileNotFoundException;
 import java.util.Properties;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author David Greven
@@ -41,7 +43,7 @@ public final class PostgresConfigurator implements Configurator<PostgresService>
     private final PostgresService service;
 
     /**
-     * @param service
+     * @param service The service that is currently being configured.
      *
      * @since 0.2.0
      */
@@ -51,9 +53,9 @@ public final class PostgresConfigurator implements Configurator<PostgresService>
     }
 
     /**
-     * @param propertiesFile
+     * @param propertiesFile The path and filename of the properties file defining the credentials.
      *
-     * @return
+     * @return this
      *
      * @since 0.2.0
      */
@@ -82,7 +84,22 @@ public final class PostgresConfigurator implements Configurator<PostgresService>
     }
 
     /**
-     * @return
+     * @param callback The consumer that should be called if a connection times out.
+     *
+     * @return this
+     *
+     * @since 0.6.8
+     */
+    @NotNull
+    @Contract(value = "_ -> this", pure = true)
+    public PostgresConfigurator onConnectionFailure(@Nullable ThrowingConsumer<ConnectionStatus> callback) {
+        this.service.connectionFailureCallbacks.add(callback);
+        return this;
+    }
+
+
+    /**
+     * @return The service that is currently being configured.
      *
      * @since 0.2.0
      */
