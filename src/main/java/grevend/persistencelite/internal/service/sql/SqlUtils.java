@@ -116,7 +116,7 @@ final class SqlUtils {
         PreparedStatementFactory preparedStatementFactory = new PreparedStatementFactory();
         var transaction = transactionSupplier.get();
         if (!(transaction instanceof SqlTransaction)) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Transaction not instanceof SqlTransaction.");
         } else {
             try {
                 var targetMetadata = EntityMetadata.of(entityRelation.getTargetEntity());
